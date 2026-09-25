@@ -1,6 +1,7 @@
 import { FrenchDivisionType } from '../../domain/translations/fr/Divisions';
 import { FrenchFurType } from '../../domain/translations/fr/Furs';
 import { FrenchChargeType } from '../../domain/translations/fr/Charges';
+import { FrenchCounterchanged } from '../../domain/translations/fr/Counterchanged';
 import { FrenchModifiers } from '../../domain/translations/fr/Modifiers';
 import { FrenchStrewings, SOWN } from '../../domain/translations/fr/Strewings';
 import { FrenchNumbers } from '../../domain/translations/fr/Numbers';
@@ -19,6 +20,9 @@ export const FrenchBlazonWording: BlazonWording<FrenchWord> = {
   ordinaries: FrenchOrdinaryType,
   charges: FrenchChargeType,
   modifiers: FrenchModifiers,
+  // "à la bordure de l'un à l'autre": the phrase stands where the tincture would
+  // and agrees with nothing, naming the two halves rather than the band.
+  counterchanged: FrenchCounterchanged,
   strewings: FrenchStrewings,
   numbers: FrenchNumbers,
   introduce: withArticle,

@@ -3,6 +3,7 @@ import { EnglishDivisionType } from '../../domain/translations/en/Divisions';
 import { EnglishFurType } from '../../domain/translations/en/Furs';
 import { EnglishVariationType, OF } from '../../domain/translations/en/Variations';
 import { EnglishChargeType } from '../../domain/translations/en/Charges';
+import { EnglishCounterchanged } from '../../domain/translations/en/Counterchanged';
 import { EnglishModifiers } from '../../domain/translations/en/Modifiers';
 import { EnglishStrewings, OF as SOWN_OF, SOWN } from '../../domain/translations/en/Strewings';
 import { strewnTerms } from '../../domain/translations/Strewings';
@@ -10,8 +11,9 @@ import { asSeveral, writtenAs } from '../../domain/translations/Translation';
 import { EnglishOrdinaryType } from '../../domain/translations/en/Ordinaries';
 import { EnglishNumbers } from '../../domain/translations/en/Numbers';
 import { EnglishTinctures } from '../../domain/translations/en/Tinctures';
+import { COUNTERCHANGED, Counterchanged } from '../../domain/models/Counterchanged';
 import { BlazonGrammar } from '../parser/BlazonGrammar';
-import { anyKeyword, keyword, optional, spelledTerm, term } from '../parser/Combinators';
+import { anyKeyword, anyPhrase, keyword, optional, spelledTerm, term } from '../parser/Combinators';
 import { asOrdinary, asDivision, asTincture } from '../parser/Failures';
 import { NOT_IN_NUMBER, alone, bearings, modifiable, several } from '../parser/Borne';
 import { anyWriting, modifying } from '../parser/Modifiers';
@@ -59,6 +61,16 @@ const TREATMENT = strewing(alt(NAMED_STREWING, SOWN_CHARGE), term(EnglishTinctur
 // where another would have been right.
 const MODIFIER = modifying(anyWriting(EnglishModifiers));
 
+// "a bordure counterchanged": said where the tincture would be said, and saying
+// that there is none of its own. One word where French has a phrase it spells
+// two ways, and read by the same rule for that reason — the writings the
+// vocabulary page shows a reader are the writings the parser answers to, however
+// many of them a tongue turns out to have.
+const COUNTERCHANGED_BAND = apply(
+  anyPhrase(writtenAs(EnglishCounterchanged)),
+  (): Counterchanged => COUNTERCHANGED
+);
+
 export const EnglishBlazonGrammar: BlazonGrammar = {
   tincture: term(EnglishTinctures, asTincture),
   division: term(EnglishDivisionType, asDivision),
@@ -76,5 +88,6 @@ export const EnglishBlazonGrammar: BlazonGrammar = {
     modifiable(alone(kright(ARTICLE, spelledTerm(BEARINGS, asOrdinary))), () => MODIFIER),
     modifiable(several(BEARINGS, EnglishNumbers, asOrdinary, NOT_IN_NUMBER), () => MODIFIER)
   ),
+  counterchanged: COUNTERCHANGED_BAND,
   and: AND,
 };

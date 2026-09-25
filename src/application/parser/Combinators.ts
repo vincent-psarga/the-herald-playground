@@ -17,7 +17,7 @@ import {
   bySpelling,
 } from '../../domain/translations/Translation';
 import { Word } from '../../domain/translations/Word';
-import { TokenKind } from '../lexer/Lexer';
+import { TokenKind, tokenise } from '../lexer/Lexer';
 import { Vocabulary, complaining, owed, positionOf } from './Failures';
 
 /**
@@ -243,4 +243,93 @@ export function optional<TKind, TResult>(
       };
     },
   };
+}
+
+/**
+ * Matches any one spelling of a phrase of several words, however it was spaced
+ * and capitalised: "de l'un à l'autre", and "de l'un en l'autre" beside it.
+ *
+ * Every spelling is given rather than the canonical one alone, by the same
+ * reckoning anyKeyword reads every spelling of a keyword: a word may answer to
+ * more than one writing of itself without being more than one word, and a
+ * grammar that read only the first would refuse what the vocabulary says it
+ * holds.
+ *
+ * The spellings are handed over as the words themselves and read with the very
+ * lexer the blazon is read with, so a vocabulary that holds a phrase as one word
+ * and a grammar that reads it cannot come to disagree about where its words
+ * divide. That matters here more than it would for a keyword: the phrase is half
+ * articles, and an article is not a word to the lexer.
+ *
+ * Nothing is kept but the fact that one of them was there. The phrase names no
+ * term of the vocabulary in either tongue — it says what a figure is painted
+ * with by pointing at the field rather than by naming anything — so what it
+ * means is the caller's to supply, and which spelling said it is no more kept
+ * than which spelling of a charge was written.
+ *
+ * A phrase that breaks off partway complains where it began rather than where it
+ * broke off, because breaking off is how it says it was never there: these are
+ * fixed words and they commit to nothing. Complaining further along would let a
+ * phrase that merely shares its first word with what was written — "de", which
+ * opens a French tincture as readily — outrank the complaint of whatever was
+ * actually being said.
+ */
+export function anyPhrase(expected: readonly string[]): Parser<TokenKind, string> {
+  const spellings = expected.map(spelling);
+
+  return {
+    parse(token: Token<TokenKind> | undefined): ParserOutput<TokenKind, string> {
+      for (const words of spellings) {
+        const after = following(words, token);
+        if (after !== false) {
+          return {
+            successful: true,
+            candidates: [{ firstToken: token, nextToken: after, result: expected[0] }],
+            error: undefined,
+          };
+        }
+      }
+      return {
+        successful: false,
+        error: { kind: 'Error', pos: token?.pos, message: `Expected "${expected[0]}"` },
+      };
+    },
+  };
+}
+
+/**
+ * What stands after these words, where they stand here at all, and false where
+ * they do not — which is not the same as nothing: a phrase may run to the very
+ * end of the blazon, and then there is nothing after it and it was still there.
+ */
+function following(
+  words: readonly string[],
+  token: Token<TokenKind> | undefined
+): Token<TokenKind> | undefined | false {
+  let current = token;
+  for (const word of words) {
+    if (current === undefined || plainly(current.text) !== word) {
+      return false;
+    }
+    current = current.next;
+  }
+  return current;
+}
+
+/** The words a phrase is made of, as the lexer divides them. */
+function spelling(expected: string): readonly string[] {
+  const words: string[] = [];
+  for (let token = tokenise(expected); token !== undefined; token = token.next) {
+    words.push(plainly(token.text));
+  }
+  return words;
+}
+
+/**
+ * A word as it is compared: folded to lower case, and the curly apostrophe
+ * folded to the straight one. The lexer reads either, so a blazon typed with one
+ * must match a phrase written with the other.
+ */
+function plainly(text: string): string {
+  return text.toLowerCase().replace(/’/g, "'");
 }

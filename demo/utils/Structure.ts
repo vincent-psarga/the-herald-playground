@@ -1,9 +1,10 @@
 import { EnglishBlazonWording } from '../../src/application/english/EnglishBlazonWording';
 import { FrenchBlazonWording } from '../../src/application/french/FrenchBlazonWording';
-import { BlazonWording } from '../../src/application/writer/BlazonWording';
+import { BlazonWording, bandNamed } from '../../src/application/writer/BlazonWording';
 import { Blazon, ChargeOrOrdinary, isOrdinary } from '../../src/domain/models/Blazon';
 import { Languages } from '../../src/domain/models/Languages';
 import { numberBorne } from '../../src/domain/models/Charge';
+import { Tinctured, isCounterchanged } from '../../src/domain/models/Counterchanged';
 import {
   Division,
   Field,
@@ -206,7 +207,7 @@ function borneBranch<W extends Word>(
 ): Branch {
   const band = isOrdinary(one);
   const word = band
-    ? wordIn(wording.ordinaries, one.type, one.tincture)
+    ? bandNamed(wording.ordinaries, one.type, one.tincture)
     : wordIn(wording.charges, one.type, one.tincture, one.modifier);
   const count = band ? borne(one) : numberBorne(one);
   return {
@@ -238,9 +239,36 @@ function borneBranch<W extends Word>(
               children: [],
             },
           ]),
-      ...tinctureSaid(wording, word, one.tincture),
+      ...paintedSaid(wording, field, word, one.tincture),
     ],
   };
+}
+
+/**
+ * What the thing is painted with, standing under it: the tincture it names, or
+ * the phrase that says it takes the field's own two, reversed.
+ *
+ * The phrase names neither of the two and cannot, so what stands under it is the
+ * field it takes them from, bare — which is the same rule the tincture follows,
+ * a branch being shown as the arms the word alone amounts to.
+ */
+function paintedSaid<W extends Word>(
+  wording: BlazonWording<W>,
+  field: Field,
+  word: W,
+  tincture: Tinctured
+): readonly Branch[] {
+  if (!isCounterchanged(tincture)) {
+    return tinctureSaid(wording, word, tincture);
+  }
+  return [
+    {
+      word: wording.counterchanged.value,
+      rank: 'counterchange',
+      arms: { field: bare(field) },
+      children: [],
+    },
+  ];
 }
 
 /**

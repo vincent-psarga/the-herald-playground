@@ -4,6 +4,7 @@ import { sownIn } from '../../src/application/french/FrenchGrammar';
 import { BlazonWording, writeBlazon } from '../../src/application/writer/BlazonWording';
 import { Blazon, ChargeOrOrdinary } from '../../src/domain/models/Blazon';
 import { ChargeType, allowsModifier, modifiersOf } from '../../src/domain/models/Charge';
+import { COUNTERCHANGED, Counterchanged } from '../../src/domain/models/Counterchanged';
 import { Modifier } from '../../src/domain/models/Modifier';
 import {
   DivisionType,
@@ -54,6 +55,11 @@ import { readBlazon } from './Reading';
  * is written as its tincture and nothing else — and "plain" and "semé" say what
  * a field carries rather than how it is cut. So the two are named here and
  * nowhere else.
+ *
+ * Counterchanging is a rank of its own for all that it holds one term, because
+ * it is none of the others: it stands where a tincture stands and is no
+ * tincture, and it is said of a band without being one. A rank with one term in
+ * it is what a page shows when a tongue has one word for a thing.
  */
 export type Ranked =
   | { readonly rank: 'tincture'; readonly term: Tincture }
@@ -64,6 +70,7 @@ export type Ranked =
   | { readonly rank: 'charge'; readonly term: ChargeType }
   | { readonly rank: 'modifier'; readonly term: Modifier }
   | { readonly rank: 'strewing'; readonly term: ChargeType }
+  | { readonly rank: 'counterchange'; readonly term: Counterchanged }
   | { readonly rank: 'field'; readonly term: typeof PLAIN_TERM | typeof SOWN_TERM };
 
 /**
@@ -169,6 +176,12 @@ const SOWN_FIGURE = ChargeType.annulet;
 const PLAIN_TERM = 'Field.plain';
 const SOWN_TERM = 'Field.sown';
 
+// The arms that show counterchanging: a band laid across the line it is
+// counterchanged across, so that the drawing shows the figure cut by the
+// partition rather than merely standing on one side of it.
+const COUNTERCHANGED_ON = FieldType.pale;
+const COUNTERCHANGED_BAND = OrdinaryType.fess;
+
 const CHARGE_TYPES = Object.values(ChargeType);
 
 /**
@@ -267,6 +280,11 @@ function sensesOf<W extends Word>(tongue: Tongue<W>): readonly Sense<W>[] {
     ...spelled('charge', wording.charges),
     ...spelled('modifier', wording.modifiers),
     ...strewn(wording.strewings),
+    {
+      rank: 'counterchange',
+      term: COUNTERCHANGED,
+      words: [wording.counterchanged],
+    } satisfies Sense<W>,
     ...(tongue.plain === undefined
       ? []
       : [{ rank: 'field', term: PLAIN_TERM, words: [tongue.plain] } satisfies Sense<W>]),
@@ -404,6 +422,16 @@ function armsOf<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W): Bl
           semy: { type: sense.term, tincture: borne },
         },
       };
+    // Shown on a band crossing the line it is counterchanged across, which is
+    // the case the word is hardest to picture in: a fess on a field parted per
+    // pale comes out one tincture to dexter and the other to sinister, and a
+    // reader can see in one drawing both what it does and that it does it to
+    // the parts of a figure rather than to the whole of one.
+    case 'counterchange':
+      return {
+        field: { type: COUNTERCHANGED_ON, firstTincture: METAL, secondTincture: COLOUR },
+        chargesOrOrdinaries: [{ type: COUNTERCHANGED_BAND, tincture: sense.term }],
+      };
     case 'field':
       return sense.term === PLAIN_TERM
         ? { field: { type: FieldType.plain, tincture: COLOUR } }
@@ -447,6 +475,10 @@ function insisting<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W):
       return { ...wording, modifiers: { ...wording.modifiers, ...only } };
     case 'strewing':
       return { ...wording, strewings: { ...wording.strewings, ...only } };
+    // One word to a tongue, so there is nothing to narrow: the writer has no
+    // choice to be held to here.
+    case 'counterchange':
+      return wording;
     case 'field':
       return sense.term === SOWN_TERM ? { ...wording, strew: tongue.sowing(word.value) } : wording;
   }
@@ -546,6 +578,9 @@ function writings(word: Word): string {
     : word.value;
 }
 
+const COUNTERCHANGE_NOTE =
+  'Said of a band and not yet of a charge, and only over a field divided in two. Heraldry counterchanges a charge as readily and over a varied field as readily, and both are refused here rather than drawn wrongly. Nothing follows it: it stands where the tincture would stand and is the whole of what the band is painted with.';
+
 const FURRED_NOTE =
   'Named where the fur itself is not. A fur is a tincture and carries its pair with it, so naming it is the whole of what a blazon says; a furred field is owed the two tinctures its figures are cut from.';
 
@@ -559,6 +594,8 @@ function noteOn<W extends Word>(sense: Sense<W>, word: W, language: Languages): 
       return FURRED_NOTE;
     case 'modifier':
       return MODIFIER_NOTE[language]?.(word);
+    case 'counterchange':
+      return COUNTERCHANGE_NOTE;
     default:
       return undefined;
   }

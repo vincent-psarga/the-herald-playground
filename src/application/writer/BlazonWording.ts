@@ -1,5 +1,6 @@
 import { Blazon, ChargeOrOrdinary, isCharge, isOrdinary } from '../../domain/models/Blazon';
 import { ChargeType, numberBorne } from '../../domain/models/Charge';
+import { Tinctured, isCounterchanged } from '../../domain/models/Counterchanged';
 import { Modifier } from '../../domain/models/Modifier';
 import {
   Division,
@@ -42,6 +43,15 @@ export interface BlazonWording<W extends Word = Word> {
   readonly ordinaries: Translation<OrdinaryType, W>;
   readonly charges: Translation<ChargeType, W>;
   readonly modifiers: Translation<Modifier, W>;
+  /**
+   * What the language says in place of a tincture where a band takes the field's
+   * own two, reversed: "de l'un à l'autre", "counterchanged".
+   *
+   * One word rather than a translation, the model holding one term and each
+   * tongue one way of saying it — and a word rather than a bare string, so that
+   * what the phrase means travels with it onto the page that lists it.
+   */
+  readonly counterchanged: W;
   /** What the language calls a field sown with each charge, where it has a word. */
   readonly strewings: Strewings<W>;
   /** How the language counts what a field bears several of. */
@@ -140,10 +150,31 @@ function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdi
   const { word, count } = named(wording, one);
   const several = count >= SEVERAL;
   const bearing = wording.bear(word, several ? counted(wording.numbers, count) : undefined);
-  const tincture =
-    word.defaultTincture === one.tincture ? undefined : writeTincture(wording, one.tincture);
   const modifier = modifying(wording, one, word)?.(several);
-  return [bearing, modifier, tincture].filter((part) => part !== undefined).join(' ');
+  return [bearing, modifier, painting(wording, one.tincture, word)]
+    .filter((part) => part !== undefined)
+    .join(' ');
+}
+
+/**
+ * What the thing is painted with, written after the name.
+ *
+ * Three answers, and the last of them is silence. A band painted out of the
+ * field it is laid on is written with the phrase that says so, there being no
+ * tincture to write. A name chosen for the tincture it means has said it by
+ * being written — a besant is a gold coin entire — so nothing follows it, and an
+ * armorial that wrote the tincture after such a name would be saying the one
+ * thing twice. Everything else is written with its tincture.
+ */
+function painting<W extends Word>(
+  wording: BlazonWording<W>,
+  tincture: Tinctured,
+  named: W
+): string | undefined {
+  if (isCounterchanged(tincture)) {
+    return wording.counterchanged.value;
+  }
+  return named.defaultTincture === tincture ? undefined : writeTincture(wording, tincture);
 }
 
 /**
@@ -197,11 +228,28 @@ function named<W extends Word>(
   one: ChargeOrOrdinary
 ): { readonly word: W; readonly count: number } {
   return isOrdinary(one)
-    ? { word: wordIn(wording.ordinaries, one.type, one.tincture), count: borne(one) }
+    ? { word: bandNamed(wording.ordinaries, one.type, one.tincture), count: borne(one) }
     : {
         word: wordIn(wording.charges, one.type, one.tincture, one.modifier),
         count: numberBorne(one),
       };
+}
+
+/**
+ * The word a band is written with: chosen by its tincture where it has one of
+ * its own, and by the term alone where it takes the field's.
+ *
+ * No band of either tongue has a name per tincture today, so the two answers are
+ * the same answer. The question is still asked the same way a charge's is, so
+ * that the day a tongue names one — heraldry has done it before, a besant being
+ * exactly that for a charge — the band is named by the same rule.
+ */
+export function bandNamed<W extends Word>(
+  ordinaries: Translation<OrdinaryType, W>,
+  type: OrdinaryType,
+  tincture: Tinctured
+): W {
+  return isCounterchanged(tincture) ? wordOf(ordinaries, type) : wordIn(ordinaries, type, tincture);
 }
 
 function writeField<W extends Word>(wording: BlazonWording<W>, field: Field): string {

@@ -7,7 +7,9 @@
 - Allow complex partition (eg: "per fess azur a bend or and argent")
 - Handle a semy of more than one figure ("semé alterné de tours et de fleurs de lys")
 - Sow a divided field, once the blazon can say which half was sown
-- Support for "shortcuts" (eg: "du même", "l'un dans l'autre", "brochant sur le tout")
+- Support for "shortcuts" (eg: "du même", "brochant sur le tout")
+- Counterchange a charge, which is what French keeps "de l'un en l'autre" for
+- Counterchange over a varied field, which is cut into a row rather than in two
 
 # Display
 

@@ -1,6 +1,7 @@
 import { EnglishDivisionType } from '../../domain/translations/en/Divisions';
 import { EnglishFurType } from '../../domain/translations/en/Furs';
 import { EnglishChargeType } from '../../domain/translations/en/Charges';
+import { EnglishCounterchanged } from '../../domain/translations/en/Counterchanged';
 import { EnglishModifiers } from '../../domain/translations/en/Modifiers';
 import { EnglishStrewings, OF as SOWN_OF, SOWN } from '../../domain/translations/en/Strewings';
 import { EnglishNumbers } from '../../domain/translations/en/Numbers';
@@ -18,6 +19,9 @@ export const EnglishBlazonWording: BlazonWording = {
   ordinaries: EnglishOrdinaryType,
   charges: EnglishChargeType,
   modifiers: EnglishModifiers,
+  // "a bordure counterchanged": one word where French writes a phrase, and one
+  // word for both of the cases French tries to tell apart.
+  counterchanged: EnglishCounterchanged,
   strewings: EnglishStrewings,
   numbers: EnglishNumbers,
   // English names a tincture bare: "Azure.", "Per pale azure and or."

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
+import { isCounterchanged } from '../../src/domain/models/Counterchanged';
 import { isDivision, isFurred, isPlain, isVariation } from '../../src/domain/models/Field';
 import { Languages } from '../../src/domain/models/Languages';
 import { METALS, Tincture, isFur } from '../../src/domain/models/Tinctures';
@@ -54,6 +55,7 @@ const HEADINGS = [
   'A French modifier agrees with the charge the blazon named',
   'A modifier is said only of a charge that can show it',
   'A word the armorials keep for one charge is written of that charge alone',
+  'Counterchanging is one thing, whatever French calls it',
   'The smaller settlements',
 ];
 
@@ -141,6 +143,39 @@ describe('what each rule shows', () => {
   test('keeps the tincture where the name means no single one', () => {
     mount(<ConventionsPage />);
     expect(shown("D'or au tourteau de gueules").written).toContain("D'or au tourteau de gueules.");
+  });
+
+  test('writes counterchanging in the one phrase each tongue keeps for it', () => {
+    mount(<ConventionsPage />);
+    // Both French phrases are read and the one comes back, which is the same
+    // settling every other spelling on this page is under.
+    expect(shown("Parti d'or et de sable à la bordure de l'un en l'autre").written).toEqual([
+      "Parti d'or et de sable à la bordure de l'un à l'autre.",
+      'Per pale or and sable a bordure counterchanged.',
+    ]);
+    expect(shown("Parti d'or et de sable à la bordure de l'un à l'autre").written).toEqual([
+      "Parti d'or et de sable à la bordure de l'un à l'autre.",
+      'Per pale or and sable a bordure counterchanged.',
+    ]);
+    expect(shown('Per pale argent and sable a fess counterchanged').written).toEqual([
+      "Parti d'argent et de sable à la fasce de l'un à l'autre.",
+      'Per pale argent and sable a fess counterchanged.',
+    ]);
+  });
+
+  test('refuses counterchanging where there is nothing to counterchange, and draws no arms', () => {
+    mount(<ConventionsPage />);
+    const refused = shown('Or a bordure counterchanged');
+    expect(refused.refused).toBe('Nothing to counterchange: the field is not divided in two');
+    expect(refused.written).toEqual([]);
+    expect(refused.arms).toBe(0);
+  });
+
+  test('refuses a charge counterchanged, which it does not read yet', () => {
+    mount(<ConventionsPage />);
+    expect(shown("Parti d'or et de sable à la billette de l'un à l'autre").refused).toBe(
+      'Counterchanged is read of a band and not yet of a charge: billette'
+    );
   });
 
   test('refuses a tincture the name cannot mean, and draws no arms for it', () => {
@@ -350,6 +385,13 @@ describe('the rule of tincture, which every example must keep', () => {
         ...(blazon.chargesOrOrdinaries ?? []),
       ];
       for (const one of over) {
+        // A band that takes the field's own tinctures reversed keeps the rule by
+        // being what it is — metal falls on colour and colour on metal because
+        // that is the whole of what the phrase says — and it names no tincture
+        // for this to weigh.
+        if (isCounterchanged(one.tincture)) {
+          continue;
+        }
         const laid = rank(one.tincture);
         expect(
           ground === 'fur' || laid === 'fur' || ground !== laid,

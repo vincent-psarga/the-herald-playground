@@ -3,6 +3,7 @@ import { FrenchDivisionType } from '../../domain/translations/fr/Divisions';
 import { FrenchFurType } from '../../domain/translations/fr/Furs';
 import { FrenchVariationType, PIECES } from '../../domain/translations/fr/Variations';
 import { FrenchChargeType } from '../../domain/translations/fr/Charges';
+import { FrenchCounterchanged } from '../../domain/translations/fr/Counterchanged';
 import { FrenchStrewings, SOWN } from '../../domain/translations/fr/Strewings';
 import { strewnTerms } from '../../domain/translations/Strewings';
 import { FrenchOrdinaryType } from '../../domain/translations/fr/Ordinaries';
@@ -13,11 +14,20 @@ import { WrongTinctureArticle } from '../../domain/errors/parsing/WrongTinctureA
 import { FrenchModifiers } from '../../domain/translations/fr/Modifiers';
 import { FrenchNumbers } from '../../domain/translations/fr/Numbers';
 import { FrenchTinctures } from '../../domain/translations/fr/Tinctures';
+import { COUNTERCHANGED, Counterchanged } from '../../domain/models/Counterchanged';
 import { Modifier } from '../../domain/models/Modifier';
 import { asSeveral, wordsOf, writtenAs } from '../../domain/translations/Translation';
 import { TokenKind } from '../lexer/Lexer';
 import { BlazonGrammar } from '../parser/BlazonGrammar';
-import { anyKeyword, guard, keyword, optional, spelledTerm, term } from '../parser/Combinators';
+import {
+  anyKeyword,
+  anyPhrase,
+  guard,
+  keyword,
+  optional,
+  spelledTerm,
+  term,
+} from '../parser/Combinators';
 import { asOrdinary, asDivision, asTincture } from '../parser/Failures';
 import { NOT_IN_NUMBER, alone, bearings, modifiable, several } from '../parser/Borne';
 import { ModifierForm, modifying } from '../parser/Modifiers';
@@ -163,6 +173,17 @@ const SEVERAL_BORNE = modifiable(
 
 const BORNE = alt(ONE, SEVERAL_BORNE);
 
+// "à la bordure de l'un à l'autre": said where the tincture would be said, and
+// saying that there is none of its own. Every spelling the word answers to is
+// read — French writes "de l'un en l'autre" as readily — and all of them are
+// read off the word rather than written out again, half of each being articles
+// the lexer reads as articles: the phrases the vocabulary page shows a reader
+// are the phrases the parser answers to.
+const COUNTERCHANGED_BAND = apply(
+  anyPhrase(writtenAs(FrenchCounterchanged)),
+  (): Counterchanged => COUNTERCHANGED
+);
+
 // French counts the pieces of a varied field after naming the tinctures it
 // alternates — "bandé de gueules et d'argent de six pièces" — and an armorial
 // writes "en six pièces" as readily as "de", so both are read. The article is
@@ -210,5 +231,6 @@ export const FrenchBlazonGrammar: BlazonGrammar = {
   pieces: HOW_MANY_PIECES,
   treatment: TREATMENT,
   borne: BORNE,
+  counterchanged: COUNTERCHANGED_BAND,
   and: AND,
 };

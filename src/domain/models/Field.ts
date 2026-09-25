@@ -353,3 +353,21 @@ export function isVariation(field: Field): field is Variation {
 export function isFurred(field: Field): field is Furred {
   return kindOf(field.type) === FieldKind.furred;
 }
+
+/**
+ * Whether a figure laid on this field can be counterchanged between its
+ * tinctures: whether the field is cut from two of them along a line that can cut
+ * the figure in its turn.
+ *
+ * The partitions alone, for now. A varied field is cut from two tinctures as
+ * well, and heraldry counterchanges over one — Parker blazons "Barry of six,
+ * argent and gules, per pale indented counterchanged" — but it is cut into a row
+ * of pieces rather than into two halves, and there is nothing yet that cuts a
+ * figure by a row. A fur is cut from two tinctures too and counterchanges over
+ * neither, its figures being scattered rather than laid on either side of a
+ * line. So both are refused rather than drawn wrongly, and this is the one place
+ * that has to change the day either arrives.
+ */
+export function isCounterchangeable(field: Field): field is Division {
+  return isDivision(field);
+}
