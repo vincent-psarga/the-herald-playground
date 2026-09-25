@@ -533,9 +533,19 @@ export const RULES: readonly Rule[] = [
           the figure happens to lie.
         </p>
         <p className="rule__law">
-          It is said of a band alone so far, and only over a field divided in two. A charge
-          counterchanged is good heraldry, and so is a counterchanged band over a varied field; both
-          are refused by name rather than drawn wrongly.
+          It is said of a charge as readily as of a band, and of several charges at once: each falls
+          where it falls, and each comes out the opposite of what it fell on. What it needs is a
+          field divided in two — a varied field is cut from two tinctures as well, and is refused by
+          name rather than drawn wrongly, being cut into a row rather than in two.
+        </p>
+        <p className="rule__law">
+          What it also needs is a name that has not already said what the figure is painted with.
+          The rule is the besant’s own: a besant is a gold coin, so a besant painted half out of the
+          sable half of a field is not a besant, and the blazon is refused exactly as “a besant
+          azure” is. English keeps a name for every colour of roundel and one for none of them, so a
+          roundel counterchanges under that last name; French tells the metal disc from the coloured
+          one and has no third word, so it cannot counterchange a disc at all. That is the tongue’s
+          own gap, not a rule imposed on it.
         </p>
       </>
     ),
@@ -558,8 +568,11 @@ export const RULES: readonly Rule[] = [
       fr("Coupé d'argent et de gueules au chevron de l'un à l'autre"),
       fr("Tranché d'or et d'azur à trois bandes de l'un à l'autre"),
       en('Per pale argent and sable a fess counterchanged'),
+      fr("Coupé d'or et de sable à deux losanges de l'un à l'autre"),
+      en('Per pale argent and sable three lozenges voided counterchanged'),
+      en('Per pale or and sable a roundel counterchanged'),
       en('Or a bordure counterchanged'),
-      fr("Parti d'or et de sable à la billette de l'un à l'autre"),
+      en('Per pale or and sable a besant counterchanged'),
     ],
   },
   {

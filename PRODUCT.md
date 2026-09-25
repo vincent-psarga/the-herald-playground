@@ -114,11 +114,16 @@ Supported vocabulary as it stands:
   French in a phrase it spells two ways, "de l'un à l'autre" and "de l'un en l'autre". Both are
   read and the first is written: the dictionaries variously make the second the same thing or its
   opposite, so the model takes no side and lets the shape of the figure answer what the phrases
-  argue over — which is what Parker already does, quoting the pair as one word. A band alone so far, and a field
-  divided in two alone: a counterchanged charge and a counterchanged band over a varied field are
-  both good heraldry and are both refused by name rather than drawn wrongly. It is not a tincture
-  and is never one — a colouring answers for the tinctures, and what this is painted with is known
-  only once the field is.
+  argue over — which is what Parker already does, quoting the pair as one word. Said of a band or a
+  charge, and of several at once: each falls where it falls and each comes out the opposite of what
+  it fell on. What it needs is a field divided in two — a varied field is cut from two tinctures as
+  well and is refused, being cut into a row rather than in two — and a name that has not already
+  said what the figure is painted with: a besant is a gold coin, so a counterchanged besant is
+  refused by the rule that refuses an azure one, and French, naming the metal disc and the coloured
+  one and nothing between, cannot counterchange a disc at all. Where the charges stand is the
+  disposition and is not read, so several counterchanged charges fall where the drawer puts them.
+  It is not a tincture and is never one — a colouring answers for the tinctures, and what this is
+  painted with is known only once the field is.
 - **Languages (2)** — French and English, both reading and writing. French agrees its article with
   the word it introduces, elision included — "à la billette", "au losange", "à l'annelet"; English
   chooses "a" or "an".
@@ -150,7 +155,7 @@ roadmap toward full blazon. Pages must state what is supported and must not prom
 
 ## Evidence on Hand
 
-- The working library itself: parser, writer and drawer, with 1680 passing tests. Any claim a page makes
+- The working library itself: parser, writer and drawer, with 1689 passing tests. Any claim a page makes
   can be demonstrated live rather than asserted.
 - Tincture shades and hatching marks are taken from Wikipedia's own tables
   (`https://en.wikipedia.org/wiki/Tincture_(heraldry)`, `https://en.wikipedia.org/wiki/Hatching_(heraldry)`),

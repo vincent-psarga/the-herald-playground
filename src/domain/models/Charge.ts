@@ -1,5 +1,5 @@
 import { Modifier } from './Modifier';
-import { Tincture } from './Tinctures';
+import { Tinctured } from './Counterchanged';
 
 /**
  * The charges: the figures a field bears that follow no line across it.
@@ -144,6 +144,12 @@ export function allowsModifier(type: ChargeType, modifier: Modifier): boolean {
  * ordinary may be the one top or the one edge of the shield — so there is no
  * list here saying which may and which may not.
  *
+ * The tincture may be no tincture at all but the field's own two, reversed,
+ * exactly as a band's may: whatever part of the figure lies over one half of the
+ * field is painted the other half's tincture. Several charges counterchanged are
+ * the commonest case there is — each of them falls where it falls, and each
+ * comes out the opposite of what it fell on.
+ *
  * The count is left off rather than set to one when a single charge is borne, so
  * that a lozenge reads back as the lozenge it was written as.
  *
@@ -153,7 +159,7 @@ export function allowsModifier(type: ChargeType, modifier: Modifier): boolean {
  */
 export type Charge = {
   type: ChargeType;
-  tincture: Tincture;
+  tincture: Tinctured;
   /** How many are borne, where more than one is. */
   count?: number;
   /**

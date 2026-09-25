@@ -182,6 +182,11 @@ const SOWN_TERM = 'Field.sown';
 const COUNTERCHANGED_ON = FieldType.pale;
 const COUNTERCHANGED_BAND = OrdinaryType.fess;
 
+// And the charge it is shown on beside the band: two of them, standing one in
+// each half of a field parted per pale, which is the other half of what the
+// phrase does — each takes the tincture of the half it did not fall on.
+const COUNTERCHANGED_CHARGE = ChargeType.lozenge;
+
 const CHARGE_TYPES = Object.values(ChargeType);
 
 /**
@@ -579,7 +584,7 @@ function writings(word: Word): string {
 }
 
 const COUNTERCHANGE_NOTE =
-  'Said of a band and not yet of a charge, and only over a field divided in two. Heraldry counterchanges a charge as readily and over a varied field as readily, and both are refused here rather than drawn wrongly. Nothing follows it: it stands where the tincture would stand and is the whole of what the band is painted with.';
+  'Said of a band or a charge, and of several at once, over a field divided in two. A varied field is cut from two tinctures as well and is refused all the same, being cut into a row rather than in two. Nothing follows the phrase: it stands where the tincture would stand and is the whole of what the figure is painted with — so a name that already means a tincture refuses it, a besant being gold and a counterchanged one being nothing.';
 
 const FURRED_NOTE =
   'Named where the fur itself is not. A fur is a tincture and carries its pair with it, so naming it is the whole of what a blazon says; a furred field is owed the two tinctures its figures are cut from.';
@@ -723,6 +728,36 @@ function otherwise<W extends Word>(
             whereabouts('charge', named)
           );
         }),
+      },
+    ];
+  }
+
+  if (sense.rank === 'counterchange') {
+    // A band and a charge under the one phrase, because the phrase is said of
+    // both and the two drawings answer different halves of the question: a band
+    // crossing the line shows the figure cut by it, and charges standing either
+    // side of it show each taking the half it did not fall on.
+    return [
+      {
+        heading: 'Said of',
+        entries: [
+          say(
+            {
+              field: { type: COUNTERCHANGED_ON, firstTincture: METAL, secondTincture: COLOUR },
+              chargesOrOrdinaries: [{ type: COUNTERCHANGED_BAND, tincture: COUNTERCHANGED }],
+            },
+            'A band'
+          ),
+          say(
+            {
+              field: { type: COUNTERCHANGED_ON, firstTincture: METAL, secondTincture: COLOUR },
+              chargesOrOrdinaries: [
+                { type: COUNTERCHANGED_CHARGE, tincture: COUNTERCHANGED, count: 2 },
+              ],
+            },
+            'Two charges'
+          ),
+        ],
       },
     ];
   }

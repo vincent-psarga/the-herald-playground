@@ -228,28 +228,11 @@ function named<W extends Word>(
   one: ChargeOrOrdinary
 ): { readonly word: W; readonly count: number } {
   return isOrdinary(one)
-    ? { word: bandNamed(wording.ordinaries, one.type, one.tincture), count: borne(one) }
+    ? { word: wordIn(wording.ordinaries, one.type, one.tincture), count: borne(one) }
     : {
         word: wordIn(wording.charges, one.type, one.tincture, one.modifier),
         count: numberBorne(one),
       };
-}
-
-/**
- * The word a band is written with: chosen by its tincture where it has one of
- * its own, and by the term alone where it takes the field's.
- *
- * No band of either tongue has a name per tincture today, so the two answers are
- * the same answer. The question is still asked the same way a charge's is, so
- * that the day a tongue names one — heraldry has done it before, a besant being
- * exactly that for a charge — the band is named by the same rule.
- */
-export function bandNamed<W extends Word>(
-  ordinaries: Translation<OrdinaryType, W>,
-  type: OrdinaryType,
-  tincture: Tinctured
-): W {
-  return isCounterchanged(tincture) ? wordOf(ordinaries, type) : wordIn(ordinaries, type, tincture);
 }
 
 function writeField<W extends Word>(wording: BlazonWording<W>, field: Field): string {

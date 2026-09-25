@@ -171,11 +171,31 @@ describe('what each rule shows', () => {
     expect(refused.arms).toBe(0);
   });
 
-  test('refuses a charge counterchanged, which it does not read yet', () => {
+  test('counterchanges a charge, and several, and one under a modifier', () => {
     mount(<ConventionsPage />);
-    expect(shown("Parti d'or et de sable à la billette de l'un à l'autre").refused).toBe(
-      'Counterchanged is read of a band and not yet of a charge: billette'
+    expect(shown("Coupé d'or et de sable à deux losanges de l'un à l'autre").written).toEqual([
+      "Coupé d'or et de sable à deux losanges de l'un à l'autre.",
+      'Per fess or and sable two lozenges counterchanged.',
+    ]);
+    // A lozenge voided is a mascle, and the name says the voiding by being
+    // written: the phrase follows it and nothing stands between.
+    expect(shown('Per pale argent and sable three lozenges voided counterchanged').written).toEqual(
+      [
+        "Parti d'argent et de sable à trois macles de l'un à l'autre.",
+        'Per pale argent and sable three mascles counterchanged.',
+      ]
     );
+  });
+
+  test('refuses a name that has already said what the figure is painted with', () => {
+    mount(<ConventionsPage />);
+    // The plain name takes it and the name that means gold does not.
+    expect(shown('Per pale or and sable a roundel counterchanged').written).toContain(
+      'Per pale or and sable a roundel counterchanged.'
+    );
+    const refused = shown('Per pale or and sable a besant counterchanged');
+    expect(refused.refused).toBe('Wrong tincture: besant is never counterchanged');
+    expect(refused.arms).toBe(0);
   });
 
   test('refuses a tincture the name cannot mean, and draws no arms for it', () => {

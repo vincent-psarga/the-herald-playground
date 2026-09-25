@@ -1,6 +1,6 @@
 import { EnglishBlazonWording } from '../../src/application/english/EnglishBlazonWording';
 import { FrenchBlazonWording } from '../../src/application/french/FrenchBlazonWording';
-import { BlazonWording, bandNamed } from '../../src/application/writer/BlazonWording';
+import { BlazonWording } from '../../src/application/writer/BlazonWording';
 import { Blazon, ChargeOrOrdinary, isOrdinary } from '../../src/domain/models/Blazon';
 import { Languages } from '../../src/domain/models/Languages';
 import { numberBorne } from '../../src/domain/models/Charge';
@@ -207,7 +207,7 @@ function borneBranch<W extends Word>(
 ): Branch {
   const band = isOrdinary(one);
   const word = band
-    ? bandNamed(wording.ordinaries, one.type, one.tincture)
+    ? wordIn(wording.ordinaries, one.type, one.tincture)
     : wordIn(wording.charges, one.type, one.tincture, one.modifier);
   const count = band ? borne(one) : numberBorne(one);
   return {

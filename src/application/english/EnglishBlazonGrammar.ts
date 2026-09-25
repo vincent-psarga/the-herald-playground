@@ -11,7 +11,6 @@ import { asSeveral, writtenAs } from '../../domain/translations/Translation';
 import { EnglishOrdinaryType } from '../../domain/translations/en/Ordinaries';
 import { EnglishNumbers } from '../../domain/translations/en/Numbers';
 import { EnglishTinctures } from '../../domain/translations/en/Tinctures';
-import { COUNTERCHANGED, Counterchanged } from '../../domain/models/Counterchanged';
 import { BlazonGrammar } from '../parser/BlazonGrammar';
 import { anyKeyword, anyPhrase, keyword, optional, spelledTerm, term } from '../parser/Combinators';
 import { asOrdinary, asDivision, asTincture } from '../parser/Failures';
@@ -66,10 +65,7 @@ const MODIFIER = modifying(anyWriting(EnglishModifiers));
 // two ways, and read by the same rule for that reason — the writings the
 // vocabulary page shows a reader are the writings the parser answers to, however
 // many of them a tongue turns out to have.
-const COUNTERCHANGED_BAND = apply(
-  anyPhrase(writtenAs(EnglishCounterchanged)),
-  (): Counterchanged => COUNTERCHANGED
-);
+const COUNTERCHANGED = anyPhrase(writtenAs(EnglishCounterchanged));
 
 export const EnglishBlazonGrammar: BlazonGrammar = {
   tincture: term(EnglishTinctures, asTincture),
@@ -88,6 +84,6 @@ export const EnglishBlazonGrammar: BlazonGrammar = {
     modifiable(alone(kright(ARTICLE, spelledTerm(BEARINGS, asOrdinary))), () => MODIFIER),
     modifiable(several(BEARINGS, EnglishNumbers, asOrdinary, NOT_IN_NUMBER), () => MODIFIER)
   ),
-  counterchanged: COUNTERCHANGED_BAND,
+  counterchanged: COUNTERCHANGED,
   and: AND,
 };

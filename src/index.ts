@@ -88,7 +88,6 @@ export { MissingTincture } from './domain/errors/parsing/MissingTincture';
 export { MissingOrdinary } from './domain/errors/parsing/MissingOrdinary';
 export { ChargedPlainField } from './domain/errors/parsing/ChargedPlainField';
 export { UndividedField } from './domain/errors/parsing/UndividedField';
-export { CounterchangedCharge } from './domain/errors/parsing/CounterchangedCharge';
 export { WrongTinctureArticle } from './domain/errors/parsing/WrongTinctureArticle';
 export { WrongOrdinaryArticle } from './domain/errors/parsing/WrongOrdinaryArticle';
 export { WrongModifier } from './domain/errors/parsing/WrongModifier';

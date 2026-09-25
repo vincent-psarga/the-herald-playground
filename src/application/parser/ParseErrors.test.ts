@@ -306,7 +306,7 @@ describe('every refusal', () => {
     "D'azur fasce d'or",
     "D'argent au besant d'azur",
     "D'azur à la bordure de l'un à l'autre",
-    "Parti d'azur et d'or à la billette de l'un à l'autre",
+    "Parti d'azur et d'or au besant de l'un à l'autre",
     '.',
     "D'azur..",
   ];
@@ -334,8 +334,8 @@ describe('every refusal', () => {
       'UndividedField'
     );
     expect(
-      refused(() => french.parse("Parti d'azur et d'or à la billette de l'un à l'autre")).name
-    ).toBe('CounterchangedCharge');
+      refused(() => french.parse("Parti d'azur et d'or au besant de l'un à l'autre")).name
+    ).toBe('InvalidTincture');
   });
 
   test('says where it gave up, counting rows and columns from one', () => {

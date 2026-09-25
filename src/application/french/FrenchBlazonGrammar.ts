@@ -14,7 +14,6 @@ import { WrongTinctureArticle } from '../../domain/errors/parsing/WrongTinctureA
 import { FrenchModifiers } from '../../domain/translations/fr/Modifiers';
 import { FrenchNumbers } from '../../domain/translations/fr/Numbers';
 import { FrenchTinctures } from '../../domain/translations/fr/Tinctures';
-import { COUNTERCHANGED, Counterchanged } from '../../domain/models/Counterchanged';
 import { Modifier } from '../../domain/models/Modifier';
 import { asSeveral, wordsOf, writtenAs } from '../../domain/translations/Translation';
 import { TokenKind } from '../lexer/Lexer';
@@ -179,10 +178,7 @@ const BORNE = alt(ONE, SEVERAL_BORNE);
 // read off the word rather than written out again, half of each being articles
 // the lexer reads as articles: the phrases the vocabulary page shows a reader
 // are the phrases the parser answers to.
-const COUNTERCHANGED_BAND = apply(
-  anyPhrase(writtenAs(FrenchCounterchanged)),
-  (): Counterchanged => COUNTERCHANGED
-);
+const COUNTERCHANGED = anyPhrase(writtenAs(FrenchCounterchanged));
 
 // French counts the pieces of a varied field after naming the tinctures it
 // alternates — "bandé de gueules et d'argent de six pièces" — and an armorial
@@ -231,6 +227,6 @@ export const FrenchBlazonGrammar: BlazonGrammar = {
   pieces: HOW_MANY_PIECES,
   treatment: TREATMENT,
   borne: BORNE,
-  counterchanged: COUNTERCHANGED_BAND,
+  counterchanged: COUNTERCHANGED,
   and: AND,
 };
