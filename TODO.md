@@ -10,7 +10,12 @@
 - Handle a semy of more than one figure ("semé alterné de tours et de fleurs de lys")
 - Sow a divided field, once the blazon can say which half was sown
 - Support for "shortcuts" (eg: "du même", "brochant sur le tout")
-- Counterchange over a varied field, which is cut into a row rather than in two
+- Counterchange a varied field by a partition line ("barry of six, sable and or,
+  per pale counterchanged"), which is what Parker, Fox-Davies and Wikipedia all
+  document under counterchanging a variation — a complex partition rather than a
+  figure laid on the field. A band or a charge counterchanged over a varied field
+  is a different thing, drawn easily enough and asked for by no source found so
+  far, so it waits for an armorial that writes one
 
 # Display
 

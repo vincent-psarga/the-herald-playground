@@ -359,14 +359,26 @@ export function isFurred(field: Field): field is Furred {
  * tinctures: whether the field is cut from two of them along a line that can cut
  * the figure in its turn.
  *
- * The partitions alone, for now. A varied field is cut from two tinctures as
- * well, and heraldry counterchanges over one — Parker blazons "Barry of six,
- * argent and gules, per pale indented counterchanged" — but it is cut into a row
- * of pieces rather than into two halves, and there is nothing yet that cuts a
- * figure by a row. A fur is cut from two tinctures too and counterchanges over
- * neither, its figures being scattered rather than laid on either side of a
- * line. So both are refused rather than drawn wrongly, and this is the one place
- * that has to change the day either arrives.
+ * The partitions alone, and not for want of drawing: a varied field is cut from
+ * two tinctures as well and the same paint would cover it. It is refused because
+ * no source asks for it. Parker's counterchanged blazons are partitions to a
+ * man, and the one varied field among them — "Barry of six, argent and gules,
+ * per pale indented counterchanged" — is counterchanged by a partition line
+ * drawn across it rather than by anything laid on it. Fox-Davies says the same
+ * of Ballingall, Wikipedia says "any of these patterns may be counterchanged by
+ * the addition of a division line", the French dictionaries define both their
+ * phrases against les partitions, and the armorials in demo/ counterchange over
+ * nothing else. A field counterchanged by a partition line is a complex
+ * partition and is a different thing from this; it is in TODO.md under its own
+ * name.
+ *
+ * A fur is cut from two tinctures too and is not divided by them: its figures
+ * are scattered over the field rather than laid on either side of a line, so a
+ * figure counterchanged across one would be counterchanged across every bell it
+ * happened to touch, which is a drawing nobody blazons.
+ *
+ * So both are refused rather than drawn on a guess, and this is the one place
+ * that has to change the day an armorial asks for either.
  */
 export function isCounterchangeable(field: Field): field is Division {
   return isDivision(field);
