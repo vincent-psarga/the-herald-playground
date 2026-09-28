@@ -1617,6 +1617,58 @@ body {
 
 /* ─ the roll ─────────────────────────────────────────────────────────────── */
 
+/* ─ the search: what of a roll the reader asked for ──────────────────────── */
+
+.search {
+  margin: clamp(2rem, 5vw, 3rem) 0 0;
+  max-width: var(--measure);
+  display: grid;
+  gap: 0.4rem;
+}
+
+.search__label {
+  font-family: var(--display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-quiet);
+}
+
+/* Set as the translator sets its own field: the same clearing out of the ground,
+   nothing drawn round it, and the reader's words the brightest thing in it. */
+.search__field {
+  font: inherit;
+  font-family: var(--display);
+  font-size: 1.125rem;
+  letter-spacing: 0.01em;
+  color: var(--bone);
+  background: var(--void-lift);
+  border: 0;
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+}
+
+.search__law,
+.search__found {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--bone-quiet);
+}
+
+/* What the search left is the one figure here that is read rather than obeyed. */
+.search__found {
+  font-family: var(--display);
+  font-variant-numeric: tabular-nums;
+  color: var(--bone);
+}
+
+/* The roll answers the field directly above it, so it is held nearer than a
+   section that begins on its own. */
+.search + .roll__hold {
+  margin-top: 1.5rem;
+}
+
 /*
  * An armorial is a roll, so it is set as one. A table is the one place a ruled
  * grid would be expected, and there is none: the columns are held apart by air
