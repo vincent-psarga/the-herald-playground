@@ -8,15 +8,14 @@ import {
   FurType,
   Furred,
   Plain,
-  QUARTERS,
   Semy,
   Variation,
   VariationType,
   isDivision,
   isFurred,
-  isPlain,
   isVariation,
-  partsOf,
+  saidInTwo,
+  sameArms,
   usualPieces,
 } from '../../domain/models/Field';
 import { OrdinaryType, SEVERAL, borne } from '../../domain/models/Ordinary';
@@ -313,8 +312,8 @@ function writeVariation<W extends Word>(wording: BlazonWording<W>, variation: Va
 function writeDivision<W extends Word>(wording: BlazonWording<W>, division: Division): string {
   const ranked = wording.rank;
   const name = nameOf(wording.divisions, division.type);
-  if (ranked === undefined || saidUnranked(division)) {
-    const [first, second] = asTwo(division);
+  if (ranked === undefined || saidInTwo(division)) {
+    const [first, second] = division.parts;
     return [name, writeArms(wording, first), wording.conjunction, writeArms(wording, second)].join(
       ' '
     );
@@ -323,38 +322,6 @@ function writeDivision<W extends Word>(wording: BlazonWording<W>, division: Divi
     ({ ranks, arms }) => `${ranked(ranks)} ${writeArms(wording, arms)}`
   );
   return [`${name}${SEPARATOR}`, phrases.join(`${SEPARATOR} `)].join(' ');
-}
-
-/**
- * Whether the unranked form would say this field and not some other.
- *
- * Two parts are said by it unless the second bears something, which that form
- * puts on the shield instead. Four are said by it only where they are the two
- * tinctures it fills them out from — the first and fourth alike, the second and
- * third alike, and none of them bearing or sown — because two tinctures is the
- * whole of what it can say about four parts.
- */
-function saidUnranked(division: Division): boolean {
-  const parts = division.parts;
-  if (partsOf(division.type) !== QUARTERS) {
-    return !bearsAnything(parts[1]);
-  }
-  return parts.every(bareTincture) && sameArms(parts[0], parts[3]) && sameArms(parts[1], parts[2]);
-}
-
-/** Whether a part is one tincture and nothing else: nothing borne, nothing sown. */
-function bareTincture(part: Blazon): boolean {
-  const field = part.field;
-  return !bearsAnything(part) && isPlain(field) && field.semy === undefined;
-}
-
-/**
- * The two arms an unranked blazon names, which for a field of four are the ones
- * its first and second tinctures were filled out from.
- */
-function asTwo(division: Division): readonly [Blazon, Blazon] {
-  const parts = division.parts;
-  return [parts[0], parts[1]];
 }
 
 /**
@@ -380,25 +347,6 @@ function repeating(
     }
   });
   return phrases;
-}
-
-/**
- * Whether two parts carry the same arms, which is what lets one phrase rank
- * both.
- *
- * Compared by what they are made of rather than by identity, because a blazon
- * read from "aux 1 et 4" hands the one object to both parts and a blazon built
- * by hand need not have. Arms are plain data — a field, and a list of what is
- * laid on it — so writing them out is a fair reading of sameness, and two arms
- * that write the same are the same arms.
- */
-function sameArms(one: Blazon, other: Blazon): boolean {
-  return JSON.stringify(one) === JSON.stringify(other);
-}
-
-/** Whether a part of a divided field bears anything at all. */
-function bearsAnything(part: Blazon): boolean {
-  return (part.chargesOrOrdinaries ?? []).length !== 0;
 }
 
 /**

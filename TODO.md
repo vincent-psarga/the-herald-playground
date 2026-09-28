@@ -10,9 +10,13 @@
   léopardé d'or» — though the armorial of the Plantagenets writes a shield's
   bordure after the last quarter and marks nothing
 - Handle a semy of more than one figure ("semé alterné de tours et de fleurs de lys")
-- Read a half that is itself cut ("parti vairé d'or et de pourpre, et de gueules
-  plain", which the armorial of the Round Table writes), and a quarter
-  contre-écartelé, which is the same thing asked of a quarter
+- Read a part covered with a pelt ("parti vairé d'or et de pourpre, et de
+  gueules plain", which the armorial of the Round Table writes): a pelt is a
+  pattern sized to what it covers, and the drawing carries one definition for
+  the shield rather than one per part
+- Read a part that is itself cut, which is a half parti or a quarter
+  contre-écartelé: the model already holds it, a part being arms, and neither
+  tongue is read there yet
 - Read the noun after a rank, which the dictionaries write and the rolls here do
   not: "au 1 quartier", "aux premier et quatrième quartiers"
 - Support for "shortcuts" (eg: "du même", "l'un dans l'autre" [#4](https://github.com/vincent-psarga/the-herald-playground/pull/4), "brochant sur le tout")
@@ -26,8 +30,11 @@
   dimidiation ... which do not surround the shield but end at the line of
   partition" (Greaves) — and loses the curve at the base. Everything else laid in
   a part is measured against the part and drawn where it belongs
-- Draw a part that is itself cut: its second tincture is nowhere and neither is
-  the line between them, the part being painted the tincture its field is laid on
+- Draw a part that is itself cut, and a part covered with a pelt: a cut part's
+  second tincture is nowhere and neither is the line between them, and a pelt
+  has no definition of its own — both parts are painted the one tincture their
+  field is laid on. A part cut into pieces is drawn, its pieces measured against
+  the part
 - Scale a band to the part it is borne in: a band is drawn to a width of its own
   rather than to a share of its frame, so a cross borne in a quarter all but
   fills it — the quarter being a quarter of the shield and the cross still the

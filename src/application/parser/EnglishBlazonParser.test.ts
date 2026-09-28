@@ -145,6 +145,19 @@ describe('EnglishBlazonParser', () => {
     expect(writer.write(parser.parse(blazon))).toBe(blazon);
   });
 
+  // A part is arms, so its field is whatever a shield's field may be — English
+  // quarters a bendy as readily as French quarters a bandé.
+  test('reads a field cut into pieces as one part of a divided field', () => {
+    expect(
+      parser.parse('Quarterly, first and fourth bendy of six or and azure, second and third gules')
+        .field
+    ).toEqual(
+      new FrenchBlazonParser().parse(
+        "Écartelé : aux 1 et 4 bandé d'or et d'azur, aux 2 et 3 de gueules"
+      ).field
+    );
+  });
+
   test('takes the closing full stop or leaves it', () => {
     expect(parser.parse('Vert.')).toEqual(parser.parse('Vert'));
   });

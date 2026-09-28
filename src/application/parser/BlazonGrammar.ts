@@ -331,11 +331,81 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
   // to write.
   const secondOfThePair = owedAtEnd(kright(grammar.and, grammar.tincture), asTincture);
 
+  // A varied field is the same two tinctures cut along the same lines, over and
+  // over — so it is read as a division is, with a number of pieces around it.
+  //
+  // Where that number stands is the language's business: English counts before
+  // the tinctures, French after them, and either may leave it unsaid. What
+  // arrives is taken wherever it came from, and what never arrives is the number
+  // the term is understood to have — save for the pily, which is understood to
+  // have none and must therefore be counted.
+  const trailingPieces: Parser<TokenKind, number | undefined> =
+    grammar.pieces === undefined ? nil() : optional(grammar.pieces);
+
+  const variedField = within(
+    apply(
+      guard(
+        apply(
+          seq(grammar.variation, grammar.tincture, secondOfThePair, trailingPieces),
+          ([named, firstTincture, secondTincture, counted]) => ({
+            named,
+            firstTincture,
+            secondTincture,
+            pieces: counted ?? named.pieces ?? usualPieces(named.type),
+          })
+        ),
+        ({ named, pieces }) => pieces !== undefined && cutInPieces(named.type, pieces),
+        ({ named, pieces }, position) =>
+          pieces === undefined
+            ? new MissingPieces(named.named, position)
+            : new BlazonParseError(
+                pieces < PIECES
+                  ? `A field is cut into pieces: ${pieces} is not more than one`
+                  : `A ${named.named} alternates its tinctures, so its pieces are even: ${pieces} is odd`,
+                position
+              )
+      ),
+      // Whatever reaches here was counted: the guard has refused every field
+      // whose pieces neither the blazon nor the term itself could say.
+      ({ named, firstTincture, secondTincture, pieces }): Variation => ({
+        type: named.type,
+        firstTincture,
+        secondTincture,
+        pieces: pieces as number,
+      })
+    )
+  );
+
+  /**
+   * What a part of a divided field may be, before anything is laid on it.
+   *
+   * A field of one tincture, or a field cut into pieces: heraldry quarters a
+   * bandé as readily as a plain coat, and the arms of Bourgogne are two of each
+   * — "écartelé : aux 1 et 4 bandé d'or et d'azur à la bordure de gueules ; aux
+   * 2 et 3 d'azur semé de fleurs de lys d'or". A part is arms, so what a part's
+   * field may be is what a shield's field may be, and the two are read by the
+   * same rules.
+   *
+   * Not every one of them yet. A part covered with a pelt and a part cut again
+   * are read by neither of these, and are left out because neither can be drawn
+   * rather than because a blazon does not say them.
+   *
+   * The plain reading is listed first, which settles what a reader is told when
+   * a word is neither: both fail at that very word, a tie goes to whichever was
+   * listed first, and "Unknown tincture" is the useful half of the truth — a
+   * part of one tincture being what nearly every part is.
+   */
+  const partField = alt(
+    plainField,
+    apply(variedField, (field): ReadField => ({ field, bare: false }))
+  );
+
   // The other half of a divided field, which is a field and not a tincture: it
-  // carries whatever the tongue says of a field of one tincture, which is what
-  // the armorials write there — "et d'hermine plain", "et de sinople semé de
-  // larmes d'or". Being owed is the tincture's affair all the same, a half that
-  // never arrives having failed to name one.
+  // carries whatever the tongue says of a field — that it is plain, what it is
+  // sown with, or that it is cut into pieces of its own — which is what the
+  // armorials write there: "et d'hermine plain", "et de sinople semé de larmes
+  // d'or". Being owed is the tincture's affair all the same, a half that never
+  // arrives having failed to name one.
   //
   // A blazon may set its own mark before the conjunction — "à six macles
   // d'argent, et d'hermine" — which says no more than the conjunction does, so it
@@ -345,7 +415,7 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
   const otherHalf = owedAtEnd(
     kright(
       seq(optional(SEPARATOR), grammar.and),
-      apply(plainField, ({ field }): Blazon => ({ field }))
+      apply(partField, ({ field }): Blazon => ({ field }))
     ),
     asTincture
   );
@@ -384,7 +454,7 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
   // has to be ranked.
   const unrankedDivision = within(
     apply(
-      seq(grammar.division, laidOn(plainField), otherHalf),
+      seq(grammar.division, laidOn(partField), otherHalf),
       ([type, first, second]): Division => ({
         type,
         parts: fillingOut(type, first, second),
@@ -452,7 +522,7 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
             (ranks, position) =>
               new BlazonParseError(misranked(type, taken, ranks) as string, position)
           ),
-          laidOn(plainField, laid)
+          laidOn(partField, laid)
         ),
         ([ranks, arms]): RankedPart => ({ ranks, arms })
       );
@@ -514,51 +584,6 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
       ? unrankedDivision
       : alt(unrankedDivision, rankedDivision(grammar.rank));
 
-  // A varied field is the same two tinctures cut along the same lines, over and
-  // over — so it is read as a division is, with a number of pieces around it.
-  //
-  // Where that number stands is the language's business: English counts before
-  // the tinctures, French after them, and either may leave it unsaid. What
-  // arrives is taken wherever it came from, and what never arrives is the number
-  // the term is understood to have — save for the pily, which is understood to
-  // have none and must therefore be counted.
-  const trailingPieces: Parser<TokenKind, number | undefined> =
-    grammar.pieces === undefined ? nil() : optional(grammar.pieces);
-
-  const variedField = within(
-    apply(
-      guard(
-        apply(
-          seq(grammar.variation, grammar.tincture, secondOfThePair, trailingPieces),
-          ([named, firstTincture, secondTincture, counted]) => ({
-            named,
-            firstTincture,
-            secondTincture,
-            pieces: counted ?? named.pieces ?? usualPieces(named.type),
-          })
-        ),
-        ({ named, pieces }) => pieces !== undefined && cutInPieces(named.type, pieces),
-        ({ named, pieces }, position) =>
-          pieces === undefined
-            ? new MissingPieces(named.named, position)
-            : new BlazonParseError(
-                pieces < PIECES
-                  ? `A field is cut into pieces: ${pieces} is not more than one`
-                  : `A ${named.named} alternates its tinctures, so its pieces are even: ${pieces} is odd`,
-                position
-              )
-      ),
-      // Whatever reaches here was counted: the guard has refused every field
-      // whose pieces neither the blazon nor the term itself could say.
-      ({ named, firstTincture, secondTincture, pieces }): Variation => ({
-        type: named.type,
-        firstTincture,
-        secondTincture,
-        pieces: pieces as number,
-      })
-    )
-  );
-
   // A furred field names the fur and the two tinctures it is cut from, and is
   // read exactly as a division is: what differs is the vocabulary the first word
   // belongs to, and that the pelt takes the whole field rather than half of it.
@@ -578,7 +603,7 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
   // unknown first word is told apart from a word that was never meant to be a
   // partition at all — so it has to recognise as much of a division as the
   // division rule does, or a charged half would hide the partition from it.
-  const restOfDivision = seq(laidOn(plainField), otherHalf);
+  const restOfDivision = seq(laidOn(partField), otherHalf);
 
   // The varied reading is tried first of the three, because all three open on a
   // word of their own vocabulary and all three complain about the same word when

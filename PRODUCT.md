@@ -62,8 +62,11 @@ Supported vocabulary as it stands:
   fess together, its quarters standing square; and per saltire (French écartelé en sautoir), the bend
   and the bend sinister together, its quarters standing on their points. How many parts a line leaves
   is declared with the term, so nothing counts for itself. Every part is arms of its own: a field with
-  whatever a tongue says of a field — that it is plain, or what it is sown with — and whatever a shield
-  may bear. Two forms say it. The unranked form is what the armorials write and what the parts are
+  whatever a tongue says of a field — that it is plain, what it is sown with, or that it is cut into
+  pieces of its own, heraldry quartering a bandé as readily as a plain coat ("écartelé : aux 1 et 4
+  bandé d'or et d'azur à la bordure de gueules ; aux 2 et 3 d'azur semé de fleurs de lys d'or") — and
+  whatever a shield may bear. Two fields a part may not yet be: one covered with a pelt, and one cut
+  again. Two forms say it. The unranked form is what the armorials write and what the parts are
   written back out in wherever it can say them: "Parti d'azur à six macles d'argent, et d'hermine
   plain", and two tinctures for a quartered field, which fills out the parts ranked 1 and 4 from the
   first and the two between them from the second — "Écartelé d'argent et d'azur". A mark set before the
@@ -81,9 +84,11 @@ Supported vocabulary as it stands:
   own corner and its own reaches, so three lilies in the half at dexter stand in that half and are
   drawn small enough for it — and cut off at the line. Its sowing is laid in the lattice the whole
   field is sown in and cut off there too, which keeps it in step with whatever is sown beyond the line.
-  What is not drawn: a part cut again, a band that follows an outline rather than measuring itself, and
-  a band scaled to the part it stands in — a bordure borne on a part follows the part's box rather than
-  the field's edge, and a cross borne in a quarter is still the width of one drawn on the whole shield.
+  A part cut into pieces is drawn as well as read, its pieces measured against the part: a bandé of six
+  in a quarter is six pieces across the quarter. What is not drawn: a part cut again, a band that
+  follows an outline rather than measuring itself, and a band scaled to the part it stands in — a
+  bordure borne on a part follows the part's box rather than the field's edge, and a cross borne in a
+  quarter is still the width of one drawn on the whole shield.
 - **Varied fields (5)** — barry, paly, bendy, pily, chevronny, cut into a counted number of pieces.
 - **Furred fields (1)** — vairy: the bells of vair cut from two tinctures the blazon names, rather
   than from the argent and azure vair itself is always drawn in. Nothing about it is counted.

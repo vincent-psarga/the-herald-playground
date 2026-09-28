@@ -11,14 +11,13 @@ import {
   Furred,
   HALVES,
   Plain,
-  QUARTERS,
   Semy,
   Variation,
   isDivision,
   isFurred,
   isPlain,
   isVariation,
-  partsOf,
+  saidInTwo,
 } from '../../src/domain/models/Field';
 import { borne } from '../../src/domain/models/Ordinary';
 import { Tincture } from '../../src/domain/models/Tinctures';
@@ -188,18 +187,19 @@ function parts<W extends Word>(
   }));
 }
 
-/** Whether the parts have to be shown one by one rather than as the pair they were written as. */
+/**
+ * Whether the parts have to be shown one by one rather than as the pair the
+ * blazon wrote.
+ *
+ * Two reasons, and either is enough. A blazon the short form cannot say is
+ * written with its parts ranked, and the tree beside it says what it says — that
+ * is the model's question, and it is asked rather than answered again here. And
+ * a part that bears anything is gathered whatever form the blazon took, because
+ * ungathered, a bend blazoned in the second half would stand beside the first
+ * half's tincture with nothing to say which half it belonged to.
+ */
 function gathered(division: Division): boolean {
-  const parts = division.parts;
-  if (partsOf(division.type) !== QUARTERS) {
-    return parts.some(bears);
-  }
-  return parts.some(bears) || !same(parts[0], parts[3]) || !same(parts[1], parts[2]);
-}
-
-/** Whether two parts are the same arms, which is what lets one stand for both. */
-function same(one: Blazon, other: Blazon): boolean {
-  return JSON.stringify(one) === JSON.stringify(other);
+  return !saidInTwo(division) || division.parts.some(bears);
 }
 
 /** Whether a part carries anything beyond the tincture of its field. */

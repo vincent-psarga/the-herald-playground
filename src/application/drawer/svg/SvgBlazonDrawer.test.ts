@@ -185,6 +185,62 @@ describe('SvgBlazonDrawer', () => {
     });
   });
 
+  describe('a part cut into pieces of its own', () => {
+    const bendy = (pieces: number) => ({
+      field: {
+        type: FieldType.bendy as const,
+        firstTincture: Metals.or,
+        secondTincture: Colours.azure,
+        pieces,
+      },
+    });
+
+    const quartered = (pieces = 6) =>
+      drawer.draw({
+        field: {
+          type: FieldType.cross,
+          parts: [bendy(pieces), half(Colours.gules), half(Colours.gules), bendy(pieces)],
+        },
+      });
+
+    // The part is painted the first tincture by the painting that covers every
+    // part, and the pieces are laid over it in the second — which is how a whole
+    // field cut into pieces is painted, and is why the part needs no paint of
+    // its own.
+    test('lays the pieces over the part, in the second tincture', () => {
+      const svg = quartered();
+      const laid = fills(svg);
+      // Every part first, the cut ones in the first tincture of their own
+      // field; then nothing but the second tincture, which is every other piece
+      // of the two quarters that are cut.
+      expect(laid.slice(0, 4)).toEqual([
+        WikipediaColours[Metals.or],
+        WikipediaColours[Colours.gules],
+        WikipediaColours[Colours.gules],
+        WikipediaColours[Metals.or],
+      ]);
+      expect(laid.length).toBeGreaterThan(4);
+      expect(new Set(laid.slice(4))).toEqual(new Set([WikipediaColours[Colours.azure]]));
+      expect(svg).toContain(`<clipPath id="blason-part-1">`);
+      expect(svg).toContain(`<clipPath id="blason-part-4">`);
+    });
+
+    // Measured against the quarter, so the count a blazon gives is the count
+    // that shows there: a bandé of eight in a quarter is eight across the
+    // quarter and not eight across the shield.
+    test('cuts the part into as many pieces as the blazon counted', () => {
+      const pieces = (svg: string) => (svg.match(/<polygon/g) ?? []).length;
+      expect(pieces(quartered(6))).toBeLessThan(pieces(quartered(10)));
+    });
+
+    test('draws nothing of the kind where no part is cut', () => {
+      const svg = drawer.draw({
+        field: { type: FieldType.cross, parts: painted(FieldType.cross, Metals.or, Colours.gules) },
+      });
+      expect(svg).not.toContain('<clipPath id="blason-part');
+    });
+  });
+
   describe('a half that carries something', () => {
     const lilies = (type: DivisionType, count = 3) =>
       drawer.draw({

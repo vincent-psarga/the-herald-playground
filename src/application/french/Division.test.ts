@@ -248,6 +248,78 @@ describe('divided fields', () => {
     });
   });
 
+  describe('a part cut into pieces of its own', () => {
+    const BENDY = {
+      type: FieldType.bendy,
+      firstTincture: Metals.or,
+      secondTincture: Colours.azure,
+      pieces: 6,
+    };
+
+    // The same field cut into eight rather than the six French understands, and
+    // carrying a band of its own.
+    const BORDURED = {
+      field: { ...BENDY, pieces: 8 },
+      chargesOrOrdinaries: [{ type: OrdinaryType.bordure, tincture: Colours.gules }],
+    };
+
+    // A part is arms, so its field is whatever a shield's field may be — and
+    // heraldry quarters a bandé as readily as a plain coat. The arms of
+    // Bourgogne are two of each.
+    test('reads a bandé in the quarters of an écartelé', () => {
+      expect(
+        parser.parse("Écartelé : aux 1 et 4 bandé d'or et d'azur, aux 2 et 3 de gueules").field
+      ).toEqual({
+        type: FieldType.cross,
+        parts: [{ field: BENDY }, half(Colours.gules), half(Colours.gules), { field: BENDY }],
+      });
+    });
+
+    test('reads it in a half, in the ranked form and the unranked one alike', () => {
+      const parti = {
+        type: FieldType.pale,
+        parts: [{ field: BENDY }, half(Colours.gules)],
+      };
+      expect(parser.parse("Parti bandé d'or et d'azur et de gueules").field).toEqual(parti);
+      expect(
+        parser.parse("Parti, au premier bandé d'or et d'azur, au second de gueules").field
+      ).toEqual(parti);
+    });
+
+    test('reads it as the other half, past the conjunction', () => {
+      expect(parser.parse("Parti de gueules et bandé d'or et d'azur").field).toEqual({
+        type: FieldType.pale,
+        parts: [half(Colours.gules), { field: BENDY }],
+      });
+    });
+
+    // The pieces are the part's own, counted after its tinctures as they are
+    // anywhere else, and what the part bears stands after them.
+    test('counts its pieces, and bears what a part bears', () => {
+      expect(
+        parser.parse(
+          "Écartelé : aux 1 et 4 bandé d'or et d'azur de huit pièces à la bordure de gueules, aux 2 et 3 d'azur"
+        ).field
+      ).toEqual({
+        type: FieldType.cross,
+        parts: [BORDURED, half(Colours.azure), half(Colours.azure), BORDURED],
+      });
+    });
+
+    // Neither is read, and for the same reason: neither can be drawn. A pelt is
+    // a pattern sized to the shield it covers, and a part cut again has no line
+    // between its own tinctures.
+    test.each([
+      [
+        'a part covered with a pelt',
+        "Écartelé : aux 1 et 4 vairé d'or et de gueules, aux 2 et 3 d'azur",
+      ],
+      ['a part cut again', "Écartelé : aux 1 et 4 parti d'or et d'azur, aux 2 et 3 de gueules"],
+    ])('does not read %s', (_what, blazon) => {
+      expect(() => parser.parse(blazon)).toThrow();
+    });
+  });
+
   describe('a quartered field, whose line leaves four parts', () => {
     const QUARTERS = [
       half(Colours.azure),

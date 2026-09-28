@@ -140,20 +140,30 @@ function carried(figure: DivisionFigure, rank: number, part: Blazon, clip: strin
   const field = part.field;
   const semy = isPlain(field) ? field.semy : undefined;
   const borne = part.chargesOrOrdinaries ?? [];
-  if (semy === undefined && borne.length === 0) {
+  const cut = isVariation(field) ? field : undefined;
+  if (cut === undefined && semy === undefined && borne.length === 0) {
     return () => '';
   }
   const laidOn = over(...borne.map(bearing));
+  // The pieces of a part cut into them, laid over the part's own paint exactly
+  // as a whole field's are: the painting above has already covered the part in
+  // the first tincture, so what is left to draw is every other piece.
+  const cutUp =
+    cut === undefined
+      ? undefined
+      : laid((frame) => VARIATIONS[cut.type].pieces(frame, cut.pieces), INKS[cut.secondTincture]);
   return (ground) => {
     const { covers, room, at } = figure.parts(ground.frame)[rank];
+    // Measured against the part rather than the field, so a bandé of six in a
+    // quarter is six pieces across the quarter, and put where the part is.
+    const inside = (painter: Painter) =>
+      `<g transform="translate(${at[0]} ${at[1]})">${painter({ ...ground, frame: room })}</g>`;
+    const pieces = cutUp === undefined ? '' : inside(cutUp);
     const sowing = semy === undefined ? '' : sown(semy)(ground);
-    const bearings =
-      borne.length === 0
-        ? ''
-        : `<g transform="translate(${at[0]} ${at[1]})">${laidOn({ ...ground, frame: room })}</g>`;
+    const bearings = borne.length === 0 ? '' : inside(laidOn);
     return [
       `<clipPath id="${clip}"><path d="${covers}"/></clipPath>`,
-      `<g clip-path="url(#${clip})">${sowing}${bearings}</g>`,
+      `<g clip-path="url(#${clip})">${pieces}${sowing}${bearings}</g>`,
     ].join('');
   };
 }

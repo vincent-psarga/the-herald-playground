@@ -361,7 +361,8 @@ export type Semy = {
  * say: a line drawn once leaves two and a line that crosses itself leaves four,
  * and every one of them is a part in the same sense. The list is as long as the
  * term declares — nothing here is free to hold three — and what holds it to that
- * is `dividedInto`, which is asked wherever a division is built.
+ * is how a division comes to be built: filled out from a pair, or ranked part by
+ * part with every rank accounted for.
  *
  * They stand in the order a blazon ranks them, which both tongues number from
  * the part in chief: the upper, or the one at dexter where two stand side by
@@ -403,6 +404,56 @@ export function dividedInto(type: DivisionType, parts: number): boolean {
  */
 export function fillingOut(type: DivisionType, first: Blazon, second: Blazon): readonly Blazon[] {
   return partsOf(type) === QUARTERS ? [first, second, second, first] : [first, second];
+}
+
+/**
+ * Whether the short form says this division whole: the name of the line and two
+ * arms with the conjunction between them, which is what the armorials write and
+ * what `fillingOut` fills the parts out from.
+ *
+ * It is asked wherever a divided field is put back into words — by the writer
+ * choosing a form, and by anything showing a blazon's shape beside it — because
+ * it is one question about the field and not a matter of taste.
+ *
+ * Two parts are said by it unless the second carries something. The short form
+ * has nowhere to put that: what stands after the second part belongs to the
+ * shield, so a blazon written that way comes back as different arms.
+ *
+ * Four are said by it only where they are the pair it would fill them out from
+ * — the first and fourth alike, the second and third alike, and none of them
+ * carrying anything — because two arms is the whole of what it can say about
+ * four parts.
+ */
+export function saidInTwo(division: Division): boolean {
+  const parts = division.parts;
+  if (partsOf(division.type) !== QUARTERS) {
+    return !carriesAnything(parts[1]);
+  }
+  return (
+    !parts.some(carriesAnything) && sameArms(parts[0], parts[3]) && sameArms(parts[1], parts[2])
+  );
+}
+
+/** Whether a part carries anything beyond the tincture of its field. */
+function carriesAnything(part: Blazon): boolean {
+  const field = part.field;
+  return (
+    (part.chargesOrOrdinaries ?? []).length !== 0 || !isPlain(field) || field.semy !== undefined
+  );
+}
+
+/**
+ * Whether two parts carry the same arms, which is what lets one rank speak for
+ * both.
+ *
+ * Compared by what they are made of rather than by identity, because a blazon
+ * read from "aux 1 et 4" hands the one object to both parts and a blazon built
+ * by hand need not have. Arms are plain data — a field, and a list of what is
+ * laid on it — so writing them out is a fair reading of sameness, and two arms
+ * that write the same are the same arms.
+ */
+export function sameArms(one: Blazon, other: Blazon): boolean {
+  return JSON.stringify(one) === JSON.stringify(other);
 }
 
 /** The same, for the commonest thing a blazon says of two parts: their tinctures. */

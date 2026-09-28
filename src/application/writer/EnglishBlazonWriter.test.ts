@@ -182,6 +182,25 @@ describe('EnglishBlazonWriter', () => {
 });
 
 describe('round trip', () => {
+  // The arms of Bourgogne: a quarter cut into pieces of its own, which the
+  // ranked form has to say — two tinctures cannot.
+  test('a quartered field whose quarters are cut into pieces survives the round trip', () => {
+    const bendy = {
+      field: {
+        type: FieldType.bendy as const,
+        firstTincture: Metals.or,
+        secondTincture: Colours.azure,
+        pieces: 6,
+      },
+    };
+    const blazon: Blazon = {
+      field: {
+        type: FieldType.cross,
+        parts: [bendy, half(Colours.gules), half(Colours.gules), bendy],
+      },
+    };
+    expect(roundTrip(blazon)).toEqual(blazon);
+  });
   const roundTrip = (blazon: Blazon) => parser.parse(writer.write(blazon));
 
   test.each(TINCTURES)('a plain field of %s survives being written and read back', (tincture) => {
