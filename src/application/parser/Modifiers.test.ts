@@ -364,6 +364,21 @@ describe('a band drawn along a modified line', () => {
     );
   });
 
+  // The line a band is drawn along is the band's own, so however the field
+  // beneath it was cut makes no difference — a quartered field least of all,
+  // its line crossing itself where the band's does not.
+  test.each<[string, FieldType]>([
+    ['Quarterly', FieldType.cross],
+    ['Per saltire', FieldType.saltire],
+  ])('is borne on a field %s as readily as on a plain one', (named, type) => {
+    expect(inEnglish.parse(`${named} argent and azure a fess indented gules`)).toEqual({
+      field: { type, firstTincture: Metals.argent, secondTincture: Colours.azure },
+      chargesOrOrdinaries: [
+        { type: OrdinaryType.fess, tincture: Colours.gules, modifier: Modifier.indented },
+      ],
+    });
+  });
+
   test('stands where a charge’s modifier stands, and is read late as readily', () => {
     expect(inEnglish.parse('Azure a fess or indented')).toEqual(
       inEnglish.parse('Azure a fess indented or')

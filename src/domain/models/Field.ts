@@ -5,8 +5,8 @@ import { Tincture } from './Tinctures';
  * The field terms: every way a field may be painted, in one vocabulary.
  *
  * Four kinds of thing are named here — a field of one tincture, a field divided
- * once along a line, that line taken over and over into a row of equal pieces,
- * and a pelt cut from two tinctures — and they are named together because a
+ * along a line, that line taken over and over into a row of equal pieces, and a
+ * pelt cut from two tinctures — and they are named together because a
  * blazon names them in the same place, first of all, before anything the field
  * bears. Which kind a term belongs to is declared with the term below, once, and
  * every reading, writing and drawing of it is settled by that declaration.
@@ -26,10 +26,24 @@ export enum FieldType {
   // The partitions, each named after the line that divides the field. The first
   // tincture named takes the half in chief: the upper one, or the one at dexter
   // where the two stand side by side.
+  //
+  // The last two are named after lines that cross themselves, and cut the field
+  // into four rather than two: quarters taken two apiece, so that the first
+  // tincture still has the half in chief. They are named per cross and per
+  // saltire rather than quarterly, because every partition here is named after
+  // its line rather than after what the line leaves — and because heraldry calls
+  // both of them quartered and would have left the pair sharing one name.
+  //
+  // Each repeats two of the four lines above it: per cross is the pale and the
+  // fess together, per saltire the bend and the bend sinister. So the quarters
+  // of the one stand square and the quarters of the other stand on their points,
+  // which is the whole of the difference between them.
   pale = 'FieldType.pale',
   fess = 'FieldType.fess',
   bend = 'FieldType.bend',
   bendSinister = 'FieldType.bendSinister',
+  cross = 'FieldType.cross',
+  saltire = 'FieldType.saltire',
 
   // The varied fields: a field cut along one line over and over, into an even
   // number of equal pieces of two tinctures laid alternately.
@@ -100,8 +114,15 @@ export class PlainDefinition extends FieldDefinition<FieldKind.plain> {
 }
 
 /**
- * A field divided once along a line, which has nothing further to declare: the
- * line is drawn where its name says, and both halves are of a size.
+ * A field divided along a line, which has nothing further to declare: the line
+ * is drawn where its name says, and both halves are of a size.
+ *
+ * Once along it, for four of the six. The other two are cut by a line that
+ * crosses itself and leave four pieces rather than two, but they declare no more
+ * than the rest do: the pieces are still of a size, they are still painted in two
+ * tinctures, and which of them takes which is settled by the line's own name.
+ * So there is nothing here to tell the two kinds apart, and the drawing is the
+ * only thing that needs to know.
  */
 export class DivisionDefinition extends FieldDefinition<FieldKind.division> {
   constructor(type: FieldType) {
@@ -167,6 +188,8 @@ export const FieldDefinitions = {
   [FieldType.fess]: new DivisionDefinition(FieldType.fess),
   [FieldType.bend]: new DivisionDefinition(FieldType.bend),
   [FieldType.bendSinister]: new DivisionDefinition(FieldType.bendSinister),
+  [FieldType.cross]: new DivisionDefinition(FieldType.cross),
+  [FieldType.saltire]: new DivisionDefinition(FieldType.saltire),
 
   // Six pieces for the four that repeat a line: both tongues understand six and
   // neither writes it — "Le bandé est normalement divisé en six pièces (qu'on ne
@@ -203,7 +226,7 @@ type FieldTypesOf<K extends FieldKind> = {
   [T in FieldType]: (typeof FieldDefinitions)[T]['kind'] extends K ? T : never;
 }[FieldType];
 
-/** The partitions: the terms that divide a field once along a line. */
+/** The partitions: the terms that divide a field along a line. */
 export type DivisionType = FieldTypesOf<FieldKind.division>;
 
 /** The varied fields: the terms that repeat a line into a row of pieces. */
@@ -259,7 +282,7 @@ export function cutInPieces(type: VariationType, pieces: number): boolean {
 }
 
 /**
- * What a blazon lays its charges on: one tincture, or two — divided once along a
+ * What a blazon lays its charges on: one tincture, or two — divided along a
  * line, cut along that line over and over into a row of equal pieces, or covered
  * with a fur cut from the pair.
  */

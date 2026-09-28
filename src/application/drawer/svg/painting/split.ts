@@ -3,7 +3,7 @@ import { Shape } from '../shapes/Shape';
 import { inked } from './inked';
 
 /**
- * The ground cut in two along a line, each half in an ink of its own.
+ * The ground cut in two, each half in an ink of its own.
  *
  * The halves are drawn past the edges they meet and left to the clip path, so
  * the line keeps its own angle instead of being fitted to whatever curve the
