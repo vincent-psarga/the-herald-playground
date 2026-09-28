@@ -239,7 +239,7 @@ describe('ArmorialPage', () => {
       ...ARMORIAL,
       entries: [
         { ...HALBERSTADT, blazon: 'De fuchsia' },
-        { ...HALBERSTADT, name: 'Second', blazon: "Écartelé d'azur et d'or" },
+        { ...HALBERSTADT, name: 'Second', blazon: "Gironné d'azur et d'or" },
         { ...HALBERSTADT, name: 'Third', blazon: "D'azur à la champagne d'or" },
       ],
     };
@@ -247,7 +247,7 @@ describe('ArmorialPage', () => {
     test('lists each word under the term that was expected there', () => {
       mount(<ArmorialPage armorial={GAPS} />);
       expect(under('Unknown tincture')).toBe('fuchsia');
-      expect(under('Unknown division')).toBe('écartelé');
+      expect(under('Unknown division')).toBe('gironné');
       expect(under('Unknown ordinary')).toBe('champagne');
     });
 

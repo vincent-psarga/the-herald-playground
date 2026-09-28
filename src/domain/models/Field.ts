@@ -5,8 +5,8 @@ import { Tincture } from './Tinctures';
  * The field terms: every way a field may be painted, in one vocabulary.
  *
  * Four kinds of thing are named here — a field of one tincture, a field divided
- * once along a line, that line taken over and over into a row of equal pieces,
- * and a pelt cut from two tinctures — and they are named together because a
+ * along a line, that line taken over and over into a row of equal pieces, and a
+ * pelt cut from two tinctures — and they are named together because a
  * blazon names them in the same place, first of all, before anything the field
  * bears. Which kind a term belongs to is declared with the term below, once, and
  * every reading, writing and drawing of it is settled by that declaration.
@@ -26,10 +26,19 @@ export enum FieldType {
   // The partitions, each named after the line that divides the field. The first
   // tincture named takes the half in chief: the upper one, or the one at dexter
   // where the two stand side by side.
+  //
+  // The last of them is named after a line that crosses itself, and cuts the
+  // field into four rather than two: quarters, numbered from dexter chief and
+  // taken two apiece, so that the first tincture still has the half holding the
+  // dexter chief corner. It is named per cross and not quarterly because every
+  // partition here is named after its line rather than after what the line
+  // leaves — and because the field quartered the other way, along the saltire,
+  // is the same word in both tongues and will want a term beside this one.
   pale = 'FieldType.pale',
   fess = 'FieldType.fess',
   bend = 'FieldType.bend',
   bendSinister = 'FieldType.bendSinister',
+  cross = 'FieldType.cross',
 
   // The varied fields: a field cut along one line over and over, into an even
   // number of equal pieces of two tinctures laid alternately.
@@ -100,8 +109,15 @@ export class PlainDefinition extends FieldDefinition<FieldKind.plain> {
 }
 
 /**
- * A field divided once along a line, which has nothing further to declare: the
- * line is drawn where its name says, and both halves are of a size.
+ * A field divided along a line, which has nothing further to declare: the line
+ * is drawn where its name says, and both halves are of a size.
+ *
+ * Once along it, for four of the five. The fifth is cut by a line that crosses
+ * itself and leaves four pieces rather than two, but it declares no more than
+ * the others do: the pieces are still of a size, they are still painted in two
+ * tinctures, and which of them takes which is settled by the line's own name.
+ * So there is nothing here to tell the two apart, and the drawing is the only
+ * thing that needs to know.
  */
 export class DivisionDefinition extends FieldDefinition<FieldKind.division> {
   constructor(type: FieldType) {
@@ -167,6 +183,7 @@ export const FieldDefinitions = {
   [FieldType.fess]: new DivisionDefinition(FieldType.fess),
   [FieldType.bend]: new DivisionDefinition(FieldType.bend),
   [FieldType.bendSinister]: new DivisionDefinition(FieldType.bendSinister),
+  [FieldType.cross]: new DivisionDefinition(FieldType.cross),
 
   // Six pieces for the four that repeat a line: both tongues understand six and
   // neither writes it — "Le bandé est normalement divisé en six pièces (qu'on ne
@@ -203,7 +220,7 @@ type FieldTypesOf<K extends FieldKind> = {
   [T in FieldType]: (typeof FieldDefinitions)[T]['kind'] extends K ? T : never;
 }[FieldType];
 
-/** The partitions: the terms that divide a field once along a line. */
+/** The partitions: the terms that divide a field along a line. */
 export type DivisionType = FieldTypesOf<FieldKind.division>;
 
 /** The varied fields: the terms that repeat a line into a row of pieces. */
@@ -259,7 +276,7 @@ export function cutInPieces(type: VariationType, pieces: number): boolean {
 }
 
 /**
- * What a blazon lays its charges on: one tincture, or two — divided once along a
+ * What a blazon lays its charges on: one tincture, or two — divided along a
  * line, cut along that line over and over into a row of equal pieces, or covered
  * with a fur cut from the pair.
  */

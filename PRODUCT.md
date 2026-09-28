@@ -57,7 +57,12 @@ Supported vocabulary as it stands:
 
 - **Tinctures (8)** in three ranks — metals (or, argent), colours (azure, gules, sable, vert),
   furs (ermine, vair).
-- **Divisions (4)** — per pale, per fess, per bend, per bend sinister.
+- **Divisions (5)** — per pale, per fess, per bend, per bend sinister, and quarterly (French
+  écartelé), which cuts the field by two lines rather than one: four quarters numbered from dexter
+  chief, the first tincture taking the 1st and the 4th and the second the two between them. Only
+  the simplest quartering is read — two tinctures and nothing else. A shield whose quarters each
+  carry a coat of their own, and the field quartered along the saltire (écartelé en sautoir), are
+  both left for later.
 - **Varied fields (5)** — barry, paly, bendy, pily, chevronny, cut into a counted number of pieces.
 - **Furred fields (1)** — vairy: the bells of vair cut from two tinctures the blazon names, rather
   than from the argent and azure vair itself is always drawn in. Nothing about it is counted.

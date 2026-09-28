@@ -77,11 +77,17 @@ describe('SvgBlazonDrawer', () => {
   });
 
   describe('divided fields', () => {
-    test.each(DIVISIONS)('paints both halves of a field per %s', (type) => {
+    // The first tincture is laid before the second, and each is laid once
+    // however many pieces the line left it: a quarterly field is painted in two
+    // passes like any other partition, each pass covering two quarters.
+    test.each(DIVISIONS)('paints both halves of a field per %s, the first first', (type) => {
       const svg = drawer.draw({
         field: { type, firstTincture: Colours.azure, secondTincture: Metals.or },
       });
-      expect(fills(svg)).toEqual([WikipediaColours[Colours.azure], WikipediaColours[Metals.or]]);
+      expect([...new Set(fills(svg))]).toEqual([
+        WikipediaColours[Colours.azure],
+        WikipediaColours[Metals.or],
+      ]);
     });
 
     test('gives the first tincture the half in chief', () => {
@@ -95,6 +101,24 @@ describe('SvgBlazonDrawer', () => {
       // Dexter is the viewer's left, so the first tincture starts at x=0.
       expect(perPale).toContain(`<rect x="0" y="0" width="100" height="240" fill="#ff0000"/>`);
       expect(perPale).toContain(`<rect x="100" y="0" width="100" height="240" fill="#ffffff"/>`);
+    });
+
+    test('gives the first tincture the quarters at dexter chief and sinister base', () => {
+      const quarterly = drawer.draw({
+        field: {
+          type: FieldType.cross,
+          firstTincture: Colours.gules,
+          secondTincture: Metals.argent,
+        },
+      });
+      // The quarters are numbered from dexter chief, which is the viewer's top
+      // left: the first tincture takes that one and the one across from it.
+      expect(quarterly).toContain(`<rect x="0" y="0" width="100" height="120" fill="#ff0000"/>`);
+      expect(quarterly).toContain(
+        `<rect x="100" y="120" width="100" height="120" fill="#ff0000"/>`
+      );
+      expect(quarterly).toContain(`<rect x="100" y="0" width="100" height="120" fill="#ffffff"/>`);
+      expect(quarterly).toContain(`<rect x="0" y="120" width="100" height="120" fill="#ffffff"/>`);
     });
 
     test('paints the same tincture on both sides when asked', () => {

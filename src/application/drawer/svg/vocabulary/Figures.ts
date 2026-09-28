@@ -19,7 +19,17 @@ import { Spot } from './charges/disposition';
  * a frame of its own.
  */
 
-/** A field cut in two along a line: the half in chief first. */
+/**
+ * A field cut along a line, half of it in each tincture: the half in chief
+ * first — the upper one, or the one holding dexter chief where they stand side
+ * by side.
+ *
+ * Two shapes, however many pieces the line leaves. A line that crosses itself
+ * cuts the field into four, but it still paints in two tinctures and still
+ * gives each of them half the field, so what comes back is that half as one
+ * shape — the quarters of a tincture gathered by `all` — and the painting never
+ * learns that the half was cut apart.
+ */
 export type DivisionFigure = {
   readonly halves: (frame: Frame) => readonly [Shape, Shape];
 };

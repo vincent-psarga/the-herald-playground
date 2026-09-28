@@ -2,6 +2,7 @@ import { DivisionType, FieldType } from '../../../../../../domain/models/Field';
 import { DivisionFigure } from '../../Figures';
 import { bend } from './bend';
 import { bendSinister } from './bendSinister';
+import { cross } from './cross';
 import { fess } from './fess';
 import { pale } from './pale';
 
@@ -16,4 +17,5 @@ export const DIVISIONS: Record<DivisionType, DivisionFigure> = {
   [FieldType.fess]: fess,
   [FieldType.bend]: bend,
   [FieldType.bendSinister]: bendSinister,
+  [FieldType.cross]: cross,
 };

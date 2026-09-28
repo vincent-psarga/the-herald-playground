@@ -14,7 +14,7 @@ The main drives behind this project are:
 
 Adding support for new words is mainly driven by:
 
-- Grammar before vocabulary: given the choice, I'd rather support new grammar than complete parts of the existing dictionary (that's why, for example, only 4 divisions are supported so far)
+- Grammar before vocabulary: given the choice, I'd rather support new grammar than complete parts of the existing dictionary (that's why, for example, only 5 divisions are supported so far)
 - Armorial Driven Development: the [armorials](https://vincent-psarga.github.io/the-herald-playground/armorials) provide many unsupported blazons
 - supporting weird cases where French and English have mismatches
 

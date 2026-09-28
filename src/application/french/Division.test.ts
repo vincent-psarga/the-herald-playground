@@ -24,9 +24,24 @@ describe('divided fields', () => {
     ['coupé', FieldType.fess],
     ['tranché', FieldType.bend],
     ['taillé', FieldType.bendSinister],
+    ['écartelé', FieldType.cross],
   ])('%s divides the field per %s', (name, type) => {
     expect(parser.parse(`${name} de gueules et d'argent`)).toEqual({
       field: { type, firstTincture: Colours.gules, secondTincture: Metals.argent },
+    });
+  });
+
+  test('reads "Écartelé d\'argent et d\'azur" as a field quartered', () => {
+    // Two tinctures and no more: the first takes the quarters numbered 1 and 4,
+    // the second the two between them. A shield whose quarters each carry a
+    // coat of their own — "écartelé : aux 1 et 4 ..., aux 2 et 3 ..." — is a
+    // different blazon and is not read.
+    expect(parser.parse("Écartelé d'argent et d'azur")).toEqual({
+      field: {
+        type: FieldType.cross,
+        firstTincture: Metals.argent,
+        secondTincture: Colours.azure,
+      },
     });
   });
 
@@ -80,8 +95,8 @@ describe('divided fields', () => {
     });
 
     test('rejects an unknown division as a division it does not hold', () => {
-      expect(() => parser.parse("Écartelé d'azur et d'or")).toThrow(UnknownDivision);
-      expect(() => parser.parse("Écartelé d'azur et d'or")).toThrow(/Unknown division: écartelé/);
+      expect(() => parser.parse("Gironné d'azur et d'or")).toThrow(UnknownDivision);
+      expect(() => parser.parse("Gironné d'azur et d'or")).toThrow(/Unknown division: gironné/);
     });
 
     test('still reports an unknown tincture rather than an unknown division', () => {

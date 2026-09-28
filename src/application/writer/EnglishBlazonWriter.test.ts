@@ -39,6 +39,7 @@ describe('EnglishBlazonWriter', () => {
     [FieldType.fess, 'Per fess'],
     [FieldType.bend, 'Per bend'],
     [FieldType.bendSinister, 'Per bend sinister'],
+    [FieldType.cross, 'Quarterly'],
   ])('names %s in English', (type, name) => {
     const written = writer.write({
       field: { type, firstTincture: Colours.gules, secondTincture: Metals.argent },
