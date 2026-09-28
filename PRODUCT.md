@@ -57,27 +57,33 @@ Supported vocabulary as it stands:
 
 - **Tinctures (8)** in three ranks — metals (or, argent), colours (azure, gules, sable, vert),
   furs (ermine, vair).
-- **Divisions (4)** — per pale, per fess, per bend, per bend sinister. Either half is arms of its
-  own, so a half is a field with whatever a tongue says of a field — that it is plain, or what it is
-  sown with — and the first half may bear what a shield bears: "Parti d'azur à six macles d'argent,
-  et d'hermine plain", "Parti de gueules semé de billettes d'argent, et de sinople semé de billettes
-  d'or". A mark set before the conjunction says no more than the conjunction does and is read and
-  dropped. What a half bears stands between its tincture and the conjunction; what follows the
-  second half belongs to the shield, a bordure blazoned after a division surrounding the whole of
-  it. That is the unranked form the armorials write, and it can charge the first half only. The
-  ranked form the handbooks prescribe charges either — "Parti, au premier de vair, au second de
-  gueules à la bordure d'or" — the rank saying which part the arms after it are laid in, written in
-  words, in figures or in Roman numerals ("au premier", "au 1", "au I"), and the parts named in the
-  order the partition takes them or the blazon refused. It is read in French, which has the form;
-  English ranks quarters rather than halves and marshals two coats with "impaled with", so it
-  contributes no rank and cannot blazon a charge on its second half. The rank is written back only
-  where the unranked form could not have said it. A part is drawn as well as read: what it bears is
-  drawn in the room the part gives it — the part's own corner and its own reaches, so three lilies
-  in the half at dexter stand in that half and are drawn small enough for it — and cut off at the
-  line. Its sowing is laid in the lattice the whole field is sown in and cut off there too, which
-  keeps it in step with whatever is sown beyond the line. What is not drawn: a part cut again, and
-  a band that follows an outline rather than measuring itself, a bordure borne on a part following
-  the part's box rather than the field's edge.
+- **Divisions (6)** — per pale, per fess, per bend, per bend sinister, and the two whose line crosses
+  itself and cuts the field into four rather than two: quarterly (French écartelé), the pale and the
+  fess together, its quarters standing square; and per saltire (French écartelé en sautoir), the bend
+  and the bend sinister together, its quarters standing on their points. How many parts a line leaves
+  is declared with the term, so nothing counts for itself. Every part is arms of its own: a field with
+  whatever a tongue says of a field — that it is plain, or what it is sown with — and whatever a shield
+  may bear. Two forms say it. The unranked form is what the armorials write and what the parts are
+  written back out in wherever it can say them: "Parti d'azur à six macles d'argent, et d'hermine
+  plain", and two tinctures for a quartered field, which fills out the parts ranked 1 and 4 from the
+  first and the two between them from the second — "Écartelé d'argent et d'azur". A mark set before the
+  conjunction says no more than the conjunction does and is read and dropped; what a part bears stands
+  between its tincture and the conjunction; what follows the last part belongs to the shield, a bordure
+  blazoned after a division surrounding the whole of it. The ranked form says what that one cannot: any
+  part may bear, and one phrase may speak for several parts carrying the same coat — "Écartelé : aux 1
+  et 4 d'azur au chevron d'or ; aux 2 et 3, d'azur à trois colombes d'argent". A rank is written in
+  words, in figures or, in French, in Roman numerals ("au premier", "au 1", "au I"; "first", "1"), and
+  the parts are named in the order the partition takes them or the blazon is refused — a rank the field
+  has no part for, a part ranked twice, a phrase running backwards and a part never named are each
+  refused by name. Both tongues rank: French ranks with an article, English with a bare ordinal as
+  Parker ranks quarters. The rank is written back only where the unranked form could not have said it.
+  A part is drawn as well as read: what it bears is drawn in the room the part gives it — the part's
+  own corner and its own reaches, so three lilies in the half at dexter stand in that half and are
+  drawn small enough for it — and cut off at the line. Its sowing is laid in the lattice the whole
+  field is sown in and cut off there too, which keeps it in step with whatever is sown beyond the line.
+  What is not drawn: a part cut again, a band that follows an outline rather than measuring itself, and
+  a band scaled to the part it stands in — a bordure borne on a part follows the part's box rather than
+  the field's edge, and a cross borne in a quarter is still the width of one drawn on the whole shield.
 - **Varied fields (5)** — barry, paly, bendy, pily, chevronny, cut into a counted number of pieces.
 - **Furred fields (1)** — vairy: the bells of vair cut from two tinctures the blazon names, rather
   than from the argent and azure vair itself is always drawn in. Nothing about it is counted.

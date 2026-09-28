@@ -170,15 +170,15 @@ describe('a tincture the name before it will not take', () => {
 
 describe('a division the parser does not know', () => {
   test.each([
-    ['écartelé, which quarters a field', "Écartelé d'azur et d'or"],
-    ['a division closing with a full stop', "Écartelé d'azur et d'or."],
-    ['a division dividing between furs', "Écartelé d'hermine et de vair"],
+    ['gironné, which cuts a field into gyrons', "Gironné d'azur et d'or"],
+    ['a division closing with a full stop', "Gironné d'azur et d'or."],
+    ['a division dividing between furs', "Gironné d'hermine et de vair"],
   ])('%s', (_why, blazon) => {
     expect(() => french.parse(blazon)).toThrow(UnknownDivision);
   });
 
   test.each([
-    ['quarterly, which the parser does not hold', 'Quarterly azure and or'],
+    ['gyronny, which the parser does not hold', 'Gyronny azure and or'],
     ['a division named without its "per"', 'Pale azure and or'],
     ['a diagonal named without its "per"', 'Bend sinister argent and gules'],
   ])('%s, in English', (_why, blazon) => {
@@ -186,15 +186,15 @@ describe('a division the parser does not know', () => {
   });
 
   test('carries the word itself', () => {
-    const refusal = refused(() => french.parse("Écartelé d'azur et d'or")) as UnknownDivision;
-    expect(refusal.division).toBe('écartelé');
-    expect(refusal.message).toBe('Unknown division: écartelé');
+    const refusal = refused(() => french.parse("Gironné d'azur et d'or")) as UnknownDivision;
+    expect(refusal.division).toBe('gironné');
+    expect(refusal.message).toBe('Unknown division: gironné');
   });
 
   test('is not raised for a lone word, which was meant to be a tincture', () => {
     // Nothing follows to divide, so the complaint belongs to the plain reading.
-    expect(() => french.parse('écartelé')).toThrow(UnknownTincture);
-    expect(() => english.parse('Quarterly')).toThrow(UnknownTincture);
+    expect(() => french.parse('gironné')).toThrow(UnknownTincture);
+    expect(() => english.parse('Gyronny')).toThrow(UnknownTincture);
   });
 
   test('has no missing counterpart: a division is never owed and absent', () => {
@@ -314,7 +314,7 @@ describe('a field cut into a number of pieces it cannot be cut into', () => {
 describe('every refusal', () => {
   const REFUSED = [
     'de fuchsia',
-    "Écartelé d'azur et d'or",
+    "Gironné d'azur et d'or",
     "D'azur à la champagne d'or",
     "Émanché d'argent et de gueules",
     "Fascé d'or et d'azur de cinq pièces",
@@ -336,7 +336,7 @@ describe('every refusal', () => {
 
   test('carries its own name, so a log says which kind it was', () => {
     expect(refused(() => french.parse('de fuchsia')).name).toBe('UnknownTincture');
-    expect(refused(() => french.parse("Écartelé d'azur et d'or")).name).toBe('UnknownDivision');
+    expect(refused(() => french.parse("Gironné d'azur et d'or")).name).toBe('UnknownDivision');
     expect(refused(() => french.parse("D'azur à la champagne d'or")).name).toBe('UnknownOrdinary');
     expect(refused(() => french.parse("D'azur à la fasce")).name).toBe('MissingTincture');
     expect(refused(() => french.parse("Émanché d'argent et de gueules")).name).toBe(

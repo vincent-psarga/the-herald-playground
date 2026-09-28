@@ -14,7 +14,7 @@ describe('FrenchBlazonParser', () => {
 
   test('reads a divided field', () => {
     expect(parser.parse("Parti d'azur et d'or.")).toEqual({
-      field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
     });
   });
 

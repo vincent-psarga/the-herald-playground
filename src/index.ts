@@ -118,7 +118,7 @@ export {
 export type { Spelled, TermWord, Translation } from './domain/translations/Translation';
 export { counted, numberWord } from './domain/translations/Numbers';
 export type { NumberWords } from './domain/translations/Numbers';
-export { FIRST, SECOND } from './domain/translations/Ranks';
+export { FIRST, ranksOf } from './domain/translations/Ranks';
 export type { RankWords } from './domain/translations/Ranks';
 export { strewnIn, strewnTerms } from './domain/translations/Strewings';
 export type { Strewings } from './domain/translations/Strewings';

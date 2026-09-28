@@ -7,6 +7,7 @@ import {
   VARIATIONS,
   VariationType,
   half,
+  painted,
 } from '../../../domain/models/Field';
 import { ChargeType } from '../../../domain/models/Charge';
 import { OrdinaryType } from '../../../domain/models/Ordinary';
@@ -110,16 +111,22 @@ describe('SvgBlazonDrawer', () => {
   });
 
   describe('divided fields', () => {
-    test.each(DIVISIONS)('paints both halves of a field per %s', (type) => {
+    // The first tincture is laid before the second, and each is laid once
+    // however many pieces the line left it: a quarterly field is painted in two
+    // passes like any other partition, each pass covering two quarters.
+    test.each(DIVISIONS)('paints both halves of a field per %s, the first first', (type) => {
       const svg = drawer.draw({
-        field: { type, first: half(Colours.azure), second: half(Metals.or) },
+        field: { type, parts: [half(Colours.azure), half(Metals.or)] },
       });
-      expect(fills(svg)).toEqual([WikipediaColours[Colours.azure], WikipediaColours[Metals.or]]);
+      expect([...new Set(fills(svg))]).toEqual([
+        WikipediaColours[Colours.azure],
+        WikipediaColours[Metals.or],
+      ]);
     });
 
     test('gives the first tincture the half in chief', () => {
       const perPale = drawer.draw({
-        field: { type: FieldType.pale, first: half(Colours.gules), second: half(Metals.argent) },
+        field: { type: FieldType.pale, parts: [half(Colours.gules), half(Metals.argent)] },
       });
       // Dexter is the viewer's left, so the first tincture starts at x=0. Each
       // half covers a box of the field, written as the path that also cuts off
@@ -132,15 +139,47 @@ describe('SvgBlazonDrawer', () => {
       // Which is every divided field in the armorials: two shapes, no clip and
       // no group, exactly as it was drawn before a half could carry anything.
       const svg = drawer.draw({
-        field: { type: FieldType.pale, first: half(Colours.gules), second: half(Metals.argent) },
+        field: { type: FieldType.pale, parts: [half(Colours.gules), half(Metals.argent)] },
       });
       expect(svg).not.toContain('<clipPath id="blason-part');
       expect(svg).not.toContain('<g transform');
     });
 
+    test('gives the first tincture the quarters ranked 1 and 4', () => {
+      const quarterly = drawer.draw({
+        field: {
+          type: FieldType.cross,
+          parts: painted(FieldType.cross, Colours.gules, Metals.argent),
+        },
+      });
+      // The quarters are ranked along the chief and then along the base, from
+      // dexter — the viewer's left — so the first and the fourth stand corner to
+      // corner and one tincture takes both.
+      expect(quarterly).toContain(`<path d="M 0 0 H 100 V 120 H 0 Z" fill="#ff0000"/>`);
+      expect(quarterly).toContain(`<path d="M 100 120 H 200 V 240 H 100 Z" fill="#ff0000"/>`);
+      expect(quarterly).toContain(`<path d="M 100 0 H 200 V 120 H 100 Z" fill="#ffffff"/>`);
+      expect(quarterly).toContain(`<path d="M 0 120 H 100 V 240 H 0 Z" fill="#ffffff"/>`);
+    });
+
+    test('gives the first tincture the triangles in chief and in base', () => {
+      const perSaltire = drawer.draw({
+        field: {
+          type: FieldType.saltire,
+          parts: painted(FieldType.saltire, Colours.gules, Metals.argent),
+        },
+      });
+      // Ranked in chief, at dexter, at senestre, in pointe — so the first and
+      // the fourth are the two standing on the top and bottom edges, and the
+      // pair between them are the flanks.
+      expect(perSaltire).toContain(`<path d="M 0 0 L 200 0 L 100 120 Z" fill="#ff0000"/>`);
+      expect(perSaltire).toContain(`<path d="M 0 240 L 200 240 L 100 120 Z" fill="#ff0000"/>`);
+      expect(perSaltire).toContain(`<path d="M 0 0 L 0 240 L 100 120 Z" fill="#ffffff"/>`);
+      expect(perSaltire).toContain(`<path d="M 200 0 L 200 240 L 100 120 Z" fill="#ffffff"/>`);
+    });
+
     test('paints the same tincture on both sides when asked', () => {
       const svg = drawer.draw({
-        field: { type: FieldType.fess, first: half(Colours.sable), second: half(Colours.sable) },
+        field: { type: FieldType.fess, parts: [half(Colours.sable), half(Colours.sable)] },
       });
       expect(fills(svg)).toEqual(['#000000', '#000000']);
     });
@@ -151,11 +190,13 @@ describe('SvgBlazonDrawer', () => {
       drawer.draw({
         field: {
           type,
-          first: {
-            field: { type: FieldType.plain, tincture: Colours.azure },
-            chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count }],
-          },
-          second: half(Colours.gules),
+          parts: [
+            {
+              field: { type: FieldType.plain, tincture: Colours.azure },
+              chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count }],
+            },
+            half(Colours.gules),
+          ],
         },
       });
 
@@ -212,11 +253,13 @@ describe('SvgBlazonDrawer', () => {
       const svg = drawer.draw({
         field: {
           type: FieldType.fess,
-          first: {
-            field: { type: FieldType.plain, tincture: Metals.or },
-            chargesOrOrdinaries: [{ type: OrdinaryType.fess, tincture: Colours.sable }],
-          },
-          second: half(Colours.gules),
+          parts: [
+            {
+              field: { type: FieldType.plain, tincture: Metals.or },
+              chargesOrOrdinaries: [{ type: OrdinaryType.fess, tincture: Colours.sable }],
+            },
+            half(Colours.gules),
+          ],
         },
       });
       // Across the half it lies on, at that half's own waist and a third of its
@@ -233,14 +276,16 @@ describe('SvgBlazonDrawer', () => {
       const sown = drawer.draw({
         field: {
           type: FieldType.pale,
-          first: {
-            field: {
-              type: FieldType.plain,
-              tincture: Colours.azure,
-              semy: { type: ChargeType.billet, tincture: Metals.or },
+          parts: [
+            {
+              field: {
+                type: FieldType.plain,
+                tincture: Colours.azure,
+                semy: { type: ChargeType.billet, tincture: Metals.or },
+              },
             },
-          },
-          second: half(Colours.gules),
+            half(Colours.gules),
+          ],
         },
       });
       const whole = drawer.draw({
@@ -269,11 +314,13 @@ describe('SvgBlazonDrawer', () => {
       const svg = drawer.draw({
         field: {
           type: FieldType.pale,
-          first: {
-            field: { type: FieldType.plain, tincture: Colours.azure },
-            chargesOrOrdinaries: [{ type: OrdinaryType.bordure, tincture: Metals.or }],
-          },
-          second: half(Colours.gules),
+          parts: [
+            {
+              field: { type: FieldType.plain, tincture: Colours.azure },
+              chargesOrOrdinaries: [{ type: OrdinaryType.bordure, tincture: Metals.or }],
+            },
+            half(Colours.gules),
+          ],
         },
       });
       expect(svg).toContain('<path d="M 0 0 H 100 V 240 H 0 Z" fill="none" stroke="#ffd700"');
@@ -286,14 +333,15 @@ describe('SvgBlazonDrawer', () => {
       const svg = drawer.draw({
         field: {
           type: FieldType.pale,
-          first: {
-            field: {
-              type: FieldType.fess,
-              first: half(Colours.azure),
-              second: half(Metals.argent),
+          parts: [
+            {
+              field: {
+                type: FieldType.fess,
+                parts: [half(Colours.azure), half(Metals.argent)],
+              },
             },
-          },
-          second: half(Colours.gules),
+            half(Colours.gules),
+          ],
         },
       });
       expect(fills(svg)).toEqual([
@@ -310,7 +358,7 @@ describe('SvgBlazonDrawer', () => {
     // with a field of its own.
     test('rules both halves of a hatched field', () => {
       const svg = new SvgBlazonDrawer(HatchingColours).draw({
-        field: { type: FieldType.pale, first: half(Colours.azure), second: half(Colours.vert) },
+        field: { type: FieldType.pale, parts: [half(Colours.azure), half(Colours.vert)] },
       });
       const defs = svg.slice(svg.indexOf('<defs>'), svg.indexOf('</defs>'));
       expect(defs).toContain('hatch-azure');
@@ -361,7 +409,7 @@ describe('SvgBlazonDrawer', () => {
 
     test('lays an ordinary on a divided field over both halves', () => {
       const svg = drawer.draw({
-        field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+        field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
         chargesOrOrdinaries: [{ type: OrdinaryType.fess, tincture: Colours.gules }],
       });
       expect(fills(svg)).toEqual(['#0000ff', '#ffd700', '#ff0000']);
@@ -458,7 +506,7 @@ describe('painting with patterns rather than colours', () => {
 
   test('carries both patterns of a divided field', () => {
     const svg = hatched.draw({
-      field: { type: FieldType.pale, first: half(Colours.azure), second: half(Colours.gules) },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Colours.gules)] },
     });
     expect(defs(svg)).toContain('<pattern id="hatch-azure"');
     expect(defs(svg)).toContain('<pattern id="hatch-gules"');
@@ -466,7 +514,7 @@ describe('painting with patterns rather than colours', () => {
 
   test('carries a shared pattern once, not twice', () => {
     const svg = hatched.draw({
-      field: { type: FieldType.fess, first: half(Colours.sable), second: half(Colours.sable) },
+      field: { type: FieldType.fess, parts: [half(Colours.sable), half(Colours.sable)] },
     });
     expect(svg.split('<pattern id="hatch-sable"').length - 1).toBe(1);
   });

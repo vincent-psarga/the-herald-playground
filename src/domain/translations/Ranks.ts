@@ -20,5 +20,7 @@ export type RankWords<W extends Word = Word> = Translation<`${number}`, W>;
 /** The rank of the part in chief — the upper, or the one at dexter — named first. */
 export const FIRST = 1;
 
-/** The rank of the other part, which a blazon names after it. */
-export const SECOND = 2;
+/** The ranks a field of so many parts has, in the order a blazon names them. */
+export function ranksOf(parts: number): readonly number[] {
+  return Array.from({ length: parts }, (_, part) => FIRST + part);
+}

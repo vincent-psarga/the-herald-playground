@@ -9,13 +9,16 @@ import {
   Field,
   FieldType,
   Furred,
+  HALVES,
   Plain,
+  QUARTERS,
   Semy,
   Variation,
   isDivision,
   isFurred,
   isPlain,
   isVariation,
+  partsOf,
 } from '../../src/domain/models/Field';
 import { borne } from '../../src/domain/models/Ordinary';
 import { Tincture } from '../../src/domain/models/Tinctures';
@@ -24,6 +27,7 @@ import { SOWN as FrenchSown } from '../../src/domain/translations/fr/Strewings';
 import { strewnIn } from '../../src/domain/translations/Strewings';
 import { wordIn, wordOf, wordSaidOf } from '../../src/domain/translations/Translation';
 import { Word } from '../../src/domain/translations/Word';
+import { FIRST } from '../../src/domain/translations/Ranks';
 import { Rank } from './Vocabulary';
 
 /**
@@ -136,7 +140,7 @@ function fieldBranch<W extends Word>(wording: BlazonWording<W>, sown: Word, fiel
     return cut(
       wordOf(wording.divisions, field.type).value,
       'division',
-      halves(wording, sown, field)
+      parts(wording, sown, field)
     );
   }
   if (isFurred(field)) {
@@ -146,41 +150,59 @@ function fieldBranch<W extends Word>(wording: BlazonWording<W>, sown: Word, fiel
 }
 
 /**
- * The two halves of a divided field, each a whole coat and each taken apart as
- * one.
+ * The parts of a divided field, each a whole coat and each taken apart as one.
  *
- * Where neither half bears anything the halves are their tinctures and nothing
- * more, so they stand straight under the partition: a parti of azure and or
- * reads as the two words the blazon wrote and wants no scaffolding between them.
+ * Where no part bears anything the parts are their tinctures and nothing more,
+ * so they stand straight under the partition: a parti of azure and or reads as
+ * the two words the blazon wrote and wants no scaffolding between them.
  *
- * Where either bears something the halves are gathered, each under the part it
- * is laid in. Ungathered, a bend blazoned in the second half would stand beside
- * the first half's tincture with nothing to say which half it belonged to —
- * which is the one thing a divided field's structure exists to answer.
+ * Where any part bears something they are gathered, each under the part it is
+ * laid in. Ungathered, a bend blazoned in the second half would stand beside the
+ * first half's tincture with nothing to say which half it belonged to — which is
+ * the one thing a divided field's structure exists to answer.
  *
- * That is the same question the writer asks before it writes: a blazon says "au
- * premier" exactly when the short form could not say what a part bears.
+ * That is the same question the writer asks before it writes: a blazon ranks its
+ * parts exactly when the short form could not say what they carry.
+ *
+ * A quartered field is gathered whenever its quarters are not the plain pair the
+ * short form fills out from, which is the same rule seen from the other side: a
+ * quarterly of two tinctures reads as those two words, and anything else has to
+ * say which quarter it means.
  */
-function halves<W extends Word>(
+function parts<W extends Word>(
   wording: BlazonWording<W>,
   sown: Word,
   division: Division
 ): readonly Branch[] {
-  const parts = [division.first, division.second];
-  if (!parts.some(bears)) {
-    return parts.flatMap((part) => structureOf(wording, sown, part));
+  const parts = division.parts;
+  if (!gathered(division)) {
+    return parts.slice(0, HALVES).flatMap((part) => structureOf(wording, sown, part));
   }
   return parts.map((part, at) => ({
     // What the tongue ranks the part by, where it ranks them at all. It is no
     // term of the vocabulary and leads nowhere: it names a place in the shield
     // rather than anything borne there.
-    word: wording.rank?.(at + 1),
+    word: wording.rank?.([FIRST + at]),
     arms: part,
     children: structureOf(wording, sown, part),
   }));
 }
 
-/** Whether a half carries anything beyond the tincture of its field. */
+/** Whether the parts have to be shown one by one rather than as the pair they were written as. */
+function gathered(division: Division): boolean {
+  const parts = division.parts;
+  if (partsOf(division.type) !== QUARTERS) {
+    return parts.some(bears);
+  }
+  return parts.some(bears) || !same(parts[0], parts[3]) || !same(parts[1], parts[2]);
+}
+
+/** Whether two parts are the same arms, which is what lets one stand for both. */
+function same(one: Blazon, other: Blazon): boolean {
+  return JSON.stringify(one) === JSON.stringify(other);
+}
+
+/** Whether a part carries anything beyond the tincture of its field. */
 function bears(part: Blazon): boolean {
   return (part.chargesOrOrdinaries ?? []).length !== 0;
 }

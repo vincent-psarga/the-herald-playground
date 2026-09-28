@@ -47,7 +47,7 @@ describe('reading an armorial', () => {
   });
 
   test('counts what was read against what there was', () => {
-    const reading = readArmorial(armorial('De gueules', 'Écartelé de tout'), parser);
+    const reading = readArmorial(armorial('De gueules', 'Gironné de tout'), parser);
     expect(reading).toMatchObject({ read: 1, total: 2, score: 50 });
   });
 
@@ -87,13 +87,13 @@ describe('what an armorial asks for and the parser has not got', () => {
     readArmorial(armorial(...blazons), parser).unknown;
 
   test('files each word under the term the parser was expecting there', () => {
-    expect(
-      unknownIn('De fuchsia', "Écartelé d'azur et d'or", "D'azur à la champagne d'or")
-    ).toEqual({
-      tinctures: ['fuchsia'],
-      divisions: ['écartelé'],
-      ordinaries: ['champagne'],
-    });
+    expect(unknownIn('De fuchsia', "Gironné d'azur et d'or", "D'azur à la champagne d'or")).toEqual(
+      {
+        tinctures: ['fuchsia'],
+        divisions: ['gironné'],
+        ordinaries: ['champagne'],
+      }
+    );
   });
 
   test('names a word once, however many entries stumble on it', () => {

@@ -6,12 +6,12 @@ import { Tincture } from './Tinctures';
  * The field terms: every way a field may be painted, in one vocabulary.
  *
  * Four kinds of thing are named here — a field of one tincture, a field divided
- * once along a line between two halves, that line taken over and over into a row
- * of equal pieces, and a pelt cut from two tinctures — and they are named
- * together because a blazon names them in the same place, first of all, before
- * anything the field bears. Which kind a term belongs to is declared with the
- * term below, once, and every reading, writing and drawing of it is settled by
- * that declaration.
+ * along a line into parts each of which is arms, that line taken over and over
+ * into a row of equal pieces, and a pelt cut from two tinctures — and they are
+ * named together because a blazon names them in the same place, first of all,
+ * before anything the field bears. Which kind a term belongs to is declared with
+ * the term below, once, and every reading, writing and drawing of it is settled
+ * by that declaration.
  *
  * The plain field is a term here like the rest, though it names no cut of the
  * field: it is what a field is when nothing has been done to it, and naming it
@@ -28,10 +28,24 @@ export enum FieldType {
   // The partitions, each named after the line that divides the field. The first
   // tincture named takes the half in chief: the upper one, or the one at dexter
   // where the two stand side by side.
+  //
+  // The last two are named after lines that cross themselves, and cut the field
+  // into four rather than two: quarters taken two apiece, so that the first
+  // tincture still has the half in chief. They are named per cross and per
+  // saltire rather than quarterly, because every partition here is named after
+  // its line rather than after what the line leaves — and because heraldry calls
+  // both of them quartered and would have left the pair sharing one name.
+  //
+  // Each repeats two of the four lines above it: per cross is the pale and the
+  // fess together, per saltire the bend and the bend sinister. So the quarters
+  // of the one stand square and the quarters of the other stand on their points,
+  // which is the whole of the difference between them.
   pale = 'FieldType.pale',
   fess = 'FieldType.fess',
   bend = 'FieldType.bend',
   bendSinister = 'FieldType.bendSinister',
+  cross = 'FieldType.cross',
+  saltire = 'FieldType.saltire',
 
   // The varied fields: a field cut along one line over and over, into an even
   // number of equal pieces of two tinctures laid alternately.
@@ -104,14 +118,33 @@ export class PlainDefinition extends FieldDefinition<FieldKind.plain> {
 }
 
 /**
- * A field divided once along a line, which has nothing further to declare: the
- * line is drawn where its name says, and both halves are of a size.
+ * A field divided along a line, and into how many parts that line cuts it.
+ *
+ * The line is drawn where its name says and the parts are all of a size, so the
+ * count is the only thing such a term has to declare — and it has to, because a
+ * line that crosses itself leaves four parts where a line drawn once leaves two.
+ *
+ * It is declared here and not in a vocabulary because the answer is the same in
+ * every tongue: écartelé leaves four quarters and so does quarterly, and neither
+ * tongue is free to disagree. Everything that reads, writes or draws a divided
+ * field asks this rather than counting for itself, so a partition added with the
+ * wrong count is wrong in one place instead of five.
  */
 export class DivisionDefinition extends FieldDefinition<FieldKind.division> {
-  constructor(type: FieldType) {
+  /** How many parts the line cuts the field into: two, or four where it crosses itself. */
+  public readonly parts: number;
+
+  constructor(type: FieldType, opts?: Partial<{ parts: number }>) {
     super(type, FieldKind.division);
+    this.parts = opts?.parts ?? HALVES;
   }
 }
+
+/** The parts a line drawn once leaves, which is what most partitions leave. */
+export const HALVES = 2;
+
+/** The parts a line that crosses itself leaves: the quarters. */
+export const QUARTERS = 4;
 
 /** A field cut along one line over and over, and how it is counted. */
 export class VariationDefinition extends FieldDefinition<FieldKind.variation> {
@@ -171,6 +204,11 @@ export const FieldDefinitions = {
   [FieldType.fess]: new DivisionDefinition(FieldType.fess),
   [FieldType.bend]: new DivisionDefinition(FieldType.bend),
   [FieldType.bendSinister]: new DivisionDefinition(FieldType.bendSinister),
+  // The two whose line crosses itself, and the only terms here that leave more
+  // than two parts. Both are quartered — the one into squares and the other into
+  // triangles — and a quarter carries a coat exactly as a half does.
+  [FieldType.cross]: new DivisionDefinition(FieldType.cross, { parts: QUARTERS }),
+  [FieldType.saltire]: new DivisionDefinition(FieldType.saltire, { parts: QUARTERS }),
 
   // Six pieces for the four that repeat a line: both tongues understand six and
   // neither writes it — "Le bandé est normalement divisé en six pièces (qu'on ne
@@ -207,7 +245,7 @@ type FieldTypesOf<K extends FieldKind> = {
   [T in FieldType]: (typeof FieldDefinitions)[T]['kind'] extends K ? T : never;
 }[FieldType];
 
-/** The partitions: the terms that divide a field once along a line. */
+/** The partitions: the terms that divide a field along a line. */
 export type DivisionType = FieldTypesOf<FieldKind.division>;
 
 /** The varied fields: the terms that repeat a line into a row of pieces. */
@@ -263,7 +301,7 @@ export function cutInPieces(type: VariationType, pieces: number): boolean {
 }
 
 /**
- * What a blazon lays its charges on: one tincture, or two — divided once along a
+ * What a blazon lays its charges on: one tincture, or two — divided along a
  * line, cut along that line over and over into a row of equal pieces, or covered
  * with a fur cut from the pair.
  */
@@ -307,30 +345,69 @@ export type Semy = {
 };
 
 /**
- * A field divided once along a line, and what each half of it carries.
+ * A field divided along a line, and what each part of it carries.
  *
- * A half is arms and not a tincture, because heraldry charges one: "Parti
+ * A part is arms and not a tincture, because heraldry charges one: "Parti
  * d'azur à trois fleurs de lys d'or et d'hermine" divides the field per pale,
  * sets three lilies on the half at dexter, and leaves the other half the fur it
  * named. The half at dexter is a shield's worth of blazon and is held as one.
  *
- * The half that carries nothing but a tincture — which is what most halves
- * carry — is arms that bear nothing, its list left off exactly as a plain
- * field's is. So there is one way to say a half and not two, and a half read
- * from "parti d'azur et d'or" comes back out as the tincture it was written as.
+ * The part that carries nothing but a tincture — which is what most parts carry
+ * — is arms that bear nothing, its list left off exactly as a plain field's is.
+ * So there is one way to say a part and not two, and a part read from "parti
+ * d'azur et d'or" comes back out as the tincture it was written as.
  *
- * The first half named is the one in chief: the upper, or the one at dexter
- * where the two stand side by side.
+ * A list rather than a part apiece, because how many there are is the term's to
+ * say: a line drawn once leaves two and a line that crosses itself leaves four,
+ * and every one of them is a part in the same sense. The list is as long as the
+ * term declares — nothing here is free to hold three — and what holds it to that
+ * is `dividedInto`, which is asked wherever a division is built.
+ *
+ * They stand in the order a blazon ranks them, which both tongues number from
+ * the part in chief: the upper, or the one at dexter where two stand side by
+ * side. Of four they run along the chief and then along the base, so the parts
+ * ranked 1 and 4 stand corner to corner.
  */
 export type Division = {
   type: DivisionType;
-  first: Blazon;
-  second: Blazon;
+  parts: readonly Blazon[];
 };
 
-/** A half that carries one tincture and bears nothing, as most halves do. */
+/** A part that carries one tincture and bears nothing, as most parts do. */
 export function half(tincture: Tincture): Blazon {
   return { field: { type: FieldType.plain, tincture } };
+}
+
+/** How many parts this partition's line cuts the field into. */
+export function partsOf(type: DivisionType): number {
+  return FieldDefinitions[type].parts;
+}
+
+/** Whether this is as many parts as the partition leaves, no more and no fewer. */
+export function dividedInto(type: DivisionType, parts: number): boolean {
+  return parts === partsOf(type);
+}
+
+/**
+ * The parts of a field a blazon said two things about, which is what the short
+ * form of every partition says however many parts the line leaves.
+ *
+ * Two parts take one apiece. Four take them cornerwise — the first in the parts
+ * ranked 1 and 4, the second in the two between them — which is what both
+ * tongues mean by "écartelé d'argent et d'azur", and what puts the first in the
+ * part in chief either way.
+ *
+ * The rule lives here rather than with whatever is filling the parts out,
+ * because it is the same rule for a blazon being read, one being written and one
+ * being shown: which parts a pair falls into is a fact about the line.
+ */
+export function fillingOut(type: DivisionType, first: Blazon, second: Blazon): readonly Blazon[] {
+  return partsOf(type) === QUARTERS ? [first, second, second, first] : [first, second];
+}
+
+/** The same, for the commonest thing a blazon says of two parts: their tinctures. */
+export function painted(type: DivisionType, first: Tincture, second: Tincture): readonly Blazon[] {
+  return fillingOut(type, half(first), half(second));
 }
 
 /**

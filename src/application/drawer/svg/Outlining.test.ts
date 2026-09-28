@@ -115,7 +115,7 @@ describe('the outline a hatched drawing carries', () => {
 
   test('draws a line along the cut of a divided field', () => {
     const svg = hatched.draw({
-      field: { type: FieldType.pale, first: half(Metals.or), second: half(Colours.gules) },
+      field: { type: FieldType.pale, parts: [half(Metals.or), half(Colours.gules)] },
     });
     expect(outlines(svg)).toHaveLength(2);
   });

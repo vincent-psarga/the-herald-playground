@@ -8,18 +8,21 @@ import {
   FurType,
   Furred,
   Plain,
+  QUARTERS,
   Semy,
   Variation,
   VariationType,
   isDivision,
   isFurred,
+  isPlain,
   isVariation,
+  partsOf,
   usualPieces,
 } from '../../domain/models/Field';
 import { OrdinaryType, SEVERAL, borne } from '../../domain/models/Ordinary';
 import { Tincture } from '../../domain/models/Tinctures';
 import { NumberWords, counted } from '../../domain/translations/Numbers';
-import { FIRST, SECOND } from '../../domain/translations/Ranks';
+import { FIRST } from '../../domain/translations/Ranks';
 import { Strewings, strewnIn } from '../../domain/translations/Strewings';
 import {
   Translation,
@@ -97,7 +100,7 @@ export interface BlazonWording<W extends Word = Word> {
    * "impaled with" between them — and writes the unranked form, which can say
    * only what the first part bears.
    */
-  readonly rank?: (rank: number) => string;
+  readonly rank?: (ranks: readonly number[]) => string;
 }
 
 /**
@@ -285,39 +288,112 @@ function writeVariation<W extends Word>(wording: BlazonWording<W>, variation: Va
 }
 
 /**
- * The name of the line, then each half written as the arms it is, with the
- * conjunction between them.
+ * The name of the line, then the parts: as two arms joined by the conjunction
+ * where the blazon can be written that way, and ranked where it cannot.
  *
- * A half carrying nothing but its tincture writes as that tincture and nothing
- * else — which is what a plain field bearing nothing writes as — so "parti
- * d'azur et d'or" comes back out as itself, and a half carrying more says more
- * in the same place: "Parti d'azur à trois fleurs de lys d'or et d'hermine".
+ * The unranked form is preferred wherever it says the whole truth, because it is
+ * what the armorials write: "parti d'azur et d'or" comes back out as itself, and
+ * a first half carrying more says more in the same place — "Parti d'azur à trois
+ * fleurs de lys d'or et d'hermine".
  *
- * What the first half bears reads back as the first half's, both tongues
- * writing it between that half's tincture and the conjunction, and both reading
- * it there. What the second half bears does not: a blazon written this way lays
- * it on the shield when it is read again, because that is what an armorial means
- * by writing anything after the second half. Heraldry says the other thing
- * another way — "au premier ..., au second ..." — and until that phrase is
- * written, this writes what the arms are and the reading takes them as it finds
- * them.
+ * It cannot say everything. What the first half bears reads back as the first
+ * half's, both tongues writing it between that half's tincture and the
+ * conjunction; what the second half bears does not, a blazon written that way
+ * laying it on the shield when it is read again. And a field of four parts has
+ * no unranked form at all beyond its two tinctures. So the ranked form is
+ * written wherever the unranked one would come back as different arms, and the
+ * choice is made by asking what the unranked form would say rather than by
+ * listing the cases.
+ *
+ * A tongue with no ranks writes the unranked form regardless. It is the only
+ * form it has, and what it cannot say it cannot say: English ranks quarters but
+ * not the halves of a partition, and marshals two coats with "impaled with"
+ * instead.
  */
 function writeDivision<W extends Word>(wording: BlazonWording<W>, division: Division): string {
-  const name = nameOf(wording.divisions, division.type);
   const ranked = wording.rank;
-  if (ranked === undefined || !bearsAnything(division.second)) {
-    return [
-      name,
-      writeArms(wording, division.first),
-      wording.conjunction,
-      writeArms(wording, division.second),
-    ].join(' ');
+  const name = nameOf(wording.divisions, division.type);
+  if (ranked === undefined || saidUnranked(division)) {
+    const [first, second] = asTwo(division);
+    return [name, writeArms(wording, first), wording.conjunction, writeArms(wording, second)].join(
+      ' '
+    );
   }
-  return [
-    `${name}${SEPARATOR}`,
-    `${ranked(FIRST)} ${writeArms(wording, division.first)}${SEPARATOR}`,
-    `${ranked(SECOND)} ${writeArms(wording, division.second)}`,
-  ].join(' ');
+  const phrases = repeating(division.parts).map(
+    ({ ranks, arms }) => `${ranked(ranks)} ${writeArms(wording, arms)}`
+  );
+  return [`${name}${SEPARATOR}`, phrases.join(`${SEPARATOR} `)].join(' ');
+}
+
+/**
+ * Whether the unranked form would say this field and not some other.
+ *
+ * Two parts are said by it unless the second bears something, which that form
+ * puts on the shield instead. Four are said by it only where they are the two
+ * tinctures it fills them out from — the first and fourth alike, the second and
+ * third alike, and none of them bearing or sown — because two tinctures is the
+ * whole of what it can say about four parts.
+ */
+function saidUnranked(division: Division): boolean {
+  const parts = division.parts;
+  if (partsOf(division.type) !== QUARTERS) {
+    return !bearsAnything(parts[1]);
+  }
+  return parts.every(bareTincture) && sameArms(parts[0], parts[3]) && sameArms(parts[1], parts[2]);
+}
+
+/** Whether a part is one tincture and nothing else: nothing borne, nothing sown. */
+function bareTincture(part: Blazon): boolean {
+  const field = part.field;
+  return !bearsAnything(part) && isPlain(field) && field.semy === undefined;
+}
+
+/**
+ * The two arms an unranked blazon names, which for a field of four are the ones
+ * its first and second tinctures were filled out from.
+ */
+function asTwo(division: Division): readonly [Blazon, Blazon] {
+  const parts = division.parts;
+  return [parts[0], parts[1]];
+}
+
+/**
+ * The parts gathered into the phrases a ranked blazon writes: the parts carrying
+ * the same arms under one rank, in the order their first rank comes.
+ *
+ * This is how the armorials write a quartered field — "aux 1 et 4 d'azur au
+ * chevron d'or ; aux 2 et 3, d'azur à trois colombes d'argent" — and saying it
+ * part by part instead would be writing the coat twice where heraldry writes it
+ * once. Parts are gathered only where they carry the very same arms, which is
+ * the only thing one phrase can claim about several.
+ */
+function repeating(
+  parts: readonly Blazon[]
+): readonly { readonly ranks: readonly number[]; readonly arms: Blazon }[] {
+  const phrases: { ranks: number[]; arms: Blazon }[] = [];
+  parts.forEach((arms, part) => {
+    const already = phrases.find((phrase) => sameArms(phrase.arms, arms));
+    if (already === undefined) {
+      phrases.push({ ranks: [FIRST + part], arms });
+    } else {
+      already.ranks.push(FIRST + part);
+    }
+  });
+  return phrases;
+}
+
+/**
+ * Whether two parts carry the same arms, which is what lets one phrase rank
+ * both.
+ *
+ * Compared by what they are made of rather than by identity, because a blazon
+ * read from "aux 1 et 4" hands the one object to both parts and a blazon built
+ * by hand need not have. Arms are plain data — a field, and a list of what is
+ * laid on it — so writing them out is a fair reading of sameness, and two arms
+ * that write the same are the same arms.
+ */
+function sameArms(one: Blazon, other: Blazon): boolean {
+  return JSON.stringify(one) === JSON.stringify(other);
 }
 
 /** Whether a part of a divided field bears anything at all. */

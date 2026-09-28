@@ -27,8 +27,7 @@ const PLAIN: Plain = { type: FieldType.plain, tincture: Metals.or };
 
 const DIVIDED: Division = {
   type: FieldType.fess,
-  first: half(Metals.or),
-  second: half(Colours.azure),
+  parts: [half(Metals.or), half(Colours.azure)],
 };
 
 const VARIED: Variation = {
@@ -130,14 +129,16 @@ describe('the halves of a divided field', () => {
   test('a half is arms, so it bears what a shield bears', () => {
     const charged: Division = {
       type: FieldType.pale,
-      first: {
-        field: { type: FieldType.plain, tincture: Colours.azure },
-        chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count: 3 }],
-      },
-      second: half(Colours.gules),
+      parts: [
+        {
+          field: { type: FieldType.plain, tincture: Colours.azure },
+          chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count: 3 }],
+        },
+        half(Colours.gules),
+      ],
     };
     expect(isDivision(charged)).toBe(true);
-    expect(charged.first.chargesOrOrdinaries).toHaveLength(1);
+    expect(charged.parts[0].chargesOrOrdinaries).toHaveLength(1);
   });
 });
 

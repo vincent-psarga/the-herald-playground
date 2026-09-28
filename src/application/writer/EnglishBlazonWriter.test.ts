@@ -7,6 +7,7 @@ import {
   VARIATIONS,
   VariationType,
   half,
+  painted,
 } from '../../domain/models/Field';
 import { ChargeType } from '../../domain/models/Charge';
 import { OrdinaryType } from '../../domain/models/Ordinary';
@@ -27,7 +28,7 @@ describe('EnglishBlazonWriter', () => {
   test('writes a divided field', () => {
     expect(
       writer.write({
-        field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+        field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
       })
     ).toBe('Per pale azure and or.');
   });
@@ -36,9 +37,11 @@ describe('EnglishBlazonWriter', () => {
     [FieldType.fess, 'Per fess'],
     [FieldType.bend, 'Per bend'],
     [FieldType.bendSinister, 'Per bend sinister'],
+    [FieldType.cross, 'Quarterly'],
+    [FieldType.saltire, 'Per saltire'],
   ])('names %s in English', (type, name) => {
     const written = writer.write({
-      field: { type, first: half(Colours.gules), second: half(Metals.argent) },
+      field: { type, parts: painted(type, Colours.gules, Metals.argent) },
     });
     expect(written).toBe(`${name} gules and argent.`);
   });
@@ -52,34 +55,36 @@ describe('EnglishBlazonWriter', () => {
       writer.write({
         field: {
           type: FieldType.pale,
-          first: {
-            field: { type: FieldType.plain, tincture: Colours.azure },
-            chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count: 3 }],
-          },
-          second: half(Furs.ermine),
+          parts: [
+            {
+              field: { type: FieldType.plain, tincture: Colours.azure },
+              chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count: 3 }],
+            },
+            half(Furs.ermine),
+          ],
         },
       })
     ).toBe('Per pale azure three fleurs-de-lis or and ermine.');
   });
 
-  // English has no ranked form to write, having none to read: a charge on the
-  // second half is written where the reading takes it for the shield's, so the
-  // arms come back saying something else. It is the one place the round trip does
-  // not hold, and it holds again the day English marshals its parts — "impaled
-  // with" — or ranks them as it ranks quarters.
-  test('cannot write a charge on the second half, having no rank to write it with', () => {
+  // A charge on the second half is what the unranked form cannot say — written
+  // that way it reads back onto the shield — so the rank is written instead, and
+  // the arms come back as themselves.
+  test('ranks the parts to write a charge the short form would put on the shield', () => {
     const blazon: Blazon = {
       field: {
         type: FieldType.pale,
-        first: half(Colours.azure),
-        second: {
-          field: { type: FieldType.plain, tincture: Metals.or },
-          chargesOrOrdinaries: [{ type: OrdinaryType.bordure, tincture: Colours.gules }],
-        },
+        parts: [
+          half(Colours.azure),
+          {
+            field: { type: FieldType.plain, tincture: Metals.or },
+            chargesOrOrdinaries: [{ type: OrdinaryType.bordure, tincture: Colours.gules }],
+          },
+        ],
       },
     };
-    expect(writer.write(blazon)).toBe('Per pale azure and or a bordure gules.');
-    expect(parser.parse(writer.write(blazon))).not.toEqual(blazon);
+    expect(writer.write(blazon)).toBe('Per pale, first azure, second or a bordure gules.');
+    expect(parser.parse(writer.write(blazon))).toEqual(blazon);
   });
 
   test('writes a bare half as its tincture and nothing more', () => {
@@ -90,8 +95,7 @@ describe('EnglishBlazonWriter', () => {
       writer.write({
         field: {
           type: FieldType.fess,
-          first: { field: { type: FieldType.plain, tincture: Metals.or } },
-          second: half(Colours.sable),
+          parts: [{ field: { type: FieldType.plain, tincture: Metals.or } }, half(Colours.sable)],
         },
       })
     ).toBe('Per fess or and sable.');
@@ -138,7 +142,7 @@ describe('EnglishBlazonWriter', () => {
         chargesOrOrdinaries: [{ type: OrdinaryType.fess, tincture: Metals.or }],
       });
       const divided = writer.write({
-        field: { type: FieldType.fess, first: half(Colours.azure), second: half(Metals.or) },
+        field: { type: FieldType.fess, parts: [half(Colours.azure), half(Metals.or)] },
       });
       expect(borne).toBe('Azure a fess or.');
       expect(divided).toBe('Per fess azure and or.');
@@ -160,7 +164,7 @@ describe('EnglishBlazonWriter', () => {
         ).toBe(`Argent ${article} gules.`);
         expect(
           writer.write({
-            field: { type: divides, first: half(Metals.argent), second: half(Colours.gules) },
+            field: { type: divides, parts: painted(divides, Metals.argent, Colours.gules) },
           })
         ).toBe(`${per} argent and gules.`);
       }
@@ -169,7 +173,7 @@ describe('EnglishBlazonWriter', () => {
     test('writes an ordinary laid on a divided field', () => {
       expect(
         writer.write({
-          field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+          field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
           chargesOrOrdinaries: [{ type: OrdinaryType.saltire, tincture: Colours.gules }],
         })
       ).toBe('Per pale azure and or a saltire gules.');
@@ -187,7 +191,7 @@ describe('round trip', () => {
 
   test.each(DIVISIONS)('a field divided per %s survives the round trip', (type) => {
     const blazon: Blazon = {
-      field: { type, first: half(Colours.sable), second: half(Metals.or) },
+      field: { type, parts: painted(type, Colours.sable, Metals.or) },
     };
     expect(roundTrip(blazon)).toEqual(blazon);
   });
@@ -210,7 +214,7 @@ describe('round trip', () => {
 
   test('a divided field bearing an ordinary survives the round trip', () => {
     const blazon: Blazon = {
-      field: { type: FieldType.bend, first: half(Colours.gules), second: half(Metals.argent) },
+      field: { type: FieldType.bend, parts: [half(Colours.gules), half(Metals.argent)] },
       chargesOrOrdinaries: [{ type: OrdinaryType.chevron, tincture: Colours.sable }],
     };
     expect(roundTrip(blazon)).toEqual(blazon);

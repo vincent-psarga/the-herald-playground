@@ -87,23 +87,27 @@ describe('a field sown with a charge', () => {
   test('sows the half whose tincture it follows, not the field entire', () => {
     expect(parser.parse("Parti d'azur et d'or semé de billettes d'argent").field).toEqual({
       type: FieldType.pale,
-      first: half(Colours.azure),
-      second: {
-        field: {
-          type: FieldType.plain,
-          tincture: Metals.or,
-          semy: { type: ChargeType.billet, tincture: Metals.argent },
+      parts: [
+        half(Colours.azure),
+        {
+          field: {
+            type: FieldType.plain,
+            tincture: Metals.or,
+            semy: { type: ChargeType.billet, tincture: Metals.argent },
+          },
         },
-      },
+      ],
     });
   });
 
   test('sows the first half where the blazon sows it there', () => {
     expect(parser.parse("Parti d'azur semé de billettes d'or et d'argent").field).toMatchObject({
-      first: {
-        field: { semy: { type: ChargeType.billet, tincture: Metals.or } },
-      },
-      second: { field: { tincture: Metals.argent } },
+      parts: [
+        {
+          field: { semy: { type: ChargeType.billet, tincture: Metals.or } },
+        },
+        { field: { tincture: Metals.argent } },
+      ],
     });
   });
 });
@@ -220,8 +224,7 @@ describe('a field the blazon calls plain', () => {
   test('is said of a half, which is a field like any other', () => {
     expect(parser.parse("Parti d'azur et d'or plain").field).toEqual({
       type: FieldType.pale,
-      first: half(Colours.azure),
-      second: half(Metals.or),
+      parts: [half(Colours.azure), half(Metals.or)],
     });
     expect(() => parser.parse("Parti de vair plain à la fasce d'or, et de gueules")).toThrow(
       ChargedPlainField

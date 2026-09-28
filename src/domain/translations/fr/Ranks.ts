@@ -13,6 +13,15 @@ import { FrenchWord } from './FrenchWord';
 // senestre". It is said there of four parts rather than two, that being where a
 // dictionary has occasion to say it at all, and the order is the order.
 //
+// Under Quartier it is said of both quarterings at once, and the two disagree
+// about where the ranks run. Of the squares: "Les Quartiers du haut sont
+// blasonnés les premiers, ensuite les QUARTIERS au-dessous, puis on finit par
+// ceux qui se trouvent en bas, en commençant toujours à dextre". Of the
+// triangles: "alors le premier Quartier est en haut, le second à dextre, le
+// troisième à senestre et le quatrième en pointe". So a rank names no place of
+// its own — it names the nth part, and which place that is belongs to the line
+// that cut the field.
+//
 // "Second" and "deuxième" say the one thing and both are read; the shorter is
 // written back. Nothing here agrees with anything: the ordinal stands before a
 // whole coat rather than before a noun, and the armorials write it masculine.
@@ -37,18 +46,45 @@ export const FrenchRanks: RankWords<FrenchWord> = {
   2: [
     new FrenchWord('second', {
       value:
-        'The other part of a divided field, the one the first is not. Whatever is blazoned after it is laid there. Written "au second", and in figures: "au 2".',
+        'The second part of a divided field, named after the first: at senestre where the parts stand square, at dextre where four stand on their points. Written "au second", and in figures: "au 2".',
       sources: [blasonArmoiries('Écartelé'), blasonArmoiries('Parti')],
     }),
     new FrenchWord('deuxième', {
       value:
-        'The other part of a divided field, said the longer way. It says what "au second" says.',
+        'The second part of a divided field, said the longer way. It says what "au second" says.',
       sources: [blasonArmoiries('Écartelé')],
     }),
     new FrenchWord('II', {
       value:
-        'The other part of a divided field, its rank written as a Roman numeral. It says what "au second" says.',
+        'The second part of a divided field, its rank written as a Roman numeral. It says what "au second" says.',
       sources: [blasonArmoiries('Écartelé')],
+    }),
+  ],
+  // The third and the fourth, which only a field cut into four ever has. A field
+  // cut in two is refused them by the count its own term declares, so nothing
+  // here has to say that a parti has no third part.
+  3: [
+    new FrenchWord('troisième', {
+      value:
+        'The third part of a divided field, which only a quartered field has: at dexter in base where the quarters stand square, at senestre where they stand on their points. Written "au troisième", and in figures: "au 3".',
+      sources: [blasonArmoiries('Quartier')],
+    }),
+    new FrenchWord('III', {
+      value:
+        'The third part of a divided field, its rank written as a Roman numeral. It says what "au troisième" says.',
+      sources: [blasonArmoiries('Quartier')],
+    }),
+  ],
+  4: [
+    new FrenchWord('quatrième', {
+      value:
+        'The last part of a quartered field: at senestre in base where the quarters stand square, in pointe where they stand on their points. It stands corner to corner with the first. Written "au quatrième", and in figures: "au 4".',
+      sources: [blasonArmoiries('Quartier')],
+    }),
+    new FrenchWord('IV', {
+      value:
+        'The last part of a quartered field, its rank written as a Roman numeral. It says what "au quatrième" says.',
+      sources: [blasonArmoiries('Quartier')],
     }),
   ],
 };

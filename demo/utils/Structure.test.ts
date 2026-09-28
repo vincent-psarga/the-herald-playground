@@ -231,14 +231,14 @@ describe('the arms a word is shown by', () => {
     // arms come from the model the shield itself was drawn from.
     const read = of('Per pale azure and argent, a bend gules', Languages.en);
     expect(found(read, 'per pale').arms).toEqual({
-      field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.argent) },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.argent)] },
     });
   });
 
   test('lays a band on the field it is actually laid on', () => {
     const read = of('Per pale azure and argent, a bend gules', Languages.en);
     expect(found(read, 'bend').arms).toEqual({
-      field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.argent) },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.argent)] },
       chargesOrOrdinaries: [{ type: OrdinaryType.bend, tincture: Colours.gules }],
     });
   });

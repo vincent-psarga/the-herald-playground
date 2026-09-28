@@ -42,14 +42,14 @@ export class SvgBlazonDrawer implements IBlazonDrawer {
  * painted with a tincture like anything else, and a hatched one needs its ruling
  * placed or it is drawn in nothing at all.
  *
- * A divided field is asked of its halves rather than of itself, each half being
- * arms with a field and bearings of its own: the tinctures of a half are the
- * half's, however deep the halves go.
+ * A divided field is asked of its parts rather than of itself, each part being
+ * arms with a field and bearings of its own: the tinctures of a part are the
+ * part's, however many parts there are and however deep they go.
  */
 function tincturesOf(blazon: Blazon): readonly Tincture[] {
   const painted = blazon.field;
   const field = isDivision(painted)
-    ? [...tincturesOf(painted.first), ...tincturesOf(painted.second)]
+    ? painted.parts.flatMap(tincturesOf)
     : isVariation(painted) || isFurred(painted)
       ? [painted.firstTincture, painted.secondTincture]
       : [painted.tincture, ...(painted.semy === undefined ? [] : [painted.semy.tincture])];

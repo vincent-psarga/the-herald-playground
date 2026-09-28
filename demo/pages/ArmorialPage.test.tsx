@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, test } from 'vitest';
 import { Armorial } from '../../src/domain/models/Armorial';
 import { Languages } from '../../src/domain/models/Languages';
@@ -238,7 +239,7 @@ describe('ArmorialPage', () => {
       ...ARMORIAL,
       entries: [
         { ...HALBERSTADT, blazon: 'De fuchsia' },
-        { ...HALBERSTADT, name: 'Second', blazon: "Écartelé d'azur et d'or" },
+        { ...HALBERSTADT, name: 'Second', blazon: "Gironné d'azur et d'or" },
         { ...HALBERSTADT, name: 'Third', blazon: "D'azur à la champagne d'or" },
       ],
     };
@@ -246,7 +247,7 @@ describe('ArmorialPage', () => {
     test('lists each word under the term that was expected there', () => {
       mount(<ArmorialPage armorial={GAPS} />);
       expect(under('Unknown tincture')).toBe('fuchsia');
-      expect(under('Unknown division')).toBe('écartelé');
+      expect(under('Unknown division')).toBe('gironné');
       expect(under('Unknown ordinary')).toBe('champagne');
     });
 
@@ -300,6 +301,113 @@ describe('ArmorialPage', () => {
     test('warns that a word is filed under what was expected, not what it is', () => {
       mount(<ArmorialPage armorial={GAPS} />);
       expect(screen.getByText(/counted an ordinary/)).toBeInTheDocument();
+    });
+  });
+
+  describe('the search', () => {
+    /**
+     * Three entries told apart by what their blazons hold. No name holds a word
+     * of any blazon, so a test of what the blazons match is a test of that.
+     */
+    const ROLL: Armorial = {
+      ...ARMORIAL,
+      entries: [
+        { ...HALBERSTADT, name: 'Nevers', blazon: "Parti d'or et de gueules" },
+        { ...HALBERSTADT, name: 'Poitiers', blazon: "De gueules à la bordure d'argent" },
+        { ...HALBERSTADT, name: 'Vannes', blazon: "D'azur à la macle d'or" },
+      ],
+    };
+
+    const search = () => screen.getByRole('searchbox', { name: 'Search the entries' });
+    const named = () => screen.getAllByRole('rowheader').map((header) => header.textContent);
+
+    const seek = async (query: string, armorial = ROLL) => {
+      mount(<ArmorialPage armorial={armorial} />);
+      await userEvent.type(search(), query);
+    };
+
+    test('stands over the roll', () => {
+      mount(<ArmorialPage armorial={ROLL} />);
+      expect(search()).toBeInTheDocument();
+    });
+
+    test('says how a word is looked for and how to ask for it whole', () => {
+      mount(<ArmorialPage armorial={ROLL} />);
+      expect(screen.getByText(/Quote it to ask for the word whole/)).toBeInTheDocument();
+    });
+
+    test('leaves the roll whole while nothing is asked for', () => {
+      mount(<ArmorialPage armorial={ROLL} />);
+      expect(named()).toEqual(['Nevers', 'Poitiers', 'Vannes']);
+    });
+
+    test('keeps the entries a word stands in', async () => {
+      await seek('macle');
+      expect(named()).toEqual(['Vannes']);
+    });
+
+    test('searches the name as well as the blazon', async () => {
+      await seek('poitiers');
+      expect(named()).toEqual(['Poitiers']);
+    });
+
+    test('searches the source’s own words and not the translation', async () => {
+      // Every blazon here is French, and each is translated into English under
+      // it; "and" is a word of those translations and of no entry.
+      await seek('and');
+      expect(screen.queryAllByRole('rowheader')).toHaveLength(0);
+    });
+
+    test('shows the entry holding the most of what was asked for first', async () => {
+      // Nevers is parted of both and leads; the two holding one apiece follow in
+      // the roll's own order.
+      await seek('or gueules');
+      expect(named()).toEqual(['Nevers', 'Poitiers', 'Vannes']);
+    });
+
+    test('finds a word standing inside a longer one', async () => {
+      await seek('gueul');
+      expect(named()).toEqual(['Nevers', 'Poitiers']);
+    });
+
+    test('finds a word inside a longer one on the page as in the roll', async () => {
+      // The or of Poitiers' bordure is an or as far as a plain search is concerned.
+      await seek('or');
+      expect(named()).toEqual(['Nevers', 'Poitiers', 'Vannes']);
+    });
+
+    test('asks for a quoted word whole, and leaves the longer ones out', async () => {
+      await seek('"or"');
+      expect(named()).toEqual(['Nevers', 'Vannes']);
+    });
+
+    test('says how much of the roll is left', async () => {
+      await seek('macle');
+      expect(screen.getByText('1 of 3 entries')).toBeInTheDocument();
+    });
+
+    test('counts nothing while nothing is asked for', () => {
+      mount(<ArmorialPage armorial={ROLL} />);
+      expect(screen.queryByText(/of 3 entries/)).toBeNull();
+    });
+
+    test('says so where nothing answers, and draws no empty roll', async () => {
+      await seek('hermine');
+      expect(screen.getByText('No entry of this armorial answers to that.')).toBeInTheDocument();
+      expect(screen.queryByRole('table')).toBeNull();
+    });
+
+    test('says the roll is the search’s and in what order, while one is on', async () => {
+      await seek('or');
+      expect(screen.getByText(/The entries this search found/)).toBeInTheDocument();
+    });
+
+    test('leaves the score and the gaps speaking for the whole armorial', async () => {
+      await seek('macle');
+      expect(screen.getByText(/of this armorial is read/)).toHaveTextContent(
+        '100% of this armorial is read: 3 of 3 blazons.'
+      );
+      expect(screen.getByText(/French/)).toHaveTextContent('3 entries · French · MIT');
     });
   });
 

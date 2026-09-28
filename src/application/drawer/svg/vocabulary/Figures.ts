@@ -20,7 +20,7 @@ import { Spot } from './charges/disposition';
  */
 
 /**
- * One part of a field cut in two: the whole of what it covers, and the room it
+ * One part of a divided field: the whole of what it covers, and the room it
  * gives whatever it bears.
  *
  * What it covers is a path rather than a shape, being asked for twice over: once
@@ -35,9 +35,17 @@ export type FieldPart = {
   readonly at: readonly [x: number, y: number];
 };
 
-/** A field cut in two along a line: the part in chief first. */
+/**
+ * A field cut along a line, part by part, the part in chief first — the upper,
+ * or the one at dexter where two stand side by side.
+ *
+ * As many as the line leaves rather than a fixed pair: a line drawn once leaves
+ * two and a line that crosses itself leaves four, and the drawing is the one
+ * place that difference shows. How many there should be is the model's to say,
+ * so what is returned here is checked against it rather than trusted.
+ */
 export type DivisionFigure = {
-  readonly parts: (frame: Frame) => readonly [FieldPart, FieldPart];
+  readonly parts: (frame: Frame) => readonly FieldPart[];
 };
 
 /**

@@ -1622,6 +1622,123 @@ body {
 
 /* ─ the roll ─────────────────────────────────────────────────────────────── */
 
+/* ─ the search: what of a roll the reader asked for ──────────────────────── */
+
+.search {
+  margin: clamp(2rem, 5vw, 3rem) 0 0;
+  max-width: var(--measure);
+  display: grid;
+  gap: 0.4rem;
+}
+
+.search__label {
+  font-family: var(--display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-quiet);
+}
+
+/* Set as the translator sets its own field: the same clearing out of the ground,
+   nothing drawn round it, and the reader's words the brightest thing in it. */
+.search__field {
+  font: inherit;
+  font-family: var(--display);
+  font-size: 1.125rem;
+  letter-spacing: 0.01em;
+  color: var(--bone);
+  background: var(--void-lift);
+  border: 0;
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+}
+
+.search__law,
+.search__found {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--bone-quiet);
+}
+
+/* What the search left is the one figure here that is read rather than obeyed. */
+.search__found {
+  font-family: var(--display);
+  font-variant-numeric: tabular-nums;
+  color: var(--bone);
+}
+
+/* The roll answers the field directly above it, so it is held nearer than a
+   section that begins on its own. */
+.search + .roll__hold {
+  margin-top: 1.5rem;
+}
+
+/*
+ * What a search across the rolls found. It is a shorter row than the roll's: a
+ * name, the words the source wrote, and the arms the source drew, with the roll
+ * it came from named under it and leading there.
+ */
+.found {
+  margin: 1.4rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 1.5rem;
+  max-width: 60rem;
+}
+
+.found__entry {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+}
+
+.found__arms {
+  display: block;
+  height: auto;
+  flex: none;
+}
+
+.found__said {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+}
+
+.found__name {
+  font-family: var(--display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--bone);
+}
+
+/* The blazon is the payload here as it is in the roll, so it is set in the same
+   hand a caller would copy. */
+.found__entry .reading {
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  color: var(--bone);
+}
+
+/* Which roll it came from is said quietly: the reader asked for the entry, and
+   the roll is where they may go next rather than what they were shown. */
+.found__of {
+  font-family: var(--display);
+  font-size: 0.8125rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-quiet);
+  text-decoration: none;
+  transition: color 140ms linear;
+}
+
+.found__of:hover,
+.found__of:focus-visible {
+  color: var(--strike);
+}
+
 /*
  * An armorial is a roll, so it is set as one. A table is the one place a ruled
  * grid would be expected, and there is none: the columns are held apart by air

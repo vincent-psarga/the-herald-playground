@@ -11,7 +11,7 @@ import {
   FurType,
   Plain,
   VariationType,
-  half,
+  painted,
   usualPieces,
 } from '../../src/domain/models/Field';
 import { OrdinaryDefinitions, OrdinaryType } from '../../src/domain/models/Ordinary';
@@ -353,7 +353,7 @@ function armsOf<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W): Bl
     // where a pelt covers it entire and has no halves for anything to be laid on.
     case 'division':
       return {
-        field: { type: sense.term, first: half(METAL), second: half(COLOUR) },
+        field: { type: sense.term, parts: painted(sense.term, METAL, COLOUR) },
       };
     case 'furred field':
       return {

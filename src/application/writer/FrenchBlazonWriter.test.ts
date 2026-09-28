@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { Blazon } from '../../domain/models/Blazon';
-import { DIVISIONS, DivisionType, FieldType, half } from '../../domain/models/Field';
+import { DIVISIONS, DivisionType, FieldType, half, painted } from '../../domain/models/Field';
 import { ChargeType } from '../../domain/models/Charge';
 import { OrdinaryType } from '../../domain/models/Ordinary';
 import { Colours, Furs, Metals, TINCTURES, Tincture } from '../../domain/models/Tinctures';
@@ -20,7 +20,7 @@ describe('FrenchBlazonWriter', () => {
   test('writes a divided field', () => {
     expect(
       writer.write({
-        field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+        field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
       })
     ).toBe("Parti d'azur et d'or.");
   });
@@ -29,9 +29,11 @@ describe('FrenchBlazonWriter', () => {
     [FieldType.fess, 'Coupé'],
     [FieldType.bend, 'Tranché'],
     [FieldType.bendSinister, 'Taillé'],
+    [FieldType.cross, 'Écartelé'],
+    [FieldType.saltire, 'Écartelé en sautoir'],
   ])('names %s in French', (type, name) => {
     const written = writer.write({
-      field: { type, first: half(Colours.gules), second: half(Metals.argent) },
+      field: { type, parts: painted(type, Colours.gules, Metals.argent) },
     });
     expect(written).toBe(`${name} de gueules et d'argent.`);
   });
@@ -45,11 +47,13 @@ describe('FrenchBlazonWriter', () => {
       writer.write({
         field: {
           type: FieldType.pale,
-          first: {
-            field: { type: FieldType.plain, tincture: Colours.azure },
-            chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count: 3 }],
-          },
-          second: half(Furs.ermine),
+          parts: [
+            {
+              field: { type: FieldType.plain, tincture: Colours.azure },
+              chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count: 3 }],
+            },
+            half(Furs.ermine),
+          ],
         },
       })
     ).toBe("Parti d'azur à trois fleurs de lys d'or et d'hermine.");
@@ -64,14 +68,16 @@ describe('FrenchBlazonWriter', () => {
       writer.write({
         field: {
           type: FieldType.pale,
-          first: {
-            field: {
-              type: FieldType.plain,
-              tincture: Colours.azure,
-              semy: { type: ChargeType.fleurDeLis, tincture: Metals.or },
+          parts: [
+            {
+              field: {
+                type: FieldType.plain,
+                tincture: Colours.azure,
+                semy: { type: ChargeType.fleurDeLis, tincture: Metals.or },
+              },
             },
-          },
-          second: half(Metals.argent),
+            half(Metals.argent),
+          ],
         },
       })
     ).toBe("Parti d'azur semé de fleurs de lys d'or et d'argent.");
@@ -85,8 +91,7 @@ describe('FrenchBlazonWriter', () => {
       writer.write({
         field: {
           type: FieldType.fess,
-          first: { field: { type: FieldType.plain, tincture: Metals.or } },
-          second: half(Colours.sable),
+          parts: [{ field: { type: FieldType.plain, tincture: Metals.or } }, half(Colours.sable)],
         },
       })
     ).toBe("Coupé d'or et de sable.");
@@ -123,7 +128,7 @@ describe('FrenchBlazonWriter', () => {
     test('writes an ordinary laid on a divided field', () => {
       expect(
         writer.write({
-          field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+          field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
           chargesOrOrdinaries: [{ type: OrdinaryType.saltire, tincture: Colours.gules }],
         })
       ).toBe("Parti d'azur et d'or au sautoir de gueules.");
@@ -163,7 +168,7 @@ describe('round trip', () => {
 
   test.each(DIVISIONS)('a field divided per %s survives the round trip', (type) => {
     const blazon: Blazon = {
-      field: { type, first: half(Colours.sable), second: half(Metals.or) },
+      field: { type, parts: painted(type, Colours.sable, Metals.or) },
     };
     expect(roundTrip(blazon)).toEqual(blazon);
   });
@@ -186,7 +191,7 @@ describe('round trip', () => {
 
   test('a divided field bearing an ordinary survives the round trip', () => {
     const blazon: Blazon = {
-      field: { type: FieldType.bend, first: half(Colours.gules), second: half(Metals.argent) },
+      field: { type: FieldType.bend, parts: [half(Colours.gules), half(Metals.argent)] },
       chargesOrOrdinaries: [{ type: OrdinaryType.chevron, tincture: Colours.sable }],
     };
     expect(roundTrip(blazon)).toEqual(blazon);
@@ -209,7 +214,7 @@ describe('round trip', () => {
     ).toBe("D'azur à la bande d'or.");
     expect(
       writer.write({
-        field: { type: FieldType.bend, first: half(Colours.azure), second: half(Metals.or) },
+        field: { type: FieldType.bend, parts: [half(Colours.azure), half(Metals.or)] },
       })
     ).toBe("Tranché d'azur et d'or.");
   });

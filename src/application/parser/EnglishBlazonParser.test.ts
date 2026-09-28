@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { FieldType, half } from '../../domain/models/Field';
+import { DivisionType, FieldType, half, painted } from '../../domain/models/Field';
 import { ChargeType } from '../../domain/models/Charge';
 import { OrdinaryType } from '../../domain/models/Ordinary';
 import { InvalidTincture } from '../../domain/errors/parsing/InvalidTincture';
@@ -38,17 +38,21 @@ describe('EnglishBlazonParser', () => {
 
   test('reads a divided field', () => {
     expect(parser.parse('Per pale azure and or.')).toEqual({
-      field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
     });
   });
 
-  test.each([
+  test.each<[string, DivisionType]>([
     ['Per fess', FieldType.fess],
     ['Per bend', FieldType.bend],
     ['Per bend sinister', FieldType.bendSinister],
+    // The one partition written without a "per": the armorials say "quarterly",
+    // and Parker's "party per cross" is the gloss rather than the blazon.
+    ['Quarterly', FieldType.cross],
+    ['Per saltire', FieldType.saltire],
   ])('reads "%s" as a field divided per that line', (name, type) => {
     expect(parser.parse(`${name} gules and argent`)).toEqual({
-      field: { type, first: half(Colours.gules), second: half(Metals.argent) },
+      field: { type, parts: painted(type, Colours.gules, Metals.argent) },
     });
   });
 
@@ -59,7 +63,7 @@ describe('EnglishBlazonParser', () => {
 
   test('is case insensitive', () => {
     expect(parser.parse('PER PALE AZURE AND OR')).toEqual({
-      field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
     });
   });
 
@@ -70,18 +74,20 @@ describe('EnglishBlazonParser', () => {
     expect(parser.parse('Per fess azure a bend or and argent')).toEqual({
       field: {
         type: FieldType.fess,
-        first: {
-          field: { type: FieldType.plain, tincture: Colours.azure },
-          chargesOrOrdinaries: [{ type: OrdinaryType.bend, tincture: Metals.or }],
-        },
-        second: half(Metals.argent),
+        parts: [
+          {
+            field: { type: FieldType.plain, tincture: Colours.azure },
+            chargesOrOrdinaries: [{ type: OrdinaryType.bend, tincture: Metals.or }],
+          },
+          half(Metals.argent),
+        ],
       },
     });
   });
 
   test('lays what follows the second half on the shield', () => {
     expect(parser.parse('Per pale azure and or a bordure gules')).toEqual({
-      field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
       chargesOrOrdinaries: [{ type: OrdinaryType.bordure, tincture: Colours.gules }],
     });
   });
@@ -91,12 +97,16 @@ describe('EnglishBlazonParser', () => {
   // field being plain, so there is nothing of that sort to read here.
   test('reads a sown half, and sows the half whose tincture it follows', () => {
     expect(parser.parse('Per pale azure semy of billets or and argent').field).toMatchObject({
-      first: { field: { semy: { type: ChargeType.billet, tincture: Metals.or } } },
-      second: { field: { tincture: Metals.argent } },
+      parts: [
+        { field: { semy: { type: ChargeType.billet, tincture: Metals.or } } },
+        { field: { tincture: Metals.argent } },
+      ],
     });
     expect(parser.parse('Per pale azure and or semy of billets argent').field).toMatchObject({
-      first: { field: { tincture: Colours.azure } },
-      second: { field: { semy: { type: ChargeType.billet, tincture: Metals.argent } } },
+      parts: [
+        { field: { tincture: Colours.azure } },
+        { field: { semy: { type: ChargeType.billet, tincture: Metals.argent } } },
+      ],
     });
   });
 
@@ -106,17 +116,27 @@ describe('EnglishBlazonParser', () => {
     );
   });
 
-  // English does not rank the parts of a partition. It sets two whole coats side
-  // by side another way — "It is necessary always to mention the dexter shield
-  // first and to say impaled with" — which is a phrase of its own and no rank at
-  // all, and where English does rank it ranks quarters, which are not read yet.
-  // So the French form is not lent to it: a tongue contributes the ranks it has,
-  // and English contributes none.
+  // English ranks its parts with a bare ordinal and no article, which is how
+  // Parker writes a quartered field: "Quarterly; first and fourth gules, three
+  // cinquefoils ... ; second gules, three cinquefoils argent". The form is his
+  // for quarters and is lent to the halves of a partition, English having no
+  // other way to say what a half carries.
+  test('ranks the parts of a partition with a bare ordinal', () => {
+    expect(parser.parse('Per pale, first azure, second or')).toEqual(
+      parser.parse('Per pale azure and or')
+    );
+  });
+
+  test('ranks them in figures too, a number being read wherever a number is', () => {
+    expect(parser.parse('Per pale, 1 azure, 2 or')).toEqual(parser.parse('Per pale azure and or'));
+  });
+
+  // The ordinal stands bare: what introduces a rank is the one thing the two
+  // tongues do differently here, and neither lends its phrasing to the other.
   test.each([
     'Per pale, in the first azure, in the second or',
-    'Per pale, 1 azure, 2 or',
     'Per pale, au premier azure, au second or',
-  ])('does not rank the parts of a partition: %s', (blazon) => {
+  ])('does not rank them as another tongue does: %s', (blazon) => {
     expect(() => parser.parse(blazon)).toThrow();
   });
 
@@ -163,7 +183,7 @@ describe('EnglishBlazonParser', () => {
 
     test('lays an ordinary on a divided field', () => {
       expect(parser.parse('Per pale azure and or a saltire gules')).toEqual({
-        field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+        field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
         chargesOrOrdinaries: [{ type: OrdinaryType.saltire, tincture: Colours.gules }],
       });
     });
@@ -241,6 +261,16 @@ describe('reading the same arms in either language', () => {
     expect(parser.parse('Vert')).toEqual(french.parse('De sinople'));
     expect(parser.parse('Per fess gules and argent')).toEqual(
       french.parse("Coupé de gueules et d'argent")
+    );
+    // The two tongues name this one differently — English after the quarters,
+    // French after the quartering — and still mean the one field.
+    expect(parser.parse('Quarterly argent and azure')).toEqual(
+      french.parse("Écartelé d'argent et d'azur")
+    );
+    // English keeps "quarterly" for the one cut and names the other after its
+    // line; French calls both of them quartered and says which by adding words.
+    expect(parser.parse('Per saltire argent and azure')).toEqual(
+      french.parse("Écartelé en sautoir d'argent et d'azur")
     );
   });
 

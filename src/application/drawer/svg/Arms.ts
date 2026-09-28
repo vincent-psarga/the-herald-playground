@@ -10,6 +10,7 @@ import {
   isVariation,
 } from '../../../domain/models/Field';
 import { borne } from '../../../domain/models/Ordinary';
+import { FIRST } from '../../../domain/translations/Ranks';
 import { Tincture } from '../../../domain/models/Tinctures';
 import { Ink, Painter } from './Ground';
 import { laid } from './painting/laid';
@@ -97,18 +98,22 @@ function field(field: Field, within: string): Painter {
  */
 function divided(division: Division, within: string): Painter {
   const figure = DIVISIONS[division.type];
-  const parts = [division.first, division.second] as const;
+  const parts = division.parts;
   return over(
-    split(
-      (frame) => {
-        const [inChief, inBase] = figure.parts(frame);
-        return [filled(inChief.covers), filled(inBase.covers)];
-      },
-      inkOf(parts[0]),
-      inkOf(parts[1])
-    ),
+    laidIn(figure, parts),
     ...parts.map((part, rank) => carried(figure, rank, part, `${within}-${rank + 1}`))
   );
+}
+
+/**
+ * Every part painted with the tincture its own field is laid on, each over the
+ * whole of what it covers.
+ *
+ * One ink to a part, in rank order, so that a field of four is painted exactly
+ * as a field of two is and neither has to know how many parts the other has.
+ */
+function laidIn(figure: DivisionFigure, parts: readonly Blazon[]): Painter {
+  return split((frame) => figure.parts(frame).map((part) => filled(part.covers)), parts.map(inkOf));
 }
 
 /**
@@ -172,7 +177,7 @@ function inkOf(part: Blazon): Ink {
  */
 function groundOf(field: Field): Tincture {
   if (isDivision(field)) {
-    return groundOf(field.first.field);
+    return groundOf(field.parts[FIRST - 1].field);
   }
   return isPlain(field) ? field.tincture : field.firstTincture;
 }

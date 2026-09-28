@@ -4,7 +4,7 @@ import { FrenchBlazonWriter } from '../writer/FrenchBlazonWriter';
 import { ChargeType } from '../../domain/models/Charge';
 import { Modifier } from '../../domain/models/Modifier';
 import { OrdinaryType } from '../../domain/models/Ordinary';
-import { FieldType, half } from '../../domain/models/Field';
+import { DivisionType, FieldType, half, painted } from '../../domain/models/Field';
 import { Colours, Furs, Metals } from '../../domain/models/Tinctures';
 import { ChargedPlainField } from '../../domain/errors/parsing/ChargedPlainField';
 import { MissingTincture } from '../../domain/errors/parsing/MissingTincture';
@@ -17,36 +17,72 @@ const writer = new FrenchBlazonWriter();
 describe('divided fields', () => {
   test('reads "Parti d\'azur et d\'or" as a field divided per pale', () => {
     expect(parser.parse("Parti d'azur et d'or")).toEqual({
-      field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
     });
   });
 
-  test.each([
+  test.each<[string, DivisionType]>([
     ['parti', FieldType.pale],
     ['coupé', FieldType.fess],
     ['tranché', FieldType.bend],
     ['taillé', FieldType.bendSinister],
+    ['écartelé', FieldType.cross],
+    ['écartelé en sautoir', FieldType.saltire],
   ])('%s divides the field per %s', (name, type) => {
     expect(parser.parse(`${name} de gueules et d'argent`)).toEqual({
-      field: { type, first: half(Colours.gules), second: half(Metals.argent) },
+      field: { type, parts: painted(type, Colours.gules, Metals.argent) },
+    });
+  });
+
+  test('reads "Écartelé d\'argent et d\'azur" as four quarters of two tinctures', () => {
+    // Two tinctures fill out four parts: the first takes the quarters ranked 1
+    // and 4, which stand corner to corner, and the second the two between them.
+    expect(parser.parse("Écartelé d'argent et d'azur")).toEqual({
+      field: {
+        type: FieldType.cross,
+        parts: [half(Metals.argent), half(Colours.azure), half(Colours.azure), half(Metals.argent)],
+      },
+    });
+  });
+
+  test('reads "Écartelé en sautoir" as the field cut corner to corner', () => {
+    // The other of the two quarterings: cut by a tranché and a taillé rather
+    // than by a parti and a coupé, so its four quarters stand on their points —
+    // and the pair ranked 1 and 4 are the one in chief and the one in pointe.
+    expect(parser.parse("Écartelé en sautoir d'argent et d'azur")).toEqual({
+      field: {
+        type: FieldType.saltire,
+        parts: [half(Metals.argent), half(Colours.azure), half(Colours.azure), half(Metals.argent)],
+      },
+    });
+  });
+
+  test('prefers the longer quartering over the shorter name it begins with', () => {
+    // "Écartelé" spells a term of its own, so both readings are offered and it
+    // is what follows that settles which was meant.
+    expect(parser.parse("Écartelé de gueules et d'argent").field).toMatchObject({
+      type: FieldType.cross,
+    });
+    expect(parser.parse("Écartelé en sautoir de gueules et d'argent").field).toMatchObject({
+      type: FieldType.saltire,
     });
   });
 
   test('accepts tinctures named without their article', () => {
     expect(parser.parse('Parti azur et or')).toEqual({
-      field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
     });
   });
 
   test('accepts the same tincture on both sides', () => {
     expect(parser.parse("Coupé d'or et d'or")).toEqual({
-      field: { type: FieldType.fess, first: half(Metals.or), second: half(Metals.or) },
+      field: { type: FieldType.fess, parts: [half(Metals.or), half(Metals.or)] },
     });
   });
 
   test('is case insensitive', () => {
     expect(parser.parse("TRANCHÉ D'AZUR ET DE SABLE")).toEqual({
-      field: { type: FieldType.bend, first: half(Colours.azure), second: half(Colours.sable) },
+      field: { type: FieldType.bend, parts: [half(Colours.azure), half(Colours.sable)] },
     });
   });
 
@@ -54,13 +90,13 @@ describe('divided fields', () => {
     const decomposed = "Coupé d'or et de sable".normalize('NFD');
     expect(decomposed).not.toBe("Coupé d'or et de sable");
     expect(parser.parse(decomposed)).toEqual({
-      field: { type: FieldType.fess, first: half(Metals.or), second: half(Colours.sable) },
+      field: { type: FieldType.fess, parts: [half(Metals.or), half(Colours.sable)] },
     });
   });
 
   test('closes with the optional full stop', () => {
     expect(parser.parse("Parti d'azur et d'or.")).toEqual({
-      field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
     });
   });
 
@@ -72,11 +108,13 @@ describe('divided fields', () => {
       expect(parser.parse("Parti d'azur à trois fleurs de lys d'or et d'hermine")).toEqual({
         field: {
           type: FieldType.pale,
-          first: {
-            field: { type: FieldType.plain, tincture: Colours.azure },
-            chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count: 3 }],
-          },
-          second: half(Furs.ermine),
+          parts: [
+            {
+              field: { type: FieldType.plain, tincture: Colours.azure },
+              chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count: 3 }],
+            },
+            half(Furs.ermine),
+          ],
         },
       });
     });
@@ -85,11 +123,13 @@ describe('divided fields', () => {
       expect(parser.parse("Coupé d'or à la fasce de sable et d'azur")).toEqual({
         field: {
           type: FieldType.fess,
-          first: {
-            field: { type: FieldType.plain, tincture: Metals.or },
-            chargesOrOrdinaries: [{ type: OrdinaryType.fess, tincture: Colours.sable }],
-          },
-          second: half(Colours.azure),
+          parts: [
+            {
+              field: { type: FieldType.plain, tincture: Metals.or },
+              chargesOrOrdinaries: [{ type: OrdinaryType.fess, tincture: Colours.sable }],
+            },
+            half(Colours.azure),
+          ],
         },
       });
     });
@@ -98,12 +138,15 @@ describe('divided fields', () => {
       expect(
         parser.parse("Parti d'azur à la fasce d'or, à trois billettes d'argent et de sable").field
       ).toMatchObject({
-        first: {
-          chargesOrOrdinaries: [
-            { type: OrdinaryType.fess, tincture: Metals.or },
-            { type: ChargeType.billet, tincture: Metals.argent, count: 3 },
-          ],
-        },
+        parts: [
+          {
+            chargesOrOrdinaries: [
+              { type: OrdinaryType.fess, tincture: Metals.or },
+              { type: ChargeType.billet, tincture: Metals.argent, count: 3 },
+            ],
+          },
+          half(Colours.sable),
+        ],
       });
     });
 
@@ -112,7 +155,7 @@ describe('divided fields', () => {
     // surrounds the whole shield rather than half of it.
     test('lays what follows the second half on the shield', () => {
       expect(parser.parse("Parti d'azur et d'or à la bordure de gueules")).toEqual({
-        field: { type: FieldType.pale, first: half(Colours.azure), second: half(Metals.or) },
+        field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
         chargesOrOrdinaries: [{ type: OrdinaryType.bordure, tincture: Colours.gules }],
       });
     });
@@ -123,11 +166,13 @@ describe('divided fields', () => {
       ).toEqual({
         field: {
           type: FieldType.pale,
-          first: {
-            field: { type: FieldType.plain, tincture: Colours.azure },
-            chargesOrOrdinaries: [{ type: OrdinaryType.fess, tincture: Metals.or }],
-          },
-          second: half(Colours.gules),
+          parts: [
+            {
+              field: { type: FieldType.plain, tincture: Colours.azure },
+              chargesOrOrdinaries: [{ type: OrdinaryType.fess, tincture: Metals.or }],
+            },
+            half(Colours.gules),
+          ],
         },
         chargesOrOrdinaries: [{ type: OrdinaryType.bordure, tincture: Metals.argent }],
       });
@@ -149,18 +194,20 @@ describe('divided fields', () => {
       expect(parser.parse("Parti d'azur à six macles d'argent, et d'hermine plain")).toEqual({
         field: {
           type: FieldType.pale,
-          first: {
-            field: { type: FieldType.plain, tincture: Colours.azure },
-            chargesOrOrdinaries: [
-              {
-                type: ChargeType.lozenge,
-                tincture: Metals.argent,
-                count: 6,
-                modifier: Modifier.voided,
-              },
-            ],
-          },
-          second: half(Furs.ermine),
+          parts: [
+            {
+              field: { type: FieldType.plain, tincture: Colours.azure },
+              chargesOrOrdinaries: [
+                {
+                  type: ChargeType.lozenge,
+                  tincture: Metals.argent,
+                  count: 6,
+                  modifier: Modifier.voided,
+                },
+              ],
+            },
+            half(Furs.ermine),
+          ],
         },
       });
     });
@@ -171,8 +218,7 @@ describe('divided fields', () => {
     test('holds a half called plain to bearing nothing', () => {
       expect(parser.parse('Parti de vair plain, et de gueules').field).toEqual({
         type: FieldType.pale,
-        first: half(Furs.vair),
-        second: half(Colours.gules),
+        parts: [half(Furs.vair), half(Colours.gules)],
       });
       expect(() => parser.parse("Parti de vair plain à la fasce d'or, et de gueules")).toThrow(
         ChargedPlainField
@@ -194,8 +240,96 @@ describe('divided fields', () => {
           "Parti de gueules semé de billettes d'argent, et de sinople semé de billettes d'or"
         ).field
       ).toMatchObject({
-        first: { field: { semy: { type: ChargeType.billet, tincture: Metals.argent } } },
-        second: { field: { semy: { type: ChargeType.billet, tincture: Metals.or } } },
+        parts: [
+          { field: { semy: { type: ChargeType.billet, tincture: Metals.argent } } },
+          { field: { semy: { type: ChargeType.billet, tincture: Metals.or } } },
+        ],
+      });
+    });
+  });
+
+  describe('a quartered field, whose line leaves four parts', () => {
+    const QUARTERS = [
+      half(Colours.azure),
+      half(Colours.gules),
+      half(Colours.gules),
+      half(Colours.azure),
+    ];
+
+    // Two tinctures fill out four parts cornerwise, which is the whole of what
+    // the unranked form can say about a quartered field — and what the rolls
+    // here write: "Écartelé d'argent et d'azur".
+    test.each<[string, DivisionType]>([
+      ['écartelé', FieldType.cross],
+      ['écartelé en sautoir', FieldType.saltire],
+    ])('fills %s out from the two tinctures it names', (name, type) => {
+      expect(parser.parse(`${name} d'azur et de gueules`).field).toEqual({ type, parts: QUARTERS });
+    });
+
+    // One phrase for several parts, which is how the armorials write a
+    // quartering whose quarters repeat — and the form Au blason des armoiries
+    // writes under Quartier: "écartelé, aux 1 et 4 quartiers d'azur ... ; aux 2
+    // et 3 de gueules".
+    test.each([
+      ['in figures', "Écartelé : aux 1 et 4 d'azur, aux 2 et 3 de gueules"],
+      ['in words', "Écartelé, aux premier et quatrième d'azur, aux second et troisième de gueules"],
+      ['in Roman numerals', "Écartelé, aux I et IV d'azur, aux II et III de gueules"],
+      ['part by part', "Écartelé : au 1 d'azur, au 2 de gueules, au 3 de gueules, au 4 d'azur"],
+    ])('ranks the quarters %s, and says the same field', (_how, blazon) => {
+      expect(parser.parse(blazon).field).toEqual({ type: FieldType.cross, parts: QUARTERS });
+    });
+
+    test('lets a quarter bear what a shield bears, and lays it in every quarter the phrase ranked', () => {
+      const charged = {
+        field: { type: FieldType.plain, tincture: Colours.azure },
+        chargesOrOrdinaries: [{ type: OrdinaryType.chevron, tincture: Metals.or }],
+      };
+      expect(
+        parser.parse("Écartelé : aux 1 et 4 d'azur au chevron d'or, aux 2 et 3 de gueules").field
+      ).toEqual({
+        type: FieldType.cross,
+        parts: [charged, half(Colours.gules), half(Colours.gules), charged],
+      });
+    });
+
+    describe('rejections', () => {
+      test('refuses a rank the field has no part for', () => {
+        expect(() => parser.parse("Écartelé : aux 1 et 5 d'or, aux 2 et 3 de gueules")).toThrow(
+          /divided into 4 has no part 5/
+        );
+      });
+
+      test('refuses a part ranked twice', () => {
+        expect(() => parser.parse("Écartelé : aux 1 et 1 d'or, aux 2 et 3 de gueules")).toThrow(
+          /ranks each part once: part 1 is ranked twice/
+        );
+      });
+
+      test('refuses phrases that do not begin where the order had got to', () => {
+        expect(() => parser.parse("Écartelé : aux 2 et 3 d'or, aux 1 et 4 de gueules")).toThrow(
+          /part 2 stands where part 1 was owed/
+        );
+      });
+
+      // A phrase that begins where the order had got to and then doubles back:
+      // every part is named once, and the order within the phrase is still the
+      // blazon's own claim about which part it means.
+      test('refuses a phrase whose own ranks run backwards', () => {
+        expect(() => parser.parse("Écartelé : aux 1 et 4 et 2 d'or, au 3 de gueules")).toThrow(
+          /part 2 stands after part 4/
+        );
+      });
+
+      test('owes every quarter, and says which one stopped the blazon', () => {
+        expect(() => parser.parse("Écartelé : au 1 d'or, au 2 de gueules")).toThrow(
+          /Missing the other part/
+        );
+      });
+
+      // A field cut in two has no third part, and the count its own term
+      // declares is what says so — nothing in either vocabulary had to.
+      test('refuses a third part of a field cut in two', () => {
+        expect(() => parser.parse("Parti : au 1 d'or, au 2 de gueules, au 3 d'azur")).toThrow();
       });
     });
   });
@@ -203,11 +337,13 @@ describe('divided fields', () => {
   describe('the ranked form, which the handbooks prescribe', () => {
     const LILIES = {
       type: FieldType.pale,
-      first: {
-        field: { type: FieldType.plain, tincture: Colours.azure },
-        chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count: 3 }],
-      },
-      second: half(Furs.ermine),
+      parts: [
+        {
+          field: { type: FieldType.plain, tincture: Colours.azure },
+          chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count: 3 }],
+        },
+        half(Furs.ermine),
+      ],
     };
 
     // The same arms either way: the rank says which part the arms after it are
@@ -234,8 +370,7 @@ describe('divided fields', () => {
     ])('reads the rank written %s', (_how, blazon) => {
       expect(parser.parse(blazon).field).toEqual({
         type: FieldType.pale,
-        first: half(Colours.azure),
-        second: half(Colours.gules),
+        parts: [half(Colours.azure), half(Colours.gules)],
       });
     });
 
@@ -250,8 +385,7 @@ describe('divided fields', () => {
     ])('reads the marks a blazon sets between the parts: %s', (blazon) => {
       expect(parser.parse(blazon).field).toEqual({
         type: FieldType.pale,
-        first: half(Metals.or),
-        second: half(Colours.gules),
+        parts: [half(Metals.or), half(Colours.gules)],
       });
     });
 
@@ -263,11 +397,13 @@ describe('divided fields', () => {
       ).toEqual({
         field: {
           type: FieldType.pale,
-          first: half(Furs.vair),
-          second: {
-            field: { type: FieldType.plain, tincture: Colours.gules },
-            chargesOrOrdinaries: [{ type: OrdinaryType.bordure, tincture: Metals.or }],
-          },
+          parts: [
+            half(Furs.vair),
+            {
+              field: { type: FieldType.plain, tincture: Colours.gules },
+              chargesOrOrdinaries: [{ type: OrdinaryType.bordure, tincture: Metals.or }],
+            },
+          ],
         },
       });
     });
@@ -312,8 +448,8 @@ describe('divided fields', () => {
     });
 
     test('rejects an unknown division as a division it does not hold', () => {
-      expect(() => parser.parse("Écartelé d'azur et d'or")).toThrow(UnknownDivision);
-      expect(() => parser.parse("Écartelé d'azur et d'or")).toThrow(/Unknown division: écartelé/);
+      expect(() => parser.parse("Gironné d'azur et d'or")).toThrow(UnknownDivision);
+      expect(() => parser.parse("Gironné d'azur et d'or")).toThrow(/Unknown division: gironné/);
     });
 
     test('still reports an unknown tincture rather than an unknown division', () => {

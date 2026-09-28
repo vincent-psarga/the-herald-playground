@@ -26,4 +26,21 @@ export const EnglishDivisionType: Translation<DivisionType> = {
       'Cut from sinister chief to dexter base — from the top right, as you look at it — along the line of a bend sinister. Sinister means the bearer’s left, never yours.',
     sources: [parker('Party')],
   }),
+  // The one partition English does not spell out with a "per": Parker glosses it
+  // "party per cross", but the armorials write "quarterly" and that is the word
+  // read and written here. Only the two-tincture blazon is read: the shield
+  // marshalling a coat to each quarter asks for a field this model cannot hold.
+  [FieldType.cross]: new Word('quarterly', {
+    value:
+      'The field cut per pale and per fess at once, into four quarters. The first tincture takes the quarter at dexter chief and the one opposite. Quarterly also introduces a shield marshalling a coat in each quarter.',
+    sources: [parker('Quarterly'), parker('Quartered')],
+  }),
+  // Named with a "per" like the first four, quarterly being the word English
+  // keeps for the other cut. Parker writes "quarterly per saltire" too and says
+  // in the same breath that it is not needed, so it is not read.
+  [FieldType.saltire]: new Word('per saltire', {
+    value:
+      'The field cut per bend and per bend sinister at once, into four triangles meeting at the centre. The first tincture takes the triangle in chief and the one in base, the second those at dexter and at sinister.',
+    sources: [parker('Party')],
+  }),
 };

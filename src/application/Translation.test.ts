@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { TINCTURES } from '../domain/models/Tinctures';
-import { DIVISIONS, FieldType, half } from '../domain/models/Field';
+import { DIVISIONS, FieldType, painted } from '../domain/models/Field';
 import { EnglishBlazonParser } from './parser/EnglishBlazonParser';
 import { FrenchBlazonParser } from './parser/FrenchBlazonParser';
 import { EnglishBlazonWriter } from './writer/EnglishBlazonWriter';
@@ -45,7 +45,7 @@ describe('translating a blazon', () => {
   });
 
   test.each(DIVISIONS)('a field divided per %s translates both ways', (type) => {
-    const blazon = { field: { type, first: half(TINCTURES[0]), second: half(TINCTURES[3]) } };
+    const blazon = { field: { type, parts: painted(type, TINCTURES[0], TINCTURES[3]) } };
     expect(french.parser.parse(intoFrench(english.writer.write(blazon)))).toEqual(blazon);
   });
 });
