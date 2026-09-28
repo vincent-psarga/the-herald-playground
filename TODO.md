@@ -7,9 +7,9 @@
 - Sow a divided field, once the blazon can say which half was sown [#2](https://github.com/vincent-psarga/the-herald-playground/pull/2)
 - Support for "shortcuts" (eg: "du même", "l'un dans l'autre" [#4](https://github.com/vincent-psarga/the-herald-playground/pull/4), "brochant sur le tout")
 - Support for charges attributes (lampassé, armé etc)
-- Quarter a field beyond its simplest form: the cut in sautoir ("écartelé en
-  sautoir"), and the quartering that marshals a coat to each quarter ("écartelé :
-  aux 1 et 4 ..., aux 2 et 3 ...") - which needs a field able to hold a coat
+- Quarter a field beyond two tinctures: the quartering that marshals a coat to
+  each quarter ("écartelé : aux 1 et 4 ..., aux 2 et 3 ..."), which needs a field
+  able to hold a coat
 
 # Display
 

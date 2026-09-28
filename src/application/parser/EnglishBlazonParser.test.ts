@@ -51,6 +51,7 @@ describe('EnglishBlazonParser', () => {
     // The one partition written without a "per": the armorials say "quarterly",
     // and Parker's "party per cross" is the gloss rather than the blazon.
     ['Quarterly', FieldType.cross],
+    ['Per saltire', FieldType.saltire],
   ])('reads "%s" as a field divided per that line', (name, type) => {
     expect(parser.parse(`${name} gules and argent`)).toEqual({
       field: { type, firstTincture: Colours.gules, secondTincture: Metals.argent },
@@ -193,6 +194,11 @@ describe('reading the same arms in either language', () => {
     // French after the quartering — and still mean the one field.
     expect(parser.parse('Quarterly argent and azure')).toEqual(
       french.parse("Écartelé d'argent et d'azur")
+    );
+    // English keeps "quarterly" for the one cut and names the other after its
+    // line; French calls both of them quartered and says which by adding words.
+    expect(parser.parse('Per saltire argent and azure')).toEqual(
+      french.parse("Écartelé en sautoir d'argent et d'azur")
     );
   });
 

@@ -27,18 +27,23 @@ export enum FieldType {
   // tincture named takes the half in chief: the upper one, or the one at dexter
   // where the two stand side by side.
   //
-  // The last of them is named after a line that crosses itself, and cuts the
-  // field into four rather than two: quarters, numbered from dexter chief and
-  // taken two apiece, so that the first tincture still has the half holding the
-  // dexter chief corner. It is named per cross and not quarterly because every
-  // partition here is named after its line rather than after what the line
-  // leaves — and because the field quartered the other way, along the saltire,
-  // is the same word in both tongues and will want a term beside this one.
+  // The last two are named after lines that cross themselves, and cut the field
+  // into four rather than two: quarters taken two apiece, so that the first
+  // tincture still has the half in chief. They are named per cross and per
+  // saltire rather than quarterly, because every partition here is named after
+  // its line rather than after what the line leaves — and because heraldry calls
+  // both of them quartered and would have left the pair sharing one name.
+  //
+  // Each repeats two of the four lines above it: per cross is the pale and the
+  // fess together, per saltire the bend and the bend sinister. So the quarters
+  // of the one stand square and the quarters of the other stand on their points,
+  // which is the whole of the difference between them.
   pale = 'FieldType.pale',
   fess = 'FieldType.fess',
   bend = 'FieldType.bend',
   bendSinister = 'FieldType.bendSinister',
   cross = 'FieldType.cross',
+  saltire = 'FieldType.saltire',
 
   // The varied fields: a field cut along one line over and over, into an even
   // number of equal pieces of two tinctures laid alternately.
@@ -112,12 +117,12 @@ export class PlainDefinition extends FieldDefinition<FieldKind.plain> {
  * A field divided along a line, which has nothing further to declare: the line
  * is drawn where its name says, and both halves are of a size.
  *
- * Once along it, for four of the five. The fifth is cut by a line that crosses
- * itself and leaves four pieces rather than two, but it declares no more than
- * the others do: the pieces are still of a size, they are still painted in two
+ * Once along it, for four of the six. The other two are cut by a line that
+ * crosses itself and leave four pieces rather than two, but they declare no more
+ * than the rest do: the pieces are still of a size, they are still painted in two
  * tinctures, and which of them takes which is settled by the line's own name.
- * So there is nothing here to tell the two apart, and the drawing is the only
- * thing that needs to know.
+ * So there is nothing here to tell the two kinds apart, and the drawing is the
+ * only thing that needs to know.
  */
 export class DivisionDefinition extends FieldDefinition<FieldKind.division> {
   constructor(type: FieldType) {
@@ -184,6 +189,7 @@ export const FieldDefinitions = {
   [FieldType.bend]: new DivisionDefinition(FieldType.bend),
   [FieldType.bendSinister]: new DivisionDefinition(FieldType.bendSinister),
   [FieldType.cross]: new DivisionDefinition(FieldType.cross),
+  [FieldType.saltire]: new DivisionDefinition(FieldType.saltire),
 
   // Six pieces for the four that repeat a line: both tongues understand six and
   // neither writes it — "Le bandé est normalement divisé en six pièces (qu'on ne

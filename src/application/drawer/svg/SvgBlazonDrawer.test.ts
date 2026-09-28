@@ -121,6 +121,23 @@ describe('SvgBlazonDrawer', () => {
       expect(quarterly).toContain(`<rect x="0" y="120" width="100" height="120" fill="#ffffff"/>`);
     });
 
+    test('gives the first tincture the triangles in chief and in base', () => {
+      const perSaltire = drawer.draw({
+        field: {
+          type: FieldType.saltire,
+          firstTincture: Colours.gules,
+          secondTincture: Metals.argent,
+        },
+      });
+      // The diagonals meet in the middle, so all four triangles have a corner
+      // there: the first tincture takes the two standing on the top and bottom
+      // edges, the second the two standing on the flanks.
+      expect(perSaltire).toContain(`<polygon points="0,0 200,0 100,120" fill="#ff0000"/>`);
+      expect(perSaltire).toContain(`<polygon points="0,240 200,240 100,120" fill="#ff0000"/>`);
+      expect(perSaltire).toContain(`<polygon points="0,0 0,240 100,120" fill="#ffffff"/>`);
+      expect(perSaltire).toContain(`<polygon points="200,0 200,240 100,120" fill="#ffffff"/>`);
+    });
+
     test('paints the same tincture on both sides when asked', () => {
       const svg = drawer.draw({
         field: {

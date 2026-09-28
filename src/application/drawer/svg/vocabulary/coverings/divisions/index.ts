@@ -5,6 +5,7 @@ import { bendSinister } from './bendSinister';
 import { cross } from './cross';
 import { fess } from './fess';
 import { pale } from './pale';
+import { saltire } from './saltire';
 
 /**
  * Where the two halves of a divided field lie, before the frame clips them.
@@ -18,4 +19,5 @@ export const DIVISIONS: Record<DivisionType, DivisionFigure> = {
   [FieldType.bend]: bend,
   [FieldType.bendSinister]: bendSinister,
   [FieldType.cross]: cross,
+  [FieldType.saltire]: saltire,
 };
