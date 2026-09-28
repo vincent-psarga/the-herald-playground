@@ -11,6 +11,11 @@ import { split } from './split';
  * opposite of what lies under it — which is the whole of the rule, and it makes
  * no difference whether the figure crosses the line or lies to one side of it.
  *
+ * Nor does it make any difference how many pieces the line left. A partition
+ * hands back its ground in two whatever it cut — a quartering's two quarters of
+ * a tincture come as one shape — so a cross counterchanged over a quarterly
+ * field is painted by this rule and by nothing added to it.
+ *
  * The ground cut to the figure rather than the figure painted twice, because the
  * line between the two inks has to be drawn where it falls inside the figure: a
  * colouring that rules its tinctures reads ruling against ruling as neither, and

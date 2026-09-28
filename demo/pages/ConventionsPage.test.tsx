@@ -166,7 +166,9 @@ describe('what each rule shows', () => {
   test('refuses counterchanging where there is nothing to counterchange, and draws no arms', () => {
     mount(<ConventionsPage />);
     const refused = shown('Or a bordure counterchanged');
-    expect(refused.refused).toBe('Nothing to counterchange: the field is not divided in two');
+    expect(refused.refused).toBe(
+      'Nothing to counterchange: the field is not divided between two tinctures'
+    );
     expect(refused.written).toEqual([]);
     expect(refused.arms).toBe(0);
   });

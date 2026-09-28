@@ -584,7 +584,7 @@ function writings(word: Word): string {
 }
 
 const COUNTERCHANGE_NOTE =
-  'Said of a band or a charge, and of several at once, over a field divided in two. A varied field is cut from two tinctures as well and is refused all the same, being cut into a row rather than in two. Nothing follows the phrase: it stands where the tincture would stand and is the whole of what the figure is painted with — so a name that already means a tincture refuses it, a besant being gold and a counterchanged one being nothing.';
+  'Said of a band or a charge, and of several at once, over a field divided between two tinctures — a quartering among them, its two pairs of quarters standing for the two halves. A varied field is cut from two tinctures as well and is refused all the same, being cut into a row rather than by a line. Nothing follows the phrase: it stands where the tincture would stand and is the whole of what the figure is painted with — so a name that already means a tincture refuses it, a besant being gold and a counterchanged one being nothing.';
 
 const FURRED_NOTE =
   'Named where the fur itself is not. A fur is a tincture and carries its pair with it, so naming it is the whole of what a blazon says; a furred field is owed the two tinctures its figures are cut from.';

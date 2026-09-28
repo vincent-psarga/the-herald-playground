@@ -33,7 +33,7 @@ export const FrenchCounterchanged = new FrenchWord(
   "de l'un à l'autre",
   {
     value:
-      'Said in place of a tincture, of a band laid on a divided field: it takes the field’s own two tinctures, reversed — where the field is gold the band is sable, and where the field is sable the band is gold. A band crossing the partition is therefore cut by it, and one lying wholly in a half comes out wholly of the other half’s tincture. The field must be divided in two, or the blazon is refused: there is nothing to reverse on a field of one tincture. “De l’un en l’autre” is read for it too — the dictionaries variously make that phrase this same one or its opposite — and “de l’un à l’autre” is what comes back.',
+      'Said in place of a tincture, of a band laid on a divided field: it takes the field’s own two tinctures, reversed — where the field is gold the band is sable, and where the field is sable the band is gold. A band crossing the partition is therefore cut by it, and one lying wholly in a half comes out wholly of the other half’s tincture. The field must be divided between two tinctures, or the blazon is refused: there is nothing to reverse on a field of one tincture. “De l’un en l’autre” is read for it too — the dictionaries variously make that phrase this same one or its opposite — and “de l’un à l’autre” is what comes back.',
     sources: [
       blasonArmoiries("L'un à l'autre", 'l-un-a-l-autre'),
       laLangueDuBlason(

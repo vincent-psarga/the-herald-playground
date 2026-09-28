@@ -464,7 +464,7 @@ function modifying(borne: BorneTerm): Parser<TokenKind, Modifier | undefined> {
  * begin at the same word, so a word in neither vocabulary fails both readings at
  * the same place, and typescript-parsec breaks that tie in favour of whichever
  * rule was listed first. Listing either first is wrong for the other: every
- * unknown word would be an unknown tincture — "Écartelé d'azur et d'or"
+ * unknown word would be an unknown tincture — "Gironné d'azur et d'or"
  * included, though it plainly names a partition the vocabulary does not hold —
  * or else "de or" would be an unknown partition rather than a bad elision.
  *

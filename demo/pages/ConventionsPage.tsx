@@ -535,8 +535,9 @@ export const RULES: readonly Rule[] = [
         <p className="rule__law">
           It is said of a charge as readily as of a band, and of several charges at once: each falls
           where it falls, and each comes out the opposite of what it fell on. What it needs is a
-          field divided in two — a varied field is cut from two tinctures as well, and is refused by
-          name rather than drawn wrongly, being cut into a row rather than in two.
+          field divided between two tinctures, a quartering among them — its two pairs of quarters
+          stand for the two halves — and a varied field is cut from two tinctures as well but is
+          refused by name rather than drawn wrongly, being cut into a row rather than by a line.
         </p>
         <p className="rule__law">
           What it also needs is a name that has not already said what the figure is painted with.

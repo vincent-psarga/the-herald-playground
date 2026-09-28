@@ -198,6 +198,55 @@ describe('a charge that takes the field instead of a tincture', () => {
   });
 });
 
+describe('a field quartered, which is cut by a line that crosses itself', () => {
+  // Parker counterchanges over a quartering as readily as over a partition, and
+  // his examples are quarterings: "Quarterly, argent and azure, a cross
+  // engrailed counterchanged — HAYDON"; "Quarterly, sable and argent, a cross
+  // counterchanged — LORRAYNE". A quartering is a partition, so nothing had to
+  // let it: what the phrase asks for is a field cut between two tinctures, and
+  // a quartering is one.
+  test.each<[string, FieldType]>([
+    ['écartelé', FieldType.cross],
+    ['écartelé en sautoir', FieldType.saltire],
+  ])('counterchanges a band over a field %s', (name, type) => {
+    expect(inFrench.parse(`${name} d'argent et d'azur à la croix de l'un à l'autre`)).toEqual({
+      field: { type, firstTincture: Metals.argent, secondTincture: Colours.azure },
+      chargesOrOrdinaries: [{ type: OrdinaryType.cross, tincture: COUNTERCHANGED }],
+    });
+  });
+
+  test("reads Parker's own blazon, and says it in French", () => {
+    const arms = inEnglish.parse('Quarterly sable and argent a cross counterchanged');
+    expect(new FrenchBlazonWriter().write(arms)).toBe(
+      "Écartelé de sable et d'argent à la croix de l'un à l'autre."
+    );
+    expect(new EnglishBlazonWriter().write(arms)).toBe(
+      'Quarterly sable and argent a cross counterchanged.'
+    );
+  });
+
+  // The two quarters of a tincture stand for the half a partition would have
+  // given it, so the band is cut out of the quartering itself: both tinctures
+  // are painted inside the mask, each where its own quarters do not lie.
+  test('cuts the band out of the quartering, in both its tinctures', () => {
+    const svg = new SvgBlazonDrawer(WikipediaColours).draw(
+      inFrench.parse("Écartelé de gueules et d'or à la croix de l'un à l'autre")
+    );
+    const masked = svg.slice(svg.indexOf('<g mask="url(#'));
+    expect(masked).toContain(WikipediaColours[Colours.gules] as string);
+    expect(masked).toContain(WikipediaColours[Metals.or] as string);
+  });
+
+  // Or is dotted and gules is ruled upright: the band adds neither, taking the
+  // pair the quartering already carries.
+  test('asks for no tincture of its own among the ones the drawing defines', () => {
+    const svg = new SvgBlazonDrawer(HatchingColours).draw(
+      inFrench.parse("Écartelé de gueules et d'or à la croix de l'un à l'autre")
+    );
+    expect(svg.match(/<pattern /g)).toHaveLength(2);
+  });
+});
+
 describe('what counterchanging refuses', () => {
   test('a field with nothing to counterchange between, by name', () => {
     expect(() => inFrench.parse("D'or à la bordure de l'un à l'autre")).toThrow(UndividedField);

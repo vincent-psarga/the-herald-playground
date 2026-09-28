@@ -12,12 +12,12 @@ import { BlazonParseError, TextPosition } from './BlazonParseError';
  *
  * A varied field and a furred one are refused here too, for now. Both are cut
  * from two tinctures and heraldry counterchanges over the first of them, but
- * neither is cut into the two halves a figure can be cut by, and a blazon
- * answered with a drawing that ignored half of what it said would be worse than
- * one refused.
+ * neither is cut into the parts a figure can be cut by, and a blazon answered
+ * with a drawing that ignored half of what it said would be worse than one
+ * refused.
  */
 export class UndividedField extends BlazonParseError {
   constructor(position?: TextPosition) {
-    super('Nothing to counterchange: the field is not divided in two', position);
+    super('Nothing to counterchange: the field is not divided between two tinctures', position);
   }
 }

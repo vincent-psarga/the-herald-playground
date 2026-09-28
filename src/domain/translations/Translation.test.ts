@@ -228,7 +228,7 @@ describe('index', () => {
   });
 
   test('does not know a spelling no term claims', () => {
-    expect(partitions.get('écartelé')).toBeUndefined();
+    expect(partitions.get('gironné')).toBeUndefined();
   });
 });
 
