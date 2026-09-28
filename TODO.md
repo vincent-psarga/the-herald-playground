@@ -1,13 +1,12 @@
 # Parsing
 
-- Handle line modifications (indented, embattled etc)
 - Handle the disposition of charges (en chef, en orle, mal ordonnées)
-- Grow the modifiers past "voided" and "pierced": alésé, and the rest
-- Let an ordinary take a modifier, its own being lines drawn otherwise
-- Allow complex partition (eg: "per fess azur a bend or and argent")
+- Let a modifier take a tincture (eg: "Monsire Gerard SALVAYN, port d'argent; au cheif de sable deux molletts d'or, voydes vert--Roll, temp. ED. III.")
+- Let an ordinary take a modifier, its own being lines drawn otherwise [#1](https://github.com/vincent-psarga/the-herald-playground/pull/1)
 - Handle a semy of more than one figure ("semé alterné de tours et de fleurs de lys")
-- Sow a divided field, once the blazon can say which half was sown
-- Support for "shortcuts" (eg: "du même", "l'un dans l'autre", "brochant sur le tout")
+- Sow a divided field, once the blazon can say which half was sown [#2](https://github.com/vincent-psarga/the-herald-playground/pull/2)
+- Support for "shortcuts" (eg: "du même", "l'un dans l'autre" [#4](https://github.com/vincent-psarga/the-herald-playground/pull/4), "brochant sur le tout")
+- Support for charges attributes (lampassé, armé etc)
 
 # Display
 
