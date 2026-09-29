@@ -6,8 +6,12 @@
 - Handle a semy of more than one figure ("semé alterné de tours et de fleurs de lys")
 - Sow a divided field, once the blazon can say which half was sown [#2](https://github.com/vincent-psarga/the-herald-playground/pull/2)
 - Support for "shortcuts" (eg: "du même", "l'un dans l'autre" [#4](https://github.com/vincent-psarga/the-herald-playground/pull/4), "brochant sur le tout")
-- Grow the attributes past the one: the lion's own (armé, lampassé, couronné) once
-  there is a lion, and the words English keeps beside stoned (gemmed, jewelled)
+- Read the postures of a beast (passant, couchant, contourné, issant), the lion
+  being rampant and nothing else today
+- Crown a beast: couronné is written with a tincture in some armorials and
+  without one in others, so which of the two it is has to be settled first
+- Grow the attributes: the words English keeps beside stoned (gemmed, jewelled),
+  and onglé, becqué and membré once there are beasts and birds to say them of
 - Refuse a field sown with a name that already says a modifier or a part — "semé
   de macles", "semé d'anneaux" are read today as semys of the plain figure, the
   model having no room for either on a sowing

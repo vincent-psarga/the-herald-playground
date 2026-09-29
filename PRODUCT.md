@@ -92,24 +92,31 @@ Supported vocabulary as it stands:
   written, exactly as a besant says gold, so nothing follows it — and a blazon that says the
   modifier anyway is understood where it agrees and refused where it does not. English names no
   pierced star, molette being French, and blazons it in the ordinary way.
-- **Attributes (1)** — stoned: the stone set in a ring, painted apart from the hoop. It is not a
-  modifier. A modifier changes what is left of the figure and the whole of what is left is painted
-  in the charge's one tincture; an attribute takes nothing away and names a part the figure already
-  has, so it carries a tincture of its own and a charge bears as many of them at once as it has
-  parts to name. Written last of all, after the tincture the charge itself carries, which is where
-  the armorials of both tongues put it — "Gules, three gem-rings argent stoned azure", "au lion
-  d'or armé de gueules" — and owed a tincture there, a word that named the part and not its colour
-  saying nothing. Which charges have which part is declared on the charge, so the answer is the same
-  in either tongue: the ring alone has one, and a billet stoned is refused by name. French agrees
-  the word with what the blazon called the charge, in gender and in number, exactly as it agrees a
-  modifier. Where heraldry named the figure with the part painted, that name is read and written in
-  place of the plain one: a ring with a stone in it is a gem-ring (French anneau). Such a name says
-  the part by being written, as a besant says gold — but where a besant says the whole of its
-  tincture, a gem-ring says only that there is a stone, so the tincture is still written after it
-  and a blazon that names none has the stone drawn in the hoop's own. English names the word three
-  ways — Parker gives stoned, gemmed and jewelled — and one of the three is read.
-- **Charges (9)** — annulet, billet, lozenge, roundel, goutte, mullet, fleur-de-lis, cross couped,
-  crescent. Some are plain shapes and some are pictures of something; all are borne once or in
+- **Attributes (3)** — stoned: the stone set in a ring; armed: the claws of a beast; langued: its
+  tongue. An attribute is not a modifier. A modifier changes what is left of the figure and the
+  whole of what is left is painted in the charge's one tincture; an attribute takes nothing away and
+  names a part the figure already has, so it carries a tincture of its own and a charge bears as
+  many of them at once as it has parts to name — a lion is armed and langued in the one blazon.
+  Written last of all, after the tincture the charge itself carries, which is where the armorials of
+  both tongues put it — "Gules, three gem-rings argent stoned azure", "au lion de sinople armé et
+  lampassé de gueules" — and owed a tincture there, a word that named the part and not its colour
+  saying nothing. Two parts of one colour are one run: the words are joined by the conjunction and
+  the tincture is said once at the end, which is how both dictionaries write it; two of different
+  colours are two runs, parted by the mark. A blazon may join them with the mark instead — "armé,
+  lampassé de gueules" — and is understood. Which charges have which part is declared on the charge,
+  so the answer is the same in either tongue: the ring is stoned, the lion is armed and langued, and
+  a billet stoned is refused by name. French agrees every word of the run with the charge, in gender
+  and in number, exactly as it agrees a modifier. Where heraldry named the figure with the part
+  painted, that name is read and written in place of the plain one: a ring with a stone in it is a
+  gem-ring (French anneau). Such a name says the part by being written, as a besant says gold — but
+  where a besant says the whole of its tincture, a gem-ring says only that there is a stone, so the
+  tincture is still written after it and a blazon that names none has the stone drawn in the hoop's
+  own. Whether the plain figure draws the part at all is the figure's own affair: a beast has claws
+  whatever a blazon says of them, so a lion no blazon armed is drawn with claws in its own tincture
+  and armed paints over them, where a ring has no stone until something says there is one. English names stoned three ways — Parker gives stoned, gemmed and jewelled — and one of the
+  three is read.
+- **Charges (10)** — annulet, billet, lozenge, roundel, goutte, mullet, fleur-de-lis, cross couped,
+  crescent, lion. Some are plain shapes and some are pictures of something; all are borne once or in
   number, and any of them may be sown over a plain field instead. They
   share the ordinaries' list and their order, so what is blazoned last is drawn over the rest. Where
   they stand on the field — the disposition — is not read. The roundel is the one whose name carries
@@ -123,7 +130,18 @@ Supported vocabulary as it stands:
   first word with the ordinary, and which was meant is settled by what follows. The annulet is the
   one whose name carries a part of the figure: English reads the ring and the gem-ring beside it,
   French the annelet and the anneau, and the second of each pair is the ring with a stone set in
-  it.
+  it. The lion is the first of the beasts, and is rampant: reared on its hind paws, head in
+  profile, tail turned up over the back and tufted. That is the posture a blazon naming none means
+  — "le Lion dans sa position naturelle est rampant" — and it is the only one, passant and couchant
+  and the rest being a vocabulary of postures this does not read. Its claws and its tongue may be
+  painted apart from the rest of it. It is drawn three fifths bigger than the spot a charge is
+  given, a beast spending most of its box on the air between its legs where a disc fills its own,
+  and it is the one figure that is modelled: the folio it is traced from paints it in two greens
+  rather than one, and without the second a lion is a blot of one colour with its limbs lost in it.
+  The marks of the second are washed over it in middle grey, which tells on a light tincture and a
+  dark one alike where a black wash would vanish on sable. They say nothing — heraldry knows a flat
+  paint and no shades — so the hatching draws none of them, every mark on a hatched shield being a
+  tincture named.
 - **Sown fields** — any charge may be sown over a field of one tincture instead of borne on it:
   "semé de billettes d'or", "semy of billets or". It is the field's own state rather than something
   the field bears, so nothing is counted and a band blazoned after it covers the sowing. Where the
@@ -163,8 +181,13 @@ roadmap toward full blazon. Pages must state what is supported and must not prom
 
 ## Evidence on Hand
 
-- The working library itself: parser, writer and drawer, with 1781 passing tests. Any claim a page makes
+- The working library itself: parser, writer and drawer, with 1809 passing tests. Any claim a page makes
   can be demonstrated live rather than asserted.
+- The lion is traced from the arms of Gallegantin le Gallois in the armorial of the Knights of the
+  Round Table, Bibliothèque nationale de France ms. fr. 12597 folio 62 recto
+  (`https://gallica.bnf.fr/ark:/12148/btv1b71000160/f125.item`), whose text blazons them "parti d'or
+  et de sable a ung lyon de sinople arme et langue de gueulles". The outline is the painter's, not
+  this library's: a beast invented here would be an opinion about what a lion looks like.
 - Tincture shades and hatching marks are taken from Wikipedia's own tables
   (`https://en.wikipedia.org/wiki/Tincture_(heraldry)`, `https://en.wikipedia.org/wiki/Hatching_(heraldry)`),
   recorded in `src/infra/colours/`. Cited, not invented.

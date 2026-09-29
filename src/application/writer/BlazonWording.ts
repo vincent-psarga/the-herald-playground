@@ -1,4 +1,4 @@
-import { Attribute, Attributed } from '../../domain/models/Attributes';
+import { Attribute, Attributed, paintedIn } from '../../domain/models/Attributes';
 import { Blazon, ChargeOrOrdinary, isCharge, isOrdinary } from '../../domain/models/Blazon';
 import { ChargeType, numberBorne } from '../../domain/models/Charge';
 import { Modifier } from '../../domain/models/Modifier';
@@ -156,7 +156,13 @@ function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdi
   const tincture =
     word.defaultTincture === one.tincture ? undefined : writeTincture(wording, one.tincture);
   const modifier = modifying(wording, one, word)?.(several);
-  return [bearing, modifier, tincture, ...painting(wording, one, word, several)]
+  // The parts follow the tincture with nothing between, which is how both
+  // sources write them — "Gules, three gem-rings argent stoned azure", "au lion
+  // de sinople armé et lampassé de gueules". Two runs of them are parted by the
+  // mark, there being two tinctures in a row otherwise and no telling which
+  // belongs to which.
+  const parts = painting(wording, one, word, several).join(`${SEPARATOR} `);
+  return [bearing, modifier, tincture, parts === '' ? undefined : parts]
     .filter((part) => part !== undefined)
     .join(' ');
 }
@@ -191,17 +197,45 @@ function painting<W extends Word>(
   if (!isCharge(one) || one.attributes === undefined) {
     return [];
   }
-  return one.attributes.flatMap(({ attribute, tincture }) => {
+  const painted = one.attributes.flatMap((attributed) => {
+    const { attribute, tincture } = attributed;
     if (tincture === undefined && named.defaultAttribute === attribute) {
       return [];
     }
-    const said = wordSaidOf(wording.attributes, attribute, one.type);
     return [
-      [wording.paint(named, said, several), writeTincture(wording, tincture ?? one.tincture)].join(
-        ' '
-      ),
+      {
+        said: wording.paint(named, wordSaidOf(wording.attributes, attribute, one.type), several),
+        tincture: paintedIn(attributed, one.tincture),
+      },
     ];
   });
+  return sharing(painted).map(
+    (run) => `${run.said.join(` ${wording.conjunction} `)} ${writeTincture(wording, run.tincture)}`
+  );
+}
+
+/**
+ * The parts gathered into runs that share a tincture, in the order the blazon
+ * named them.
+ *
+ * Heraldry says the colour once where two parts have it: "armé et lampassé de
+ * gueules", and never "armé de gueules et lampassé de gueules". Only the parts
+ * standing next to each other are gathered, the order being the blazon's own and
+ * worth keeping.
+ */
+function sharing(
+  painted: readonly { readonly said: string; readonly tincture: Tincture }[]
+): readonly { readonly said: readonly string[]; readonly tincture: Tincture }[] {
+  const runs: { said: string[]; tincture: Tincture }[] = [];
+  for (const { said, tincture } of painted) {
+    const last = runs[runs.length - 1];
+    if (last !== undefined && last.tincture === tincture) {
+      last.said.push(said);
+    } else {
+      runs.push({ said: [said], tincture });
+    }
+  }
+  return runs;
 }
 
 /** The parts a charge had painted, which is none for anything but a charge. */

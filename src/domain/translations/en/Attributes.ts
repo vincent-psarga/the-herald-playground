@@ -23,4 +23,22 @@ export const EnglishAttributes: Translation<Attribute> = {
     },
     { plural: 'stoned' }
   ),
+  [Attribute.armed]: new Word(
+    'armed',
+    {
+      value:
+        'The claws of a beast, painted apart from the rest of it. Parker says it of teeth and talons and horns as well; here it is the claws, the beasts with the rest of them being yet to come.',
+      sources: [parker('Armed')],
+    },
+    { plural: 'armed' }
+  ),
+  [Attribute.langued]: new Word(
+    'langued',
+    {
+      value:
+        'The tongue of a beast, painted apart from the rest of it. English says it of the birds as readily as of the beasts, where French keeps lampassé for the four-footed.',
+      sources: [parker('Langued'), parker('Lampasse')],
+    },
+    { plural: 'langued' }
+  ),
 };

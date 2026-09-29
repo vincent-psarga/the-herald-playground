@@ -10,13 +10,12 @@ import { Tincture } from './Tinctures';
  * after the thing it is a picture of, and owes the field nothing: it is set on
  * the field wherever the blazon says, as many times as the blazon says.
  *
- * Nine so far. Some are plain geometry and some are pictures of something: a
- * drop, a star, the lily heraldry drew as a smith would forge it, and the moon
- * with its horns up. A lion is
- * a charge by the same reckoning and is read by the same phrase, which is why
- * these are kept apart from the ordinaries rather than listed among them: what
- * will grow here is the beasts and the objects, and what an ordinary can be told
- * is quite another list.
+ * Ten so far. Some are plain geometry and some are pictures of something: a
+ * drop, a star, the lily heraldry drew as a smith would forge it, the moon with
+ * its horns up, and the first of the beasts. They are kept apart from the
+ * ordinaries rather than listed among them because what will grow here is the
+ * beasts and the objects, and what an ordinary can be told is quite another
+ * list.
  *
  * The roundel is one term and not a dozen, though heraldry gives it a dozen
  * names: a bezant, a plate and a torteau are the same disc in three tinctures,
@@ -54,6 +53,20 @@ export enum ChargeType {
   crossCouped = 'Charge.crossCouped',
   /** "A half-moon with the horns uppermost", which is the only way it is drawn here. */
   crescent = 'Charge.crescent',
+  /**
+   * The lion, which Parker calls "perhaps the most frequent of all bearings".
+   *
+   * Rampant, which is the posture a blazon that names none means: "le Lion dans
+   * sa position naturelle est rampant, c'est-à-dire ayant le haut du corps levé
+   * vers le chef, et ne posant que sur ses pattes de derrière, la tête de
+   * profil, la queue retroussée vers le dos avec la houppe retombant en dehors".
+   * Every other posture is another word — passant, couchant, contourné — and
+   * they are a vocabulary of their own that this does not read.
+   *
+   * It is not the leopard, which early heraldry drew passant and guardant where
+   * the lion reared, and which the armorials here name léopard.
+   */
+  lion = 'Charge.lion',
 }
 
 /**
@@ -139,6 +152,16 @@ export const ChargeDefinitions: Record<ChargeType, ChargeDefinition> = {
   }),
   [ChargeType.roundel]: new ChargeDefinition(ChargeType.roundel, {
     allowedModifiers: [Modifier.voided],
+  }),
+  // The claws and the tongue, which are the two parts of a beast the armorials
+  // here paint apart from the rest of it: "D'argent, au lion de sable, armé et
+  // lampassé de gueules". Both are declared on the beast rather than on the
+  // attribute, so a charge with neither refuses them by name.
+  //
+  // It takes no modifier. Voiding or piercing a lion names no figure heraldry
+  // draws, where voiding a lozenge names the mascle.
+  [ChargeType.lion]: new ChargeDefinition(ChargeType.lion, {
+    allowedAttributes: [Attribute.armed, Attribute.langued],
   }),
 };
 

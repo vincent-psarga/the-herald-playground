@@ -7,6 +7,7 @@ import {
   betterError,
   combine,
   kleft,
+  kright,
   nil,
   resultOrError,
   rule,
@@ -35,10 +36,11 @@ import {
 } from '../../domain/models/Field';
 import { Modifier } from '../../domain/models/Modifier';
 import { Tincture } from '../../domain/models/Tinctures';
+import { TermWord } from '../../domain/translations/Translation';
 import { Word } from '../../domain/translations/Word';
 import { TokenKind } from '../lexer/Lexer';
 import { BorneTerm, bearsPart, bornUnder, carried } from './Borne';
-import { guard, optional, optionalUnlessBegun } from './Combinators';
+import { guard, optional, optionalUnlessBegun, present } from './Combinators';
 import { within } from './Failures';
 import { Treatment, isBare } from './Treatment';
 import { VariedField } from './Variations';
@@ -257,7 +259,7 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
       combine(modifying(borne), (early) =>
         combine(carried(grammar.tincture, borne.word), (tincture) =>
           combine(early === undefined ? modifying(borne) : nil(), (late) =>
-            apply(painting(borne, grammar.tincture), (painted): ChargeOrOrdinary => {
+            apply(painting(borne, grammar.tincture, grammar.and), (painted): ChargeOrOrdinary => {
               const one =
                 borne.count === undefined
                   ? { type: borne.type, tincture }
@@ -391,20 +393,80 @@ type Painted = { readonly term: Attribute; readonly word: Word; readonly tinctur
  */
 function painting(
   borne: BorneTerm,
-  tincture: Parser<TokenKind, Tincture>
+  tincture: Parser<TokenKind, Tincture>,
+  and: Parser<TokenKind, unknown>
 ): Parser<TokenKind, readonly Attributed[]> {
   const own = borne.word.defaultAttribute;
   if (borne.attribute === undefined) {
     return apply(nil(), () => carrying(own, []));
   }
+  const attribute = borne.attribute;
 
+  // The first word of a run, with the mark a blazon may set before it: "au lion
+  // d'or, armé de gueules". Absence answers with nothing and disagreement
+  // refuses, which is the whole difference between a blazon that said nothing of
+  // the charge and one that said it in the wrong shape.
+  //
+  // The mark is stepped over only where a word does follow it. It is the same
+  // mark that parts one bearing from the next, so eating it where nothing was
+  // said of the charge would leave the phrase after it with nothing to be
+  // introduced by — and a blazon ending on a bare mark would be read as though
+  // it had not.
+  const first: Parser<TokenKind, TermWord<Attribute> | undefined> = {
+    parse(token) {
+      const after = token?.kind === TokenKind.Separator ? token.next : token;
+      const output = attribute.parse(after);
+      if (!output.successful) {
+        return output;
+      }
+      const said = output.candidates.filter(({ result }) => result !== undefined);
+      return said.length === 0
+        ? {
+            successful: true,
+            candidates: [{ firstToken: token, nextToken: token, result: undefined }],
+            error: undefined,
+          }
+        : {
+            successful: true,
+            candidates: said.map((candidate) => ({ ...candidate, firstToken: token })),
+            error: output.error,
+          };
+    },
+  };
+
+  // Another word sharing the run, which the conjunction or the mark introduces:
+  // "armé et lampassé", "armé, lampassé". Both promise a word, so an absence
+  // here is a refusal where at the opening it was silence.
+  const another = present<TokenKind, TermWord<Attribute>>(
+    kright(alt(and, SEPARATOR), attribute),
+    (position) => new BlazonParseError('Expected something else said of the charge', position)
+  );
+
+  // A run of words sharing one tincture: "armé et lampassé de gueules", which is
+  // how the armorials of both tongues write two parts of one colour. The
+  // tincture closes the run and is given to every word gathered into it.
+  const sharing = (
+    gathered: readonly TermWord<Attribute>[]
+  ): Parser<TokenKind, readonly Painted[]> =>
+    // The tincture is tried first of the two, and only to settle which complaint
+    // is reported when neither is there: a run that ends without one is owed a
+    // tincture, which is worth saying, where "no conjunction here" is not. A
+    // blazon that goes on is settled by what it goes on with, the conjunction
+    // being no tincture and no tincture being a conjunction.
+    alt(
+      apply(tincture, (painted) => gathered.map((word) => ({ ...word, tincture: painted }))),
+      combine(another, (next) => sharing([...gathered, next]))
+    );
+
+  // Run after run, each closing on a tincture of its own: "armé d'or, lampassé
+  // de gueules" paints the claws and the tongue two colours.
   const painted = rule<TokenKind, readonly Painted[]>();
   painted.setPattern(
-    combine(borne.attribute, (named) =>
-      named === undefined
+    combine(first, (word) =>
+      word === undefined
         ? apply(nil(), (): readonly Painted[] => [])
-        : apply(seq(tincture, painted), ([tincture, rest]): readonly Painted[] => [
-            { ...named, tincture },
+        : apply(seq(sharing([word]), painted), ([run, rest]): readonly Painted[] => [
+            ...run,
             ...rest,
           ])
     )

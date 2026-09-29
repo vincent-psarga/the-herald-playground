@@ -190,6 +190,14 @@ export const FrenchChargeType: Translation<ChargeType, FrenchWord> = {
     },
     { isFeminine: true }
   ),
+  // Le lion, masculine and spelled as English spells it. The dictionary names a
+  // dozen postures beside the rampant one — contourné, naissant, issant — and
+  // none of them is read here, so the word is the beast in its own posture.
+  [ChargeType.lion]: new FrenchWord('lion', {
+    value:
+      'A lion rearing on its hind paws, head in profile, tail turned up over the back with the tuft falling outward — the position the dictionaries call natural, and the one a blazon that names none means. Its griffes and its langue may be painted apart from the rest of it.',
+    sources: [blasonArmoiries('Lion')],
+  }),
   [ChargeType.crescent]: new FrenchWord('croissant', {
     value:
       'A half-moon with the horns uppermost, which is where a croissant’s horns stand unless a blazon says otherwise — and no blazon can say otherwise here, the increscent and the decrescent being turnings this does not read.',

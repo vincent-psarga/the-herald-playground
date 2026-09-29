@@ -21,17 +21,17 @@ const HALBERSTADT = {
 /**
  * The entry the parser cannot read, which every row about a refusal is about.
  *
- * It wants a lion, which is the kind of charge the vocabulary has none of and
+ * It wants a castle, which is the kind of charge the vocabulary has none of and
  * will not have for a while. A blazon the parser was merely behind on would stop
- * testing anything the day it caught up.
+ * testing anything the day it caught up — as the lion that stood here did.
  */
-const FLANDERS = {
-  name: 'Flanders',
-  blazon: "D'or au lion de sable",
-  image: 'https://example.invalid/flanders.png',
+const CASTILE = {
+  name: 'Castile',
+  blazon: "De gueules au château d'or",
+  image: 'https://example.invalid/castile.png',
   source: {
-    title: 'Wikipédia, Armoiries de la Flandre',
-    url: 'https://example.invalid/flanders',
+    title: 'Wikipédia, Armoiries de Castille',
+    url: 'https://example.invalid/castile',
     language: Languages.fr,
   },
 };
@@ -46,7 +46,7 @@ const ARMORIAL: Armorial = {
     url: 'https://example.invalid/armorial',
     language: Languages.en,
   },
-  entries: [HALBERSTADT, FLANDERS],
+  entries: [HALBERSTADT, CASTILE],
 };
 
 const rows = () => screen.getAllByRole('row').slice(1);
@@ -94,7 +94,7 @@ describe('ArmorialPage', () => {
     mount(<ArmorialPage armorial={ARMORIAL} />);
     expect(rows()).toHaveLength(2);
     expect(row('Halberstadt')).toBeInTheDocument();
-    expect(row('Flanders')).toBeInTheDocument();
+    expect(row('Castile')).toBeInTheDocument();
   });
 
   test('shows the blazon as the source wrote it, marked in the armorial’s tongue', () => {
@@ -131,8 +131,8 @@ describe('ArmorialPage', () => {
 
   test('leads from a blazon the parser refused too: the refusal is spelled out there', () => {
     mount(<ArmorialPage armorial={ARMORIAL} />);
-    const refused = within(cells('Flanders').blazon).getByRole('link', { name: FLANDERS.blazon });
-    expect(refused).toHaveAttribute('href', readingPath(FLANDERS.blazon, Languages.fr));
+    const refused = within(cells('Castile').blazon).getByRole('link', { name: CASTILE.blazon });
+    expect(refused).toHaveAttribute('href', readingPath(CASTILE.blazon, Languages.fr));
   });
 
   test('shows the translation under a blazon it could read, and links that too', () => {
@@ -149,7 +149,7 @@ describe('ArmorialPage', () => {
 
   test('shows no translation of a blazon it could not read', () => {
     mount(<ArmorialPage armorial={ARMORIAL} />);
-    expect(within(cells('Flanders').blazon).getAllByRole('link')).toHaveLength(1);
+    expect(within(cells('Castile').blazon).getAllByRole('link')).toHaveLength(1);
   });
 
   test('translates an English armorial into French', () => {
@@ -171,20 +171,20 @@ describe('ArmorialPage', () => {
   test('links an entry’s source where it has one', () => {
     mount(<ArmorialPage armorial={ARMORIAL} />);
     expect(
-      within(row('Flanders')).getByRole('link', {
-        name: 'Wikipédia, Armoiries de la Flandre — in French',
+      within(row('Castile')).getByRole('link', {
+        name: 'Wikipédia, Armoiries de Castille — in French',
       })
-    ).toHaveAttribute('href', 'https://example.invalid/flanders');
+    ).toHaveAttribute('href', 'https://example.invalid/castile');
   });
 
   test('says which tongue a source is in, where it is not the one being read', () => {
     // Said of the French page a roll was copied from, and not of the English
     // one: a reader told it of every source would learn nothing from being told.
     mount(<ArmorialPage armorial={ARMORIAL} />);
-    const entry = within(row('Flanders')).getByRole('link', { name: /Armoiries de la Flandre/ });
+    const entry = within(row('Castile')).getByRole('link', { name: /Armoiries de Castille/ });
     expect(entry).toHaveAttribute('hreflang', 'fr');
     expect(entry.querySelector('[lang="fr"]')?.textContent).toBe(
-      'Wikipédia, Armoiries de la Flandre'
+      'Wikipédia, Armoiries de Castille'
     );
     expect(screen.getByRole('link', { name: 'Wherever it came from' }).textContent).not.toMatch(
       /in English/
@@ -213,7 +213,7 @@ describe('ArmorialPage', () => {
 
   test('leaves the last cell empty where the blazon was beyond the parser', () => {
     mount(<ArmorialPage armorial={ARMORIAL} />);
-    const { drawn } = cells('Flanders');
+    const { drawn } = cells('Castile');
     expect(drawn).toBeEmptyDOMElement();
   });
 
@@ -228,7 +228,7 @@ describe('ArmorialPage', () => {
 
   test('says nothing where nothing is drawn', () => {
     mount(<ArmorialPage armorial={ARMORIAL} />);
-    expect(cells('Flanders').drawn).not.toHaveAttribute('data-drawn');
+    expect(cells('Castile').drawn).not.toHaveAttribute('data-drawn');
   });
 
   describe('the overview of what it could not read', () => {

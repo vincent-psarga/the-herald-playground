@@ -49,6 +49,7 @@ const HEADINGS = [
   'A tincture that has a name of its own is written by it',
   'A name that means what was done to the charge is written without saying it',
   'A name that means a part of the figure is written, and the part keeps its tincture',
+  'Two parts of one colour are written once, and the colour said last',
   'A strewing is named where heraldry names it',
   'A word that says nothing is read and never written',
   'A modifier stands after the charge and before its tincture',
@@ -241,6 +242,29 @@ describe('what each rule shows', () => {
       "D'azur à l'anneau d'or.",
       'Azure a gem-ring or.',
     ]);
+  });
+
+  test('says the colour once where two parts share it, and twice where they do not', () => {
+    mount(<ConventionsPage />);
+    expect(shown("D'argent au lion de sable armé et lampassé de gueules").written).toEqual([
+      "D'argent au lion de sable armé et lampassé de gueules.",
+      'Argent a lion sable armed and langued gules.',
+    ]);
+    // Written with the mark instead, and answered with the conjunction.
+    expect(shown("D'argent au lion de sable, armé, lampassé de gueules").written).toEqual(
+      shown("D'argent au lion de sable armé et lampassé de gueules").written
+    );
+    expect(shown('Argent a lion sable armed gules langued azure').written).toEqual([
+      "D'argent au lion de sable armé de gueules, lampassé d'azur.",
+      'Argent a lion sable armed gules, langued azure.',
+    ]);
+  });
+
+  test('agrees every word of the run with the charge, in number as in gender', () => {
+    mount(<ConventionsPage />);
+    expect(shown('Argent three lions sable armed and langued gules').written).toContain(
+      "D'argent à trois lions de sable armés et lampassés de gueules."
+    );
   });
 
   test('refuses a part of a figure the charge has not got', () => {

@@ -223,6 +223,14 @@ export const EnglishChargeType: Translation<ChargeType> = {
       { plural: 'crosses humetty' }
     ),
   ],
+  // The beast, and the one word both tongues spell alike. English adds no name
+  // of its own for the postures: a lion that is not rampant is said so in the
+  // ordinary way, and no posture is read here yet.
+  [ChargeType.lion]: new Word('lion', {
+    value:
+      'A lion rearing on its hind paws, head in profile, tail turned up over the back and tufted at the tip — the posture called rampant, and the one a blazon that names none means. Its claws and its tongue may be painted apart from the rest of it.',
+    sources: [parker('Lion')],
+  }),
   [ChargeType.crescent]: new Word('crescent', {
     value:
       'A half-moon with the horns uppermost, which is where a crescent’s horns stand unless a blazon says otherwise — and no blazon can say otherwise here, the increscent and the decrescent being turnings this does not read.',

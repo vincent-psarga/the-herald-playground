@@ -17,7 +17,8 @@ import { Tincture } from './Tinctures';
  * there is one of it.
  *
  * Which of them a charge will take is the charge's own business and is declared
- * with the charge, as its modifiers are: only a ring has a stone in it.
+ * with the charge, as its modifiers are: only a ring has a stone in it, and only
+ * a beast has claws and a tongue.
  */
 export enum Attribute {
   /**
@@ -30,6 +31,29 @@ export enum Attribute {
    * and blazons "Gules, three gem-rings argent stoned azure".
    */
   stoned = 'Attribute.stoned',
+  /**
+   * The claws of a beast: "a lion gules armed azure", "au lion de gueules armé
+   * d'azur".
+   *
+   * Parker has it of the whole company at once — "when any beast of prey has
+   * teeth and claws, or any beast of chase (except stags, &c.) horns and hoofs,
+   * or any bird of prey beak and talons, of a tincture different from its body,
+   * it is said to be armed of such a tincture" — and the French dictionary keeps
+   * it off the cloven-footed, which are onglés instead.
+   *
+   * What is drawn is the claws. The teeth this vocabulary does not draw, and a
+   * blazon arming a beast that has none will have to wait for one.
+   */
+  armed = 'Attribute.armed',
+  /**
+   * The tongue of a beast: "a lion gules langued azure", "au lion de gueules
+   * lampassé d'azur".
+   *
+   * Said of the quadrupeds. French keeps langué for the birds and the reptiles
+   * and lampassé for the rest — "s'il s'agit d'un oiseau il est préférable de le
+   * dire langué" — where English says langued of either.
+   */
+  langued = 'Attribute.langued',
 }
 
 /**

@@ -311,9 +311,19 @@ describe('writing a charge with a part painted', () => {
   });
 
   test('reads back everything it writes', () => {
+    // Every part of every charge, painted in a tincture of its own — and painted
+    // in none, for the parts a name says: a part with no tincture is what a name
+    // that means it leaves behind, and no blazon can write one otherwise.
     for (const type of CHARGES) {
       for (const attribute of attributesOf(type)) {
-        for (const attributes of [[{ attribute }], [{ attribute, tincture: Colours.gules }]]) {
+        const unsaid = [EnglishChargeType, FrenchChargeType].every((translation) =>
+          wordsOf(translation, type).some((word) => word.defaultAttribute === attribute)
+        );
+        const painted = [
+          ...(unsaid ? [[{ attribute }]] : []),
+          [{ attribute, tincture: Colours.gules }],
+        ];
+        for (const attributes of painted) {
           const blazon: Blazon = {
             field: AZURE,
             chargesOrOrdinaries: [{ type, tincture: Metals.or, attributes }],
@@ -323,6 +333,24 @@ describe('writing a charge with a part painted', () => {
         }
       }
     }
+  });
+
+  test('writes a part no name says with the charge’s own tincture, saying as much', () => {
+    // A lion is armed by the blazon and never by its name, so a lion armed of no
+    // tincture at all is a model no blazon can write. Written out, it says in as
+    // many words what it meant: the claws are the beast's own colour.
+    expect(
+      writeEnglish.write({
+        field: AZURE,
+        chargesOrOrdinaries: [
+          {
+            type: ChargeType.lion,
+            tincture: Metals.or,
+            attributes: [{ attribute: Attribute.armed }],
+          },
+        ],
+      })
+    ).toBe('Azure a lion or armed or.');
   });
 
   test('says nothing of a band, which has no part to paint', () => {

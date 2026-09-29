@@ -5,6 +5,7 @@ import { Field, Semy, isDivision, isFurred, isVariation } from '../../../domain/
 import { borne } from '../../../domain/models/Ordinary';
 import { Painter } from './Ground';
 import { laid } from './painting/laid';
+import { modelled } from './painting/modelled';
 import { over } from './painting/over';
 import { plain } from './painting/plain';
 import { split } from './painting/split';
@@ -98,8 +99,23 @@ function bearing(one: ChargeOrOrdinary): Painter {
   const count = numberBorne(one);
   return over(
     laid((frame) => figure.shapes(frame, count), INKS[one.tincture]),
-    ...painting(one, figure, count)
+    ...painting(one, figure, count),
+    ...modelling(figure, count)
   );
+}
+
+/**
+ * The marks the figure is modelled by, washed over everything the blazon painted
+ * and in no tincture of its own.
+ *
+ * Last of all, the parts included: a lion armed gules has its claws shaded like
+ * the rest of it, the modelling being a fact about the drawing rather than about
+ * which paint lies where. Nothing at all for the figures that are not modelled,
+ * which is every one of them but the beast.
+ */
+function modelling(figure: ChargeFigure, count: number): readonly Painter[] {
+  const marks = figure.modelling;
+  return marks === undefined ? [] : [modelled((frame) => marks(frame, count))];
 }
 
 /**

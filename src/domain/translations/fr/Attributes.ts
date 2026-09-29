@@ -18,4 +18,14 @@ export const FrenchAttributes: Translation<Attribute, FrenchWord> = {
       'Set with a stone. The chaton is the claw setting a ring holds its stone in, and the tincture named after the word is the stone’s.',
     sources: [blasonArmoiries('Bague')],
   }),
+  [Attribute.armed]: new FrenchWord('armé', {
+    value:
+      'The griffes of a beast, painted apart from the rest of it. It is not onglé, which the dictionary keeps for the cloven-footed.',
+    sources: [blasonArmoiries('Armé')],
+  }),
+  [Attribute.langued]: new FrenchWord('lampassé', {
+    value:
+      'The tongue of a four-footed beast, painted apart from the rest of it. A bird’s tongue is langué instead — "s’il s’agit d’un oiseau il est préférable de le dire langué".',
+    sources: [blasonArmoiries('Lampassé')],
+  }),
 };

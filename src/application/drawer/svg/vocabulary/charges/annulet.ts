@@ -43,4 +43,4 @@ const stone = ({ x, y, size }: Spot) => {
  * is a part and not a second charge, so it is drawn over the hoop rather than
  * beside it, and the hoop is the same ring either way.
  */
-export const annulet: ChargeFigure = charge(hoop, {}, { [Attribute.stoned]: stone });
+export const annulet: ChargeFigure = charge(hoop, { parts: { [Attribute.stoned]: stone } });

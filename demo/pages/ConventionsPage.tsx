@@ -317,6 +317,49 @@ export const RULES: readonly Rule[] = [
     ],
   },
   {
+    id: 'parts-sharing-a-tincture',
+    heading: 'Two parts of one colour are written once, and the colour said last',
+    law: (
+      <>
+        <p className="rule__law">
+          A beast may have more than one of its parts painted apart from the rest, and heraldry says
+          the colour once where they share it: “armé et lampassé de gueules”, “armed and langued
+          gules”, and never the tincture twice over. So the words are gathered into a run joined by
+          the conjunction, and the tincture closes it.
+        </p>
+        <p className="rule__law">
+          Parts of different colours are two runs and are parted by the mark, there being two
+          tinctures in a row otherwise and no telling which belongs to which. The order is the
+          blazon’s own and is kept: only the parts standing next to each other are gathered, so a
+          blazon that said its parts in some order gets that order back.
+        </p>
+        <p className="rule__law">
+          Read more widely than written, as everything here is. An armorial may join the words with
+          the conjunction or with the mark — “au lion couronné du second, armé, lampassé de gueules”
+          — and either is understood; what comes back is the conjunction. French agrees every word
+          of the run with the charge, in gender and in number, so three lions are armés where one is
+          armé.
+        </p>
+      </>
+    ),
+    authority: (
+      <>
+        Both dictionaries write the run and not the repetition. Au blason des armoiries blazons
+        “D’argent, au lion de sable, armé et lampassé de gueules” under Lampassé and “De gueules, au
+        lion d’hermine, armé, lampassé et couronné d’or” under Armé; Parker has the claws and the
+        tongue as two words of one kind, armed being said “when any beast of prey has teeth and
+        claws … of a tincture different from its body” and langued the same of the tongue.
+      </>
+    ),
+    sources: [blasonArmoiries('Lampassé'), blasonArmoiries('Armé'), parker('Armed')],
+    cases: [
+      fr("D'argent au lion de sable armé et lampassé de gueules"),
+      fr("D'argent au lion de sable, armé, lampassé de gueules"),
+      en('Argent a lion sable armed gules langued azure'),
+      en('Argent three lions sable armed and langued gules'),
+    ],
+  },
+  {
     id: 'naming-a-strewing',
     heading: 'A strewing is named where heraldry names it',
     law: (
