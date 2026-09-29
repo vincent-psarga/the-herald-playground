@@ -41,4 +41,13 @@ export const EnglishAttributes: Translation<Attribute> = {
     },
     { plural: 'langued' }
   ),
+  [Attribute.crowned]: new Word(
+    'crowned',
+    {
+      value:
+        'The crown a beast wears, painted apart from the rest of it. A ducal coronet unless a blazon names another, and none can be named here.',
+      sources: [parker('Crown')],
+    },
+    { plural: 'crowned' }
+  ),
 };

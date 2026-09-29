@@ -153,15 +153,19 @@ export const ChargeDefinitions: Record<ChargeType, ChargeDefinition> = {
   [ChargeType.roundel]: new ChargeDefinition(ChargeType.roundel, {
     allowedModifiers: [Modifier.voided],
   }),
-  // The claws and the tongue, which are the two parts of a beast the armorials
-  // here paint apart from the rest of it: "D'argent, au lion de sable, armé et
-  // lampassé de gueules". Both are declared on the beast rather than on the
-  // attribute, so a charge with neither refuses them by name.
+  // The claws, the tongue and the crown, which are the parts of a beast the
+  // armorials here paint apart from the rest of it: "De gueules, au lion
+  // d'hermine, armé, lampassé et couronné d'or". All three are declared on the
+  // beast rather than on the attribute, so a charge with none of them refuses
+  // them by name.
+  //
+  // In the order the dictionaries say them, which is the order they are written
+  // back in where a blazon paints them all.
   //
   // It takes no modifier. Voiding or piercing a lion names no figure heraldry
   // draws, where voiding a lozenge names the mascle.
   [ChargeType.lion]: new ChargeDefinition(ChargeType.lion, {
-    allowedAttributes: [Attribute.armed, Attribute.langued],
+    allowedAttributes: [Attribute.armed, Attribute.langued, Attribute.crowned],
   }),
 };
 

@@ -260,6 +260,19 @@ describe('what each rule shows', () => {
     ]);
   });
 
+  test('says a run of three as a list, and a run of two with the conjunction alone', () => {
+    mount(<ConventionsPage />);
+    expect(
+      shown("D'argent au lion de sable, armé, lampassé et couronné de gueules").written
+    ).toEqual([
+      "D'argent au lion de sable armé, lampassé et couronné de gueules.",
+      'Argent a lion sable armed, langued and crowned gules.',
+    ]);
+    expect(shown("D'argent au lion de sable armé et lampassé de gueules").written).toContain(
+      'Argent a lion sable armed and langued gules.'
+    );
+  });
+
   test('agrees every word of the run with the charge, in number as in gender', () => {
     mount(<ConventionsPage />);
     expect(shown('Argent three lions sable armed and langued gules').written).toContain(

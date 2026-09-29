@@ -28,4 +28,9 @@ export const FrenchAttributes: Translation<Attribute, FrenchWord> = {
       'The tongue of a four-footed beast, painted apart from the rest of it. A bird’s tongue is langué instead — "s’il s’agit d’un oiseau il est préférable de le dire langué".',
     sources: [blasonArmoiries('Lampassé')],
   }),
+  [Attribute.crowned]: new FrenchWord('couronné', {
+    value:
+      'The crown a beast wears on its head, painted apart from the rest of it. A couronne à l’antique unless a blazon names another, and none can be named here.',
+    sources: [blasonArmoiries('Lion'), blasonArmoiries('Couronne')],
+  }),
 };

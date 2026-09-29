@@ -54,6 +54,17 @@ export enum Attribute {
    * dire langué" — where English says langued of either.
    */
   langued = 'Attribute.langued',
+  /**
+   * The crown a beast wears: "a lion or crowned gules", "au lion d'or couronné
+   * de gueules".
+   *
+   * A part the blazon gives the beast rather than one it has, as the ring's
+   * stone is: a lion is not crowned until something says so. Which crown is
+   * settled where the blazon leaves it unsaid — "a ducal coronet is implied
+   * unless some other be expressly mentioned" — and no blazon here can mention
+   * another, so the ducal one is the only one drawn.
+   */
+  crowned = 'Attribute.crowned',
 }
 
 /**

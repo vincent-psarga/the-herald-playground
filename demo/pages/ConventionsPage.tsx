@@ -324,8 +324,10 @@ export const RULES: readonly Rule[] = [
         <p className="rule__law">
           A beast may have more than one of its parts painted apart from the rest, and heraldry says
           the colour once where they share it: “armé et lampassé de gueules”, “armed and langued
-          gules”, and never the tincture twice over. So the words are gathered into a run joined by
-          the conjunction, and the tincture closes it.
+          gules”, and never the tincture twice over. So the words are gathered into a run and the
+          tincture closes it. The run is said as a list is said — the mark between all but the last
+          two and the conjunction before the last, “armé, lampassé et couronné d’or” — and the
+          conjunction alone where there are two of them.
         </p>
         <p className="rule__law">
           Parts of different colours are two runs and are parted by the mark, there being two
@@ -355,6 +357,7 @@ export const RULES: readonly Rule[] = [
     cases: [
       fr("D'argent au lion de sable armé et lampassé de gueules"),
       fr("D'argent au lion de sable, armé, lampassé de gueules"),
+      fr("D'argent au lion de sable, armé, lampassé et couronné de gueules"),
       en('Argent a lion sable armed gules langued azure'),
       en('Argent three lions sable armed and langued gules'),
     ],

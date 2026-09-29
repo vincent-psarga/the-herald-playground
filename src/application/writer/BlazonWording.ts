@@ -210,8 +210,22 @@ function painting<W extends Word>(
     ];
   });
   return sharing(painted).map(
-    (run) => `${run.said.join(` ${wording.conjunction} `)} ${writeTincture(wording, run.tincture)}`
+    (run) => `${listed(run.said, wording.conjunction)} ${writeTincture(wording, run.tincture)}`
   );
+}
+
+/**
+ * The words of one run, said as a list is said: the mark between all but the
+ * last two, and the conjunction before the last.
+ *
+ * Which is how both dictionaries write it — "armé, lampassé et couronné d'or",
+ * "armed, langued, and crowned … gules" — and the conjunction alone where there
+ * are only two of them, "armé et lampassé de gueules".
+ */
+function listed(said: readonly string[], conjunction: string): string {
+  return said.length === 1
+    ? said[0]
+    : `${said.slice(0, -1).join(`${SEPARATOR} `)} ${conjunction} ${said[said.length - 1]}`;
 }
 
 /**

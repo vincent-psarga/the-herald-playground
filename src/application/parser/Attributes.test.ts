@@ -204,6 +204,75 @@ describe('a word for a part agreeing with the charge in French', () => {
   });
 });
 
+describe('a run of parts sharing one tincture', () => {
+  test('is read joined by the conjunction, and by the mark', () => {
+    const run = inFrench.parse("D'argent au lion de sable armé et lampassé de gueules");
+    expect(inFrench.parse("D'argent au lion de sable, armé, lampassé de gueules")).toEqual(run);
+    expect(inEnglish.parse('Argent a lion sable armed and langued gules')).toEqual(run);
+  });
+
+  test('gathers three of them as readily as two', () => {
+    expect(
+      inFrench.parse("De gueules au lion d'hermine, armé, lampassé et couronné d'or")
+        .chargesOrOrdinaries?.[0]
+    ).toHaveProperty('attributes', [
+      { attribute: Attribute.armed, tincture: Metals.or },
+      { attribute: Attribute.langued, tincture: Metals.or },
+      { attribute: Attribute.crowned, tincture: Metals.or },
+    ]);
+  });
+
+  test('is written as a list: the mark between, and the conjunction before the last', () => {
+    // Which is how both dictionaries write it, and neither writes the tincture
+    // twice over.
+    const three = inFrench.parse("D'azur au lion d'or armé, lampassé et couronné de gueules");
+    expect(writeFrench.write(three)).toBe(
+      "D'azur au lion d'or armé, lampassé et couronné de gueules."
+    );
+    expect(writeEnglish.write(three)).toBe('Azure a lion or armed, langued and crowned gules.');
+  });
+
+  test('writes the conjunction alone where there are two, and nothing where there is one', () => {
+    expect(writeEnglish.write(inEnglish.parse('Argent a lion sable armed and langued gules'))).toBe(
+      'Argent a lion sable armed and langued gules.'
+    );
+    expect(writeEnglish.write(inEnglish.parse('Argent a lion sable crowned or'))).toBe(
+      'Argent a lion sable crowned or.'
+    );
+  });
+
+  test('is two runs where the tinctures differ, parted by the mark', () => {
+    const blazon = inEnglish.parse('Argent a lion sable armed gules, langued azure, crowned or');
+    expect(writeEnglish.write(blazon)).toBe(
+      'Argent a lion sable armed gules, langued azure, crowned or.'
+    );
+    expect(writeFrench.write(blazon)).toBe(
+      "D'argent au lion de sable armé de gueules, lampassé d'azur, couronné d'or."
+    );
+  });
+
+  test('keeps the order the blazon said them in', () => {
+    expect(
+      inEnglish.parse('Argent a lion sable crowned or, armed gules').chargesOrOrdinaries?.[0]
+    ).toHaveProperty('attributes', [
+      { attribute: Attribute.crowned, tincture: Metals.or },
+      { attribute: Attribute.armed, tincture: Colours.gules },
+    ]);
+  });
+
+  test('reads the arms the whole of this began with', () => {
+    // Franche-Comté, which wanted three parts of one colour on a beast over a
+    // sown field, and wanted every piece of this to exist first.
+    expect(
+      writeEnglish.write(
+        inFrench.parse(
+          "D'azur semé de billettes d'or au lion d'or armé, lampassé et couronné de gueules"
+        )
+      )
+    ).toBe('Azure billetty or a lion or armed, langued and crowned gules.');
+  });
+});
+
 describe('the names heraldry gave a ring with a stone in it', () => {
   test('are the charge and the part it has, and not a charge of their own', () => {
     // Parker files the gem-ring under Ring and the ring under Annulet, so the

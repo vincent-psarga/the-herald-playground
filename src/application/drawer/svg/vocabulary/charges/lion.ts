@@ -1,4 +1,5 @@
 import { Attribute } from '../../../../../domain/models/Attributes';
+import { ducalCoronet } from '../../shapes/crown';
 import { lion as rampant, lionClaws, lionModelling, lionTongue } from '../../shapes/lion';
 import { ChargeFigure } from '../Figures';
 import { charge } from './Charge';
@@ -33,10 +34,25 @@ const SPREAD = 1.6;
  * heraldry means by saying the claws are the beast's own tincture unless a
  * blazon says otherwise.
  */
+/**
+ * Where the coronet sits, and how wide it is drawn: measured against the beast's
+ * own figure rather than the spot it stands in, so that it rides the head
+ * wherever the head goes.
+ *
+ * The head is at the chief and to dexter, the beast looking up and away, and the
+ * crown rests on the skull between the brow and the ear — read off the folio's
+ * own drawing, the same landmarks the trace was taken from.
+ */
+const CROWN = { x: 0.009, y: -0.455, across: 0.118 };
+
 export const lion: ChargeFigure = charge(({ x, y, size }) => rampant(x, y, size * SPREAD), {
   parts: {
     [Attribute.armed]: ({ x, y, size }) => lionClaws(x, y, size * SPREAD),
     [Attribute.langued]: ({ x, y, size }) => lionTongue(x, y, size * SPREAD),
+    [Attribute.crowned]: ({ x, y, size }) => {
+      const beast = size * SPREAD;
+      return ducalCoronet(x + CROWN.x * beast, y + CROWN.y * beast, CROWN.across * beast);
+    },
   },
   modelling: ({ x, y, size }) => lionModelling(x, y, size * SPREAD),
 });
