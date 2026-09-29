@@ -1,3 +1,4 @@
+import { Attribute } from '../../../../domain/models/Attributes';
 import { Modifier } from '../../../../domain/models/Modifier';
 import { Frame } from '../Ground';
 import { Shape } from '../shapes/Shape';
@@ -88,4 +89,15 @@ export type ChargeFigure = BorneFigure & {
    * that there was a modifier at all.
    */
   readonly modified: Readonly<Partial<Record<Modifier, ChargeFigure>>>;
+  /**
+   * The parts of the figure a blazon may paint on their own, for the attributes
+   * it may be borne with, and empty for the charges that have none.
+   *
+   * A part is not the charge as an attribute leaves it: the charge is drawn
+   * entire and the part is drawn over it in a tincture of its own, which is what
+   * makes a gem-ring one figure in two paints rather than a ring and a gem
+   * beside it. So what is held here is the part alone, laid at the same spots
+   * and in the same number as the figure it sits on.
+   */
+  readonly parts: Readonly<Partial<Record<Attribute, BorneFigure>>>;
 };

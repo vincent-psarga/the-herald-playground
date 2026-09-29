@@ -92,6 +92,22 @@ Supported vocabulary as it stands:
   written, exactly as a besant says gold, so nothing follows it — and a blazon that says the
   modifier anyway is understood where it agrees and refused where it does not. English names no
   pierced star, molette being French, and blazons it in the ordinary way.
+- **Attributes (1)** — stoned: the stone set in a ring, painted apart from the hoop. It is not a
+  modifier. A modifier changes what is left of the figure and the whole of what is left is painted
+  in the charge's one tincture; an attribute takes nothing away and names a part the figure already
+  has, so it carries a tincture of its own and a charge bears as many of them at once as it has
+  parts to name. Written last of all, after the tincture the charge itself carries, which is where
+  the armorials of both tongues put it — "Gules, three gem-rings argent stoned azure", "au lion
+  d'or armé de gueules" — and owed a tincture there, a word that named the part and not its colour
+  saying nothing. Which charges have which part is declared on the charge, so the answer is the same
+  in either tongue: the ring alone has one, and a billet stoned is refused by name. French agrees
+  the word with what the blazon called the charge, in gender and in number, exactly as it agrees a
+  modifier. Where heraldry named the figure with the part painted, that name is read and written in
+  place of the plain one: a ring with a stone in it is a gem-ring (French anneau). Such a name says
+  the part by being written, as a besant says gold — but where a besant says the whole of its
+  tincture, a gem-ring says only that there is a stone, so the tincture is still written after it
+  and a blazon that names none has the stone drawn in the hoop's own. English names the word three
+  ways — Parker gives stoned, gemmed and jewelled — and one of the three is read.
 - **Charges (9)** — annulet, billet, lozenge, roundel, goutte, mullet, fleur-de-lis, cross couped,
   crescent. Some are plain shapes and some are pictures of something; all are borne once or in
   number, and any of them may be sown over a plain field instead. They
@@ -104,7 +120,10 @@ Supported vocabulary as it stands:
   them wavy. The fleur-de-lis is spelled four ways by the armorials, hyphenated or not and ending
   in either letter, and all four are read. The cross couped is the French croisette — the ordinary's
   own figure made small — and is not the crosslet, whose arms are themselves crossed; it shares its
-  first word with the ordinary, and which was meant is settled by what follows.
+  first word with the ordinary, and which was meant is settled by what follows. The annulet is the
+  one whose name carries a part of the figure: English reads the ring and the gem-ring beside it,
+  French the annelet and the anneau, and the second of each pair is the ring with a stone set in
+  it.
 - **Sown fields** — any charge may be sown over a field of one tincture instead of borne on it:
   "semé de billettes d'or", "semy of billets or". It is the field's own state rather than something
   the field bears, so nothing is counted and a band blazoned after it covers the sowing. Where the
@@ -144,7 +163,7 @@ roadmap toward full blazon. Pages must state what is supported and must not prom
 
 ## Evidence on Hand
 
-- The working library itself: parser, writer and drawer, with 1193 passing tests. Any claim a page makes
+- The working library itself: parser, writer and drawer, with 1781 passing tests. Any claim a page makes
   can be demonstrated live rather than asserted.
 - Tincture shades and hatching marks are taken from Wikipedia's own tables
   (`https://en.wikipedia.org/wiki/Tincture_(heraldry)`, `https://en.wikipedia.org/wiki/Hatching_(heraldry)`),

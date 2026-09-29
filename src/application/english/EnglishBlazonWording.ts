@@ -1,5 +1,6 @@
 import { EnglishDivisionType } from '../../domain/translations/en/Divisions';
 import { EnglishFurType } from '../../domain/translations/en/Furs';
+import { EnglishAttributes } from '../../domain/translations/en/Attributes';
 import { EnglishChargeType } from '../../domain/translations/en/Charges';
 import { EnglishModifiers } from '../../domain/translations/en/Modifiers';
 import { EnglishStrewings, OF as SOWN_OF, SOWN } from '../../domain/translations/en/Strewings';
@@ -18,6 +19,7 @@ export const EnglishBlazonWording: BlazonWording = {
   ordinaries: EnglishOrdinaryType,
   charges: EnglishChargeType,
   modifiers: EnglishModifiers,
+  attributes: EnglishAttributes,
   strewings: EnglishStrewings,
   numbers: EnglishNumbers,
   // English names a tincture bare: "Azure.", "Per pale azure and or."
@@ -32,6 +34,9 @@ export const EnglishBlazonWording: BlazonWording = {
   // "a lozenge or voided", "three billets sable voided": English agrees the word
   // with nothing, so it is written as it stands wherever it stands.
   modify: (_, modifier) => modifier.value,
+  // "a gem-ring or stoned azure": the same word wherever it stands, the tincture
+  // of the part following it bare as any other English tincture does.
+  paint: (_, attribute) => attribute.value,
   // "semy of billets": the English spelling of the participle, though both it
   // and the French one are read.
   strew: (word) => `${SOWN[0].value} ${SOWN_OF} ${word.plural}`,

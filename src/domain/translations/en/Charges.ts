@@ -1,3 +1,4 @@
+import { Attribute } from '../../models/Attributes';
 import { ChargeType } from '../../models/Charge';
 import { Modifier } from '../../models/Modifier';
 import { Colours, Metals } from '../../models/Tinctures';
@@ -21,11 +22,37 @@ import { Word } from '../Word';
 // English gave no name to — the furs — and for a blazon that would rather say
 // the tincture out loud.
 export const EnglishChargeType: Translation<ChargeType> = {
-  [ChargeType.annulet]: new Word('annulet', {
-    value:
-      'A plain ring. What it encloses is the field showing through, not its own tincture, which is what makes it an annulet rather than a roundel.',
-    sources: [parker('Annulet')],
-  }),
+  // The annulet is named three ways, and the third of them is the ring with
+  // something in it: "the most important bearing of this name is the Gem-ring,
+  // that is a finger-ring set with a jewel". So the gem-ring says the stone by
+  // being written, as a besant says gold — but where a besant says the whole of
+  // its tincture, a gem-ring says only that there is a stone, and what colour it
+  // is drawn is still owed after the name.
+  //
+  // "Ring" is the plain figure under the everyday word: Parker keeps annulet for
+  // it — "Rings of other kinds are incidentally mentioned, but they are more
+  // properly termed Annulets" — so it is read and the annulet is written.
+  [ChargeType.annulet]: [
+    new Word('annulet', {
+      value:
+        'A plain ring. What it encloses is the field showing through, not its own tincture. A ring with a stone set in it is a gem-ring.',
+      sources: [parker('Annulet')],
+    }),
+    new Word('ring', {
+      value:
+        'A plain ring, under the everyday word for one. The ring heraldry bears oftener is the gem-ring, which has a stone set in it.',
+      sources: [parker('Ring')],
+    }),
+    new Word(
+      'gem-ring',
+      {
+        value:
+          'A finger-ring with a stone set in it: the hoop of an annulet, and a gem standing on it in chief. The stone takes the hoop’s tincture where the blazon names it none.',
+        sources: [parker('Ring')],
+      },
+      { defaultAttribute: Attribute.stoned }
+    ),
+  ],
   [ChargeType.billet]: new Word('billet', {
     value:
       'An upright rectangle, twice as tall as it is wide. The name is the little billet — a note, or a log.',

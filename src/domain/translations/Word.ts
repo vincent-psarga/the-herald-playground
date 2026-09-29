@@ -1,3 +1,4 @@
+import { Attribute } from '../models/Attributes';
 import { ChargeType } from '../models/Charge';
 import { Languages } from '../models/Languages';
 import { Source } from '../models/Source';
@@ -41,6 +42,8 @@ export interface WordOptions {
   readonly saidOf?: readonly ChargeType[];
   /** What the word already says was done to the charge, for a name that says it. */
   readonly defaultModifier?: Modifier;
+  /** The part the word already says the figure has, for a name that says it. */
+  readonly defaultAttribute?: Attribute;
 }
 
 /**
@@ -97,6 +100,12 @@ const UNGLOSSED: Description<Languages.en> = { lang: Languages.en, value: '', so
  * written, exactly as a besant says gold by being written. It is the same charge
  * and the same drawing either way, so it is a word of the term and not a term of
  * its own: the model holds one lozenge, voided or not.
+ *
+ * A word may also carry a part of the figure, which is the ring's doing. A
+ * gem-ring is a ring with a stone in it, and the name says the stone by being
+ * written where "annulet" says none. What it does not say is the stone's
+ * tincture, so unlike a modifier the part is still owed something after the
+ * name.
  *
  * A word may also carry the tincture, which is the roundel's doing. Heraldry
  * names that charge after the coin, the disc or the cake it is the picture of,
@@ -161,6 +170,16 @@ export class Word {
   public readonly defaultModifier?: Modifier;
 
   /**
+   * The part the word already says the figure has, where the word says one.
+   *
+   * Left unsaid by every word that names the figure and nothing more. A gem-ring
+   * is a ring with a stone in it and says so by being the word it is, so the
+   * blazon need write nothing to give it one — and what it does write after such
+   * a name is the stone's tincture, which the name never said.
+   */
+  public readonly defaultAttribute?: Attribute;
+
+  /**
    * What the word means, in as many sentences as it takes, and who says so.
    *
    * Left out where there is nothing of the word's own to say: a number is not a
@@ -187,6 +206,7 @@ export class Word {
     this.defaultTincture = options?.defaultTincture;
     this.saidOf = options?.saidOf;
     this.defaultModifier = options?.defaultModifier;
+    this.defaultAttribute = options?.defaultAttribute;
     this.allowedTinctures =
       options?.allowedTinctures ??
       (this.defaultTincture === undefined ? TINCTURES : [this.defaultTincture]);
@@ -224,5 +244,20 @@ export class Word {
    */
   takes(modifier: Modifier): boolean {
     return this.defaultModifier === undefined || this.defaultModifier === modifier;
+  }
+
+  /**
+   * Whether the word is the one for a figure with exactly these parts painted.
+   *
+   * Asked when a blazon is written rather than read. A name that says a part is
+   * the word for a charge that has it — "a gem-ring or stoned azure" — and a
+   * name that says none is the word for a charge with nothing painted apart. The
+   * part still comes back with its own tincture written after the name: the
+   * gem-ring says there is a stone and never what colour it is.
+   */
+  shows(attributes: readonly Attribute[]): boolean {
+    return this.defaultAttribute === undefined
+      ? attributes.length === 0
+      : attributes.includes(this.defaultAttribute);
   }
 }

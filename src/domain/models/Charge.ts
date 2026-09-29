@@ -1,3 +1,4 @@
+import { Attribute, Attributed } from './Attributes';
 import { Modifier } from './Modifier';
 import { Tincture } from './Tinctures';
 
@@ -56,8 +57,8 @@ export enum ChargeType {
 }
 
 /**
- * What is true of a charge whatever blazon names it: today, which modifiers it
- * may be borne under.
+ * What is true of a charge whatever blazon names it: which modifiers it may be
+ * borne under, and which of its parts a blazon may paint on their own.
  *
  * It is not the drawing and it is not the word. A charge is a term of the model,
  * and what may be said of that term is the model's to know — "an annulet voided"
@@ -73,13 +74,24 @@ export class ChargeDefinition {
    */
   public readonly allowedModifiers: readonly Modifier[];
 
+  /**
+   * The attributes a blazon may paint on it, which is none for most of them.
+   *
+   * Empty says the figure has no part worth naming apart from itself: a billet
+   * is a rectangle entire, and there is nothing in it to be given a second
+   * tincture.
+   */
+  public readonly allowedAttributes: readonly Attribute[];
+
   constructor(
     public readonly type: ChargeType,
     opts?: Partial<{
       allowedModifiers: readonly Modifier[];
+      allowedAttributes: readonly Attribute[];
     }>
   ) {
     this.allowedModifiers = opts?.allowedModifiers ?? [];
+    this.allowedAttributes = opts?.allowedAttributes ?? [];
   }
 }
 
@@ -91,7 +103,15 @@ export class ChargeDefinition {
  * charge, and the one easiest to forget.
  */
 export const ChargeDefinitions: Record<ChargeType, ChargeDefinition> = {
-  [ChargeType.annulet]: new ChargeDefinition(ChargeType.annulet),
+  // The one charge with a part to be painted apart from itself: a ring is a
+  // thing a stone is set in. Parker files the figure under Ring — "the most
+  // important bearing of this name is the Gem-ring, that is a finger-ring set
+  // with a jewel" — and blazons the stone of another tincture than the hoop.
+  //
+  // It takes no modifier: an annulet is a roundel voided already.
+  [ChargeType.annulet]: new ChargeDefinition(ChargeType.annulet, {
+    allowedAttributes: [Attribute.stoned],
+  }),
   // Voided and pierced both, which are two things done to it and not one said
   // twice: the outline of a billet is one figure and a billet with a hole in it
   // is another. The armorials name the second oftener than the first — "on se
@@ -137,6 +157,21 @@ export function allowsModifier(type: ChargeType, modifier: Modifier): boolean {
   return modifiersOf(type).includes(modifier);
 }
 
+/** The parts of a charge a blazon may paint, in the order they are declared. */
+export function attributesOf(type: ChargeType): readonly Attribute[] {
+  return ChargeDefinitions[type].allowedAttributes;
+}
+
+/**
+ * Whether a charge has a part a blazon may paint on its own.
+ *
+ * Asked of the term rather than of the word, as a modifier is: a stone is set in
+ * an anneau exactly as it is set in a gem-ring.
+ */
+export function allowsAttribute(type: ChargeType, attribute: Attribute): boolean {
+  return attributesOf(type).includes(attribute);
+}
+
 /**
  * One charge, in its own tincture, borne once or several times over.
  *
@@ -164,6 +199,18 @@ export type Charge = {
    * a plain lozenge reads back as the lozenge it was written as.
    */
   modifier?: Modifier;
+  /**
+   * The parts of the figure the blazon painted apart from the rest, each in its
+   * own tincture: a gem-ring stoned azure is one charge or, with a blue stone.
+   *
+   * A list rather than the one, a figure having as many nameable parts as
+   * heraldry gave it names: a lion is armed and lampassé in the one blazon. They
+   * are kept in the order the blazon named them, and no part is named twice.
+   *
+   * Left off rather than emptied where the blazon named none, as the count and
+   * the modifier are.
+   */
+  attributes?: readonly Attributed[];
 };
 
 /** How many of a charge a blazon bears: one, unless it says otherwise. */

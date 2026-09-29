@@ -48,6 +48,7 @@ const HEADINGS = [
   'A name that means a tincture is written without one',
   'A tincture that has a name of its own is written by it',
   'A name that means what was done to the charge is written without saying it',
+  'A name that means a part of the figure is written, and the part keeps its tincture',
   'A strewing is named where heraldry names it',
   'A word that says nothing is read and never written',
   'A modifier stands after the charge and before its tincture',
@@ -223,6 +224,30 @@ describe('what each rule shows', () => {
       "D'azur à la molette d'or.",
       'Azure a mullet pierced or.',
     ]);
+  });
+
+  test('writes the name heraldry gave the figure with a part painted, and keeps the tincture', () => {
+    mount(<ConventionsPage />);
+    expect(shown('Azure a ring or stoned argent').written).toEqual([
+      "D'azur à l'anneau d'or chatonné d'argent.",
+      'Azure a gem-ring or stoned argent.',
+    ]);
+    expect(shown('Azure an annulet or stoned argent').written).toEqual(
+      shown('Azure a ring or stoned argent').written
+    );
+    // The name says there is a stone and never its colour, so a blazon that
+    // named none gets none back.
+    expect(shown('Azure a gem-ring or').written).toEqual([
+      "D'azur à l'anneau d'or.",
+      'Azure a gem-ring or.',
+    ]);
+  });
+
+  test('refuses a part of a figure the charge has not got', () => {
+    mount(<ConventionsPage />);
+    const refused = shown('Azure a billet or stoned argent');
+    expect(refused.refused).toBe('Wrong attribute: billet is never stoned');
+    expect(refused.arms).toBe(0);
   });
 
   test('never writes a pierced charge as a voided one, the two being two things', () => {

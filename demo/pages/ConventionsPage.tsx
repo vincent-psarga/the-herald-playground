@@ -270,6 +270,53 @@ export const RULES: readonly Rule[] = [
     ],
   },
   {
+    id: 'a-name-that-means-a-part',
+    heading: 'A name that means a part of the figure is written, and the part keeps its tincture',
+    law: (
+      <>
+        <p className="rule__law">
+          The mascle’s rule again, read of a part of the figure instead of what was done to it.
+          Heraldry named the ring with a stone set in it outright — a gem-ring, the French anneau —
+          and such a name says the stone by being the word it is. So a blazon that paints the stone
+          comes back under that name whichever plain word it was written with: “Azure a ring or
+          stoned argent” and “Azure an annulet or stoned argent” both come back “Azure a gem-ring or
+          stoned argent”. Painted on nothing, the plain name stands.
+        </p>
+        <p className="rule__law">
+          What the name does not say is the tincture, and that is what parts a part from a modifier.
+          A mascle is voided entire and nothing follows it; a gem-ring has a stone and says nothing
+          of its colour, so the word for the part is still written where the blazon named one. It
+          stands last of all, after the tincture the charge itself carries, which is where the
+          armorials of both tongues put it. Named none, the stone is drawn in the hoop’s own
+          tincture and nothing is written: “Azure a gem-ring or” is a gold ring with a gold stone.
+        </p>
+        <p className="rule__law">
+          Which charges have such a part is declared with the charge and is the same in either
+          tongue, as a modifier’s charges are. Only the ring has one here, so a billet stoned is
+          refused by name rather than drawn with something the figure has not got.
+        </p>
+      </>
+    ),
+    authority: (
+      <>
+        Parker files the figure under Ring: “the most important bearing of this name is the
+        Gem-ring, that is a finger-ring set with a jewel, and this is sometimes described as stoned,
+        gemmed, or jewelled of another tincture”, and blazons “Gules, three gem-rings argent stoned
+        azure”. French draws the same line at the same place, Au blason des armoiries giving
+        “lorsque ce meuble est représenté avec un chaton, il se nomme anneau” against the annelet.
+      </>
+    ),
+    sources: [parker('Ring'), blasonArmoiries('Annelet')],
+    cases: [
+      en('Azure a ring or stoned argent'),
+      en('Azure an annulet or stoned argent'),
+      en('Azure a gem-ring or'),
+      fr("D'azur à l'annelet d'or chatonné d'argent"),
+      fr("D'azur à trois anneaux d'or chatonnés d'argent"),
+      en('Azure a billet or stoned argent'),
+    ],
+  },
+  {
     id: 'naming-a-strewing',
     heading: 'A strewing is named where heraldry names it',
     law: (

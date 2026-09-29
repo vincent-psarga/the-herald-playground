@@ -1,3 +1,4 @@
+import { Attribute } from '../../../../../domain/models/Attributes';
 import { Modifier } from '../../../../../domain/models/Modifier';
 import { Shape } from '../../shapes/Shape';
 import { ChargeFigure } from '../Figures';
@@ -18,10 +19,16 @@ import { Spot, spots, strewing } from './disposition';
  * take is the model's to say; what one leaves of the figure can only be drawn
  * here, figure by figure, there being no way to take the middle out of a shape
  * that has already forgotten what shape it was.
+ *
+ * A part takes nothing away and is drawn over the whole figure in a paint of its
+ * own, so it is another drawing at the same spot and is built the same way
+ * again: what sets it apart from a modifier is that both are laid, one over the
+ * other, where a modifier's drawing stands in the plain one's place.
  */
 export function charge(
   at: (spot: Spot) => Shape,
-  modified: Readonly<Partial<Record<Modifier, (spot: Spot) => Shape>>> = {}
+  modified: Readonly<Partial<Record<Modifier, (spot: Spot) => Shape>>> = {},
+  parts: Readonly<Partial<Record<Attribute, (spot: Spot) => Shape>>> = {}
 ): ChargeFigure {
   return {
     at,
@@ -30,5 +37,8 @@ export function charge(
     modified: Object.fromEntries(
       Object.entries(modified).map(([modifier, drawn]) => [modifier, charge(drawn)])
     ) as ChargeFigure['modified'],
+    parts: Object.fromEntries(
+      Object.entries(parts).map(([attribute, drawn]) => [attribute, charge(drawn)])
+    ) as ChargeFigure['parts'],
   };
 }

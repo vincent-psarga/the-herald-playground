@@ -6,7 +6,11 @@
 - Handle a semy of more than one figure ("semé alterné de tours et de fleurs de lys")
 - Sow a divided field, once the blazon can say which half was sown [#2](https://github.com/vincent-psarga/the-herald-playground/pull/2)
 - Support for "shortcuts" (eg: "du même", "l'un dans l'autre" [#4](https://github.com/vincent-psarga/the-herald-playground/pull/4), "brochant sur le tout")
-- Support for charges attributes (lampassé, armé etc)
+- Grow the attributes past the one: the lion's own (armé, lampassé, couronné) once
+  there is a lion, and the words English keeps beside stoned (gemmed, jewelled)
+- Refuse a field sown with a name that already says a modifier or a part — "semé
+  de macles", "semé d'anneaux" are read today as semys of the plain figure, the
+  model having no room for either on a sowing
 - Quarter a field beyond two tinctures: the quartering that marshals a coat to
   each quarter ("écartelé : aux 1 et 4 ..., aux 2 et 3 ..."), which needs a field
   able to hold a coat
