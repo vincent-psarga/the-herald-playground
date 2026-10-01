@@ -16,8 +16,13 @@ const ONE: Armorial = {
   language: Languages.fr,
   licence: 'MIT',
   entries: [
-    { name: 'Halberstadt', blazon: "Parti d'argent et de gueules", image: '' },
-    { name: 'France', blazon: "D'azur", image: 'https://example.invalid/france.png' },
+    { name: 'Halberstadt', slug: 'halberstadt', blazon: "Parti d'argent et de gueules", image: '' },
+    {
+      name: 'France',
+      slug: 'france',
+      blazon: "D'azur",
+      image: 'https://example.invalid/france.png',
+    },
   ],
 };
 
@@ -26,7 +31,9 @@ const ANOTHER: Armorial = {
   slug: 'english-roll',
   language: Languages.en,
   licence: 'CC BY-SA 4.0',
-  entries: [{ name: 'Somewhere', blazon: 'Per pale argent and gules', image: '' }],
+  entries: [
+    { name: 'Somewhere', slug: 'somewhere', blazon: 'Per pale argent and gules', image: '' },
+  ],
 };
 
 const index = () => screen.getByRole('navigation', { name: 'Armorials' });

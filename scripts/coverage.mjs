@@ -90,19 +90,36 @@ async function armorialCoverage() {
     appType: 'custom',
   });
   try {
-    const { EnglishBlazonParser, FrenchBlazonParser, readArmorial } =
+    const { EnglishBlazonParser, FrenchBlazonParser, Languages, readArmorial } =
       await vite.ssrLoadModule('/src/index.ts');
     const { ARMORIALS } = await vite.ssrLoadModule('/demo/armorials/index.ts');
 
     // An armorial names the tongue it is written in, and is read by the parser
-    // of that tongue: read by the other, every entry would refuse.
-    const parsers = { french: new FrenchBlazonParser(), english: new EnglishBlazonParser() };
+    // of that tongue: read by the other, every entry would refuse. The tongues
+    // are named off the enum rather than spelled again here — spelled again,
+    // they were spelled wrong, and an armorial handed no parser at all scored
+    // nought without a word said.
+    const parsers = {
+      [Languages.fr]: new FrenchBlazonParser(),
+      [Languages.en]: new EnglishBlazonParser(),
+    };
     const armorials = ARMORIALS.map((armorial) => {
-      const { read, total } = readArmorial(armorial, parsers[armorial.language]);
+      const parser = parsers[armorial.language];
+      if (parser === undefined) {
+        throw new Error(`No parser here reads ${armorial.language}, which ${armorial.name} is in.`);
+      }
+      const { entries, read, total } = readArmorial(armorial, parser);
       return {
         slug: armorial.slug,
         name: armorial.name,
         read,
+        // Which blazons were read, and not merely how many: a count that holds
+        // still between two runs can still be a count of other entries, and
+        // each slug is the address of the entry on the demo, so a report can
+        // lead a reader straight to the row it is speaking of.
+        readSlug: entries
+          .filter(({ blazon }) => blazon !== undefined)
+          .map(({ entry }) => entry.slug),
         total,
         percentage: percentage(read, total),
       };

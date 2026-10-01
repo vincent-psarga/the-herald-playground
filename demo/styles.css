@@ -1829,6 +1829,23 @@ body {
   white-space: nowrap;
 }
 
+/*
+ * An entry answers to an address of its own, so a reader can be sent to one row
+ * of a long roll rather than to the head of it. The row is brought to rest clear
+ * of the top of the screen, there being nothing to read in a line flush against
+ * the edge.
+ */
+.roll tbody tr {
+  scroll-margin-block-start: clamp(1.5rem, 6vh, 4rem);
+}
+
+/* And it says which row was asked for, by standing a little nearer than the
+   rest of the roll: lifted off the ground rather than ruled off it. */
+.roll tbody tr:target th,
+.roll tbody tr:target td {
+  background: var(--void-lift);
+}
+
 /* The blazon is the payload, so it is set in the hand a caller would copy. The
    source's own words lead and the translation follows under them, which is the
    order the page argues in: this is what was written, and this is what the
