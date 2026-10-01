@@ -3,14 +3,21 @@ name: Deploy demo
 on:
   push:
     branches: [main]
+  # The demo lists the work that is open, which changes when a pull request is
+  # opened or closed rather than when anything is pushed to main. Those events
+  # rebuild the published demo so that the list is right within the minute.
+  pull_request:
+    types: [opened, reopened, closed]
   workflow_dispatch:
 
 # The build is pushed onto the branch Pages serves rather than handed to Pages
 # as an artifact, so what the run needs is permission to write to the
 # repository. Serving from a branch is what lets the pull request previews live
-# in a subdirectory of the same site.
+# in a subdirectory of the same site. Reading pull requests is what the list of
+# open work is made from.
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: pages
@@ -21,7 +28,12 @@ jobs:
     name: Build and publish the demo
     runs-on: ubuntu-latest
     steps:
+      # Always main, whatever opened the run. A pull request event asks for the
+      # published demo to be rebuilt because the work on show has changed, not
+      # for the branch that changed it to be published.
       - uses: actions/checkout@v5
+        with:
+          ref: main
 
       - uses: actions/setup-node@v5
         with:
@@ -30,6 +42,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Written into the build and never committed: the repository holds the
+      # list empty, so a preview, which is built from a branch, carries no list
+      # and shows no work in progress. GITHUB_TOKEN is the repository's own and
+      # needs no secret kept for it.
+      - name: Take down the work that is open
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/pull-requests.mjs
 
       # The demo is served from a subdirectory named after the repository, and
       # reads that prefix back out of import.meta.env.BASE_URL to put it in

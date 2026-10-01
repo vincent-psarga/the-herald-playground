@@ -4,7 +4,25 @@ import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { App } from './App';
 
-beforeEach(() => window.history.pushState(null, '', '/'));
+// The list of open work is written by the deployment rather than kept in the
+// repository, so a test that wants some has to say what it is. It is emptied
+// before each test: the demo as the repository holds it has none.
+const { currentPullRequests } = vi.hoisted(() => ({
+  currentPullRequests: [] as { id: number; title: string; description: string; url: string }[],
+}));
+vi.mock('./preview/PullRequests', () => ({ currentPullRequests }));
+
+const OPEN_WORK = {
+  id: 1,
+  title: 'Support modifiers for ordinaries',
+  description: 'Allow: `azure, a bend indented or`',
+  url: 'https://github.com/vincent-psarga/the-herald-playground/pull/1',
+};
+
+beforeEach(() => {
+  currentPullRequests.length = 0;
+  window.history.pushState(null, '', '/');
+});
 afterEach(cleanup);
 
 const rail = () =>
@@ -145,7 +163,7 @@ describe('handing a term to the translator', () => {
     await user.click(term('sinople'));
     await user.click(screen.getByRole('link', { name: 'De sinople.' }));
 
-    expect(heading()).toBe('Blazon');
+    expect(heading()).toBe('The Herald Playground');
     expect(screen.getByLabelText('Blazon')).toHaveValue('De sinople.');
     expect(window.location.search).toContain('De%20sinople.');
   });
@@ -168,7 +186,7 @@ describe('handing a term to the translator', () => {
     await user.click(term('sautoir'));
     await user.click(screen.getByRole('link', { name: "D'argent au sautoir de gueules." }));
 
-    expect(heading()).toBe('Blazon');
+    expect(heading()).toBe('The Herald Playground');
     expect(screen.getByLabelText('Blazon')).toHaveValue("D'argent au sautoir de gueules.");
   });
 
@@ -251,7 +269,7 @@ describe('served from a subdirectory, as on GitHub Pages', () => {
 
   test('shows the playground at the base itself rather than claiming nothing answers', () => {
     render(<App />);
-    expect(heading()).toBe('Blazon');
+    expect(heading()).toBe('The Herald Playground');
   });
 
   test('reads a page below the base', () => {
@@ -289,5 +307,52 @@ describe('served from a subdirectory, as on GitHub Pages', () => {
       'href',
       '/the-herald-playground/doc/vocabulary/fr'
     );
+  });
+});
+
+describe('the way to the work in progress', () => {
+  // A preview is built from a branch, which carries no list of open work, so a
+  // preview shows no entry and answers the address as it answers any other it
+  // does not know. Only the published demo has either.
+  test('is not offered where nothing is open', () => {
+    render(<App />);
+    expect(within(rail()).queryByRole('link', { name: 'WIP' })).toBeNull();
+  });
+
+  test('is not a page at all where nothing is open', () => {
+    window.history.pushState(null, '', '/pr-preview');
+    render(<App />);
+    expect(heading()).toBe('Nothing here');
+  });
+
+  test('stands in the rail after the armorials once something is open', () => {
+    currentPullRequests.push(OPEN_WORK);
+    render(<App />);
+    const links = within(rail()).getAllByRole('link');
+    expect(links.map((link) => link.textContent)).toEqual(['Playground', 'Armorials', 'WIP']);
+    expect(links[2]).toHaveAttribute('href', '/pr-preview');
+  });
+
+  test('leads to the page listing it', async () => {
+    currentPullRequests.push(OPEN_WORK);
+    render(<App />);
+    await userEvent.setup().click(within(rail()).getByRole('link', { name: 'WIP' }));
+    expect(heading()).toBe('Work in progress');
+  });
+
+  test('is the page a reader reaches by typing the address', () => {
+    currentPullRequests.push(OPEN_WORK);
+    window.history.pushState(null, '', '/pr-preview');
+    render(<App />);
+    expect(heading()).toBe('Work in progress');
+  });
+
+  // Pages answers the address without its slash by sending the reader to the
+  // one with it, so that is the address the page is actually opened at.
+  test('is the same page at the address Pages redirects to', () => {
+    currentPullRequests.push(OPEN_WORK);
+    window.history.pushState(null, '', '/pr-preview/');
+    render(<App />);
+    expect(heading()).toBe('Work in progress');
   });
 });
