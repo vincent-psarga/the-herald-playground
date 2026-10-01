@@ -239,6 +239,16 @@ describe('the armorials', () => {
     expect(screen.getByText(/of this armorial is read/)).toBeInTheDocument();
   });
 
+  // A roll runs to hundreds of entries, and the one the reader was sent to is
+  // rarely the first. jsdom scrolls nothing, so what is watched is the asking.
+  test('bring the reader to the entry an address names, not to the head of the roll', () => {
+    const scrolled = vi.spyOn(Element.prototype, 'scrollIntoView');
+    window.history.pushState(null, '', '/armorial/sample#bourgogne-capetien');
+    render(<App />);
+    expect(scrolled.mock.instances[0]).toBe(document.getElementById('bourgogne-capetien'));
+    scrolled.mockRestore();
+  });
+
   test('mark the rail entry as where the reader is, index and armorial alike', async () => {
     window.history.pushState(null, '', '/armorial/sample');
     render(<App />);
