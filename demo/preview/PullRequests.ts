@@ -23,7 +23,7 @@ export const currentPullRequests: readonly PullRequest[] = [
     id: 1,
     title: 'Support modifiers for ordinaries',
     description:
-      'Allow: `azure, a bend indented or`\n<img width="484" height="310" alt="Capture d’écran 2026-10-01 à 14 33 51" src="https://github.com/user-attachments/assets/ddec5399-34e4-4ea0-8ede-8f02c9609492" />\n\nAlso, add support for:\n- [ ] `denché`\n- [ ] `vivré`\n- [ ] `engrelée`\n- [ ] a specific color for the line itself (like in Lanval example: "D\'or à la bande de gueules engrêlée de sable."',
+      'Allow: `azure, a bend indented or`\n<img width="484" height="310" alt="Capture d’écran 2026-10-01 à 14 33 51" src="https://github.com/user-attachments/assets/ddec5399-34e4-4ea0-8ede-8f02c9609492" />\n\nAlso, add support for:\n- [ ] `denché`\n- [ ] `vivré`\n- [ ] `engrelée`\n- [ ] a specific color for the line itself (like in Lanval example: "D\'or à la bande de gueules engrêlée de sable."',
     url: 'https://github.com/vincent-psarga/the-herald-playground/pull/1',
   },
   {

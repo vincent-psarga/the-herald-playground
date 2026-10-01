@@ -163,7 +163,7 @@ describe('handing a term to the translator', () => {
     await user.click(term('sinople'));
     await user.click(screen.getByRole('link', { name: 'De sinople.' }));
 
-    expect(heading()).toBe('Blazon');
+    expect(heading()).toBe('The Herald Playground');
     expect(screen.getByLabelText('Blazon')).toHaveValue('De sinople.');
     expect(window.location.search).toContain('De%20sinople.');
   });
@@ -186,7 +186,7 @@ describe('handing a term to the translator', () => {
     await user.click(term('sautoir'));
     await user.click(screen.getByRole('link', { name: "D'argent au sautoir de gueules." }));
 
-    expect(heading()).toBe('Blazon');
+    expect(heading()).toBe('The Herald Playground');
     expect(screen.getByLabelText('Blazon')).toHaveValue("D'argent au sautoir de gueules.");
   });
 
@@ -269,7 +269,7 @@ describe('served from a subdirectory, as on GitHub Pages', () => {
 
   test('shows the playground at the base itself rather than claiming nothing answers', () => {
     render(<App />);
-    expect(heading()).toBe('Blazon');
+    expect(heading()).toBe('The Herald Playground');
   });
 
   test('reads a page below the base', () => {
