@@ -90,13 +90,18 @@ async function armorialCoverage() {
     appType: 'custom',
   });
   try {
-    const { EnglishBlazonParser, FrenchBlazonParser, readArmorial } =
+    const { EnglishBlazonParser, FrenchBlazonParser, Languages, readArmorial } =
       await vite.ssrLoadModule('/src/index.ts');
     const { ARMORIALS } = await vite.ssrLoadModule('/demo/armorials/index.ts');
 
     // An armorial names the tongue it is written in, and is read by the parser
-    // of that tongue: read by the other, every entry would refuse.
-    const parsers = { french: new FrenchBlazonParser(), english: new EnglishBlazonParser() };
+    // of that tongue: read by the other, every entry would refuse. Keyed on the
+    // model's own names for the tongues rather than on names of this script's
+    // own, which once drifted from them and had every armorial read as nought.
+    const parsers = {
+      [Languages.fr]: new FrenchBlazonParser(),
+      [Languages.en]: new EnglishBlazonParser(),
+    };
     const armorials = ARMORIALS.map((armorial) => {
       const { read, total } = readArmorial(armorial, parsers[armorial.language]);
       return {

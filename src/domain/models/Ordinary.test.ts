@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { Modifier } from './Modifier';
+import { LINES, Modifier } from './Modifier';
 import {
   OrdinaryDefinitions,
   OrdinaryType,
@@ -50,16 +50,20 @@ describe('what an ordinary may be drawn under', () => {
     OrdinaryType.bendSinister,
     OrdinaryType.chevron,
     OrdinaryType.bordure,
-  ])('%s is drawn indented', (type) => {
-    expect(modifiersOn(type)).toEqual([Modifier.indented]);
-    expect(admitsModifier(type, Modifier.indented)).toBe(true);
+  ])('%s is drawn along every modified line', (type) => {
+    expect(modifiersOn(type)).toEqual(LINES);
+    for (const line of LINES) {
+      expect(admitsModifier(type, line)).toBe(true);
+    }
   });
 
   test.each([OrdinaryType.barGemel, OrdinaryType.cross, OrdinaryType.saltire])(
     '%s is drawn along the line it was always drawn along',
     (type) => {
       expect(modifiersOn(type)).toEqual([]);
-      expect(admitsModifier(type, Modifier.indented)).toBe(false);
+      for (const line of LINES) {
+        expect(admitsModifier(type, line)).toBe(false);
+      }
     }
   );
 
@@ -71,7 +75,11 @@ describe('what an ordinary may be drawn under', () => {
   });
 
   test('is declared with the ordinary rather than with either vocabulary', () => {
-    expect(OrdinaryDefinitions[OrdinaryType.fess].allowedModifiers).toEqual([Modifier.indented]);
+    expect(OrdinaryDefinitions[OrdinaryType.fess].allowedModifiers).toEqual([
+      Modifier.indented,
+      Modifier.dancetty,
+      Modifier.vivre,
+    ]);
     expect(OrdinaryDefinitions[OrdinaryType.cross].allowedModifiers).toEqual([]);
   });
 });

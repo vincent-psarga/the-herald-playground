@@ -1,9 +1,15 @@
 # Parsing
 
-- Grow the line modifications past "indented": embattled, engrailed, wavy, and the dancetty, which
-  is the indented line cut larger (French denché)
-- Indent the three bands that cannot be yet: the bar gemel, the cross, the saltire
-- Let a division or a varied field take a modified line too ("per fess indented", "coupé denché"),
+- Grow the line modifications past indented, dancetty and vivré: embattled, engrailed (French
+  engrêlé), wavy
+- Let the line itself take a tincture, which the armorials do: "D'or à la bande de gueules engrêlée
+  de sable"
+- Say which way a denché points, the armorials saying it: "à trois fasces denchées d'or, les
+  pointes en bas"
+- Cut the three bands that cannot be yet: the bar gemel, the cross, the saltire ("D'argent, au
+  sautoir denché de sable")
+- Let a division or a varied field take a modified line too ("per fess indented", "coupé denché",
+  "contre-écartelé denché"),
   the quarterings among them: Parker writes "Quarterly, per fesse indented azure and argent" and
   "Quarterly, embattled argent and sable", which are a quartering's own line cut rather than
   anything laid on it

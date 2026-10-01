@@ -61,8 +61,65 @@ export enum Modifier {
    * The teeth are what parts it from the dancetty, which is the same line drawn
    * larger and fewer — "differing from indented only in the indentations, being
    * larger in size, and consequently fewer in number". Two drawings, so two
-   * terms, and this vocabulary holds the one of them: a blazon that asks for the
-   * other is refused rather than quietly given this.
+   * terms, and the vivré is a third: the lines differ in how big the tooth is
+   * and how sharp its point, and in nothing else at all.
    */
   indented = 'Modifier.indented',
+  /**
+   * The same teeth cut larger, and fewer of them: "a fess dancetty", "à la fasce
+   * denchée".
+   *
+   * Parker has it "a zigzag line of partition, differing from indented only in
+   * the indentations, being larger in size, and consequently fewer in number",
+   * and draws three of them across a fess where the indented fess has half a
+   * dozen. Nothing else parts the two — same band, same edges, same teeth — so a
+   * blazon that cared which it got had to say which, and both tongues give it
+   * two words to say it with.
+   *
+   * French measures it the same way and under its own pair. Denché is said of
+   * the pieces "dont les bords sont formés en dents de scie", and "on se sert du
+   * mot dentelé quand les dents de la bordure sont de petites dimensions": so
+   * denché is the great-toothed one and dentelé the small, which is the pair
+   * English spells dancetty and indented. Parker glosses both of his with
+   * denché, which is the looser of the two readings and not the one taken here —
+   * a blazon asking for great teeth is answered with great teeth.
+   */
+  dancetty = 'Modifier.dancetty',
+  /**
+   * The great teeth brought to a right angle instead of a sharper one: "à la
+   * bande vivrée", "a bend vivré".
+   *
+   * It is the dancetty with the point of its tooth opened out. Parker:
+   * "practically equivalent to dancetty, except that the indentations are more
+   * open, i.e. the lines forming them produce right angles, instead of the acute
+   * angles which are usually represented in the drawing of indented or
+   * dancetty". A third angle, so a third drawing, so a third term.
+   *
+   * What is square is the angle at the point and not the tooth. Parker adds that
+   * "when applied to the bend or chevron, the appearance of rectangular steps is
+   * produced" — which is what a right-angled zigzag looks like on a band that
+   * runs at a slant, each limb standing upright or lying flat, so that the band
+   * climbs like a staircase. Across a fess the same cut is a zigzag and nothing
+   * stair-like at all.
+   *
+   * The band keeps the width it always had, the steps carrying both its edges
+   * along together. That is what the French dictionaries use to part the vivré
+   * band from the vivre — a narrow angular fillet borne as a charge of its own —
+   * "en ce qu'elles ont leur largeur ordinaire, qui est de deux parties des sept
+   * de la largeur de l'écu". That fillet is another thing, and is not read here.
+   */
+  vivre = 'Modifier.vivre',
 }
+
+/**
+ * The modified lines: what a blazon says of the line a band is named after,
+ * rather than of anything taken out of a charge's middle.
+ *
+ * They are one family and are drawn by one piece of arithmetic — the same teeth
+ * cut along the same edges, differing in how big the tooth is and how sharp its
+ * point — so a band that can be cut at all can be cut by any of them,
+ * and the bands declare the family rather than listing its members. A line that
+ * some band could not take would have to be listed apart, and none of the three
+ * is.
+ */
+export const LINES: readonly Modifier[] = [Modifier.indented, Modifier.dancetty, Modifier.vivre];

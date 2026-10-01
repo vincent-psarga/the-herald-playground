@@ -468,8 +468,8 @@ describe('what one drawing cannot say', () => {
     mount(<VocabularyPage language={Languages.en} />);
     await strike('bordure');
     // Never borne twice, so nothing is shown of a count — and still shown under
-    // the line it may be drawn along, which is another question about it.
-    expect(labels('Modified')).toEqual(['Indented']);
+    // every line it may be drawn along, which is another question about it.
+    expect(labels('Modified')).toEqual(['Indented', 'Dancetty', 'Vivré']);
     expect(() => section('Borne in number')).toThrow();
     expect(within(showing()).getByText(/shield has one edge/)).toBeInTheDocument();
   });

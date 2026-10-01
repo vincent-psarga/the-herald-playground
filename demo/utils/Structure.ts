@@ -205,8 +205,12 @@ function borneBranch<W extends Word>(
   one: ChargeOrOrdinary
 ): Branch {
   const band = isOrdinary(one);
+  // Asked for what was done to it as well as for its tincture, exactly as the
+  // writer asks it: the question is the same of a band and of a charge, and the
+  // day a tongue names a modified band in one word that word is what the blazon
+  // carries and so what this line of it should show.
   const word = band
-    ? wordIn(wording.ordinaries, one.type, one.tincture)
+    ? wordIn(wording.ordinaries, one.type, one.tincture, one.modifier)
     : wordIn(wording.charges, one.type, one.tincture, one.modifier);
   const count = band ? borne(one) : numberBorne(one);
   return {
@@ -217,7 +221,7 @@ function borneBranch<W extends Word>(
     // blazon bears it and under whatever was done to it.
     arms: { field: bare(field), chargesOrOrdinaries: [one] },
     children: [
-      ...(band || one.modifier === undefined || word.means(one.modifier)
+      ...(one.modifier === undefined || word.means(one.modifier)
         ? []
         : [
             {
@@ -226,8 +230,8 @@ function borneBranch<W extends Word>(
               /*
                * The figure under it, borne once. A modifier is not a thing to be
                * drawn on its own — there is no picture of "voided" — so what it
-               * does to the very charge it was said of is the whole of what can
-               * be shown, and the count is left to the charge above.
+               * does to the very charge or band it was said of is the whole of
+               * what can be shown, and the count is left to the figure above.
                */
               arms: {
                 field: bare(field),

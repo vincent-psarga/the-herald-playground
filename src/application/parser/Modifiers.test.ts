@@ -518,6 +518,133 @@ describe('a band drawn along a modified line', () => {
   });
 });
 
+/** The angle, in degrees, at the point of the first tooth a band is cut with. */
+function point(blazon: string): number {
+  const [from, apex, to] = corners(blazon);
+  const limb = ([x, y]: readonly [number, number]): readonly [number, number] => [
+    x - apex[0],
+    y - apex[1],
+  ];
+  const [fromX, fromY] = limb(from);
+  const [toX, toY] = limb(to);
+  const cosine = (fromX * toX + fromY * toY) / (Math.hypot(fromX, fromY) * Math.hypot(toX, toY));
+  return (Math.acos(cosine) * 180) / Math.PI;
+}
+
+/** The corners of the first band an English blazon draws. */
+function corners(blazon: string): readonly (readonly [number, number])[] {
+  const [, points] = /<polygon points="([^"]*)"/.exec(drawer.draw(inEnglish.parse(blazon))) ?? [];
+  return (points ?? '')
+    .split(' ')
+    .map((corner) => corner.split(',').map(Number) as [number, number]);
+}
+
+describe('the three modified lines, which differ in the teeth and in nothing else', () => {
+  test('are three terms and not one term written three ways', () => {
+    const line = (blazon: string) => inEnglish.parse(blazon).chargesOrOrdinaries?.[0];
+    expect(line('Azure a fess indented or')).toHaveProperty('modifier', Modifier.indented);
+    expect(line('Azure a fess dancetty or')).toHaveProperty('modifier', Modifier.dancetty);
+    expect(line('Azure a fess vivré or')).toHaveProperty('modifier', Modifier.vivre);
+  });
+
+  test('are the same three in French, which tells them apart by the same measure', () => {
+    const line = (blazon: string) => inFrench.parse(blazon).chargesOrOrdinaries?.[0];
+    expect(line("D'azur à la fasce dentelée d'or")).toHaveProperty('modifier', Modifier.indented);
+    expect(line("D'azur à la fasce denchée d'or")).toHaveProperty('modifier', Modifier.dancetty);
+    expect(line("D'azur à la fasce vivrée d'or")).toHaveProperty('modifier', Modifier.vivre);
+  });
+
+  test('cross the tongues each into its own, denché never answering dentelé', () => {
+    expect(inFrench.parse("D'azur à la fasce denchée d'or")).toEqual(
+      inEnglish.parse('Azure a fess dancetty or')
+    );
+    expect(inFrench.parse("D'azur à la fasce denchée d'or")).not.toEqual(
+      inEnglish.parse('Azure a fess indented or')
+    );
+  });
+
+  // Parker's own example of the line English never named, and the arms the
+  // armorial of Franche-Comté writes the same way.
+  test('read the arms of LA BAUME MONTREVEL, which is what asked for the vivré', () => {
+    const arms = inFrench.parse("D'or à la bande vivrée d'azur.");
+    expect(arms.chargesOrOrdinaries).toEqual([
+      { type: OrdinaryType.bend, tincture: Colours.azure, modifier: Modifier.vivre },
+    ]);
+    expect(writeEnglish.write(arms)).toBe('Or a bend vivré azure.');
+    expect(writeFrench.write(arms)).toBe("D'or à la bande vivrée d'azur.");
+  });
+
+  test('agree the two new French participles as the first one agrees', () => {
+    expect(() => inFrench.parse("D'azur au chef denchée d'or")).toThrow(
+      'Wrong agreement: expected "denché"'
+    );
+    expect(() => inFrench.parse("D'azur à la fasce vivré d'or")).toThrow(
+      'Wrong agreement: expected "vivrée"'
+    );
+    expect(() => inFrench.parse("D'azur à trois bandes denchée d'or")).toThrow(WrongAgreement);
+    expect(inFrench.parse("D'azur à trois bandes vivrées d'or").chargesOrOrdinaries).toEqual([
+      { type: OrdinaryType.bend, tincture: Metals.or, count: 3, modifier: Modifier.vivre },
+    ]);
+  });
+
+  test('read dancetté, which is the accent the armorials keep on the English word', () => {
+    expect(inEnglish.parse('Azure a fess dancetté or')).toEqual(
+      inEnglish.parse('Azure a fess dancetty or')
+    );
+    // Written back under the spelling the vocabulary leads with, as every
+    // alternate spelling is.
+    expect(writeEnglish.write(inEnglish.parse('Azure a fess dancetté or'))).toBe(
+      'Azure a fess dancetty or.'
+    );
+  });
+
+  test('stand unchanged in English however many bands are borne', () => {
+    expect(writeEnglish.write(inEnglish.parse('Or three bends vivré sable'))).toBe(
+      'Or three bends vivré sable.'
+    );
+    expect(writeFrench.write(inEnglish.parse('Or three bends vivré sable'))).toBe(
+      "D'or à trois bandes vivrées de sable."
+    );
+  });
+
+  test('cut fewer teeth for the dancetty than for the indented, being the larger', () => {
+    expect(corners('Azure a fess dancetty or').length).toBeLessThan(
+      corners('Azure a fess indented or').length
+    );
+  });
+
+  test('bring the vivré to a right angle, where the dancetty comes to a sharper one', () => {
+    // What parts the two is the angle at the point of the tooth, so that is
+    // what is measured. The vivré's is square — "the lines forming them produce
+    // right angles" — and the dancetty's is the acute one Parker says the
+    // armorials usually draw, which is what "more open" is said against.
+    expect(point('Azure a fess vivré or')).toBeCloseTo(90, 0);
+    expect(point('Azure a fess dancetty or')).toBeLessThan(90);
+    expect(point('Azure a fess vivré or')).toBeGreaterThan(point('Azure a fess dancetty or'));
+    // The right angle is the line's and not the fess's: it is cut the same
+    // wherever it is cut, which is what makes a bend vivré read as a staircase.
+    expect(point('Azure a bend vivré or')).toBeCloseTo(90, 0);
+    expect(point('Azure a chevron vivré or')).toBeCloseTo(90, 0);
+  });
+
+  test('draw a different band apiece, of every band that takes them', () => {
+    for (const type of ORDINARIES.filter((type) => admitsModifier(type, Modifier.vivre))) {
+      const arms = (modifier?: Modifier) =>
+        drawer.draw({
+          field: { type: FieldType.plain, tincture: Colours.azure },
+          chargesOrOrdinaries: [{ type, tincture: Metals.or, modifier }],
+        });
+      const drawn = [
+        arms(),
+        arms(Modifier.indented),
+        arms(Modifier.dancetty),
+        arms(Modifier.vivre),
+      ];
+      expect(new Set(drawn).size).toBe(drawn.length);
+    }
+  });
+});
+
 describe('piercing a charge, which is not voiding it', () => {
   test('is a term of its own rather than a second word for the voiding', () => {
     expect(inEnglish.parse('Azure a billet pierced or').chargesOrOrdinaries).toEqual([

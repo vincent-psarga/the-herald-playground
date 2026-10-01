@@ -50,6 +50,7 @@ const HEADINGS = [
   'A name that means what was done to the charge is written without saying it',
   'A strewing is named where heraldry names it',
   'A word that says nothing is read and never written',
+  'A tongue with no word of its own is written in the word it borrowed',
   'A modifier stands after what it qualifies and before its tincture',
   'A French modifier agrees with the charge the blazon named',
   'A modifier is said only of what can show it',
@@ -107,6 +108,7 @@ describe('what each rule shows', () => {
     mount(<ConventionsPage />);
     expect(shown('Argent a border gules').written).toContain('Argent a bordure gules.');
     expect(shown('Azure a bezant').written).toContain('Azure a besant.');
+    expect(shown('Azure a fess dancetté or').written).toContain('Azure a fess dancetty or.');
     expect(shown('Pily counter pily of four or and azure').written).toContain(
       'Pily of four or and azure.'
     );
@@ -116,6 +118,21 @@ describe('what each rule shows', () => {
     expect(shown("D'or aux trois tourteaux de gueules").written).toContain(
       "D'or à trois tourteaux de gueules."
     );
+  });
+
+  test('writes the borrowed word where the tongue never named the thing', () => {
+    mount(<ConventionsPage />);
+    // English has no word of its own for the squared line, so the French one is
+    // what comes back — and the arms Parker cites it with come back in it.
+    expect(shown('Azure a fess vivré or').written).toEqual([
+      "D'azur à la fasce vivrée d'or.",
+      'Azure a fess vivré or.',
+    ]);
+    expect(shown("D'or à la bande vivrée d'azur").written).toContain('Or a bend vivré azure.');
+    // The nearest English word is another line and is not written for it.
+    expect(shown('Azure a fess dancetty or').written).toContain('Azure a fess dancetty or.');
+    // And where English does have a word of its own, the borrowed one gives way.
+    expect(shown('Vairé azure and or').written).toContain('Vairy azure and or.');
   });
 
   test('counts the pieces in English and keeps quiet about the usual number in French', () => {

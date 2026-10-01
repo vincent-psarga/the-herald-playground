@@ -131,6 +131,13 @@ describe('what a word means', () => {
     expect(word(english, 'cross humetty').description).toMatch(/four equal arms/);
     expect(word(english, 'border').description).toMatch(/whole edge of the shield/);
     expect(word(english, 'pily counter pily').description).toMatch(/long triangles/);
+    // The three saw-toothed lines are told apart by the size and the point of
+    // the tooth, and each of them says its own: "the same teeth" sends a reader
+    // to a word they have not read.
+    expect(word(english, 'dancetty').description).toMatch(/great teeth/);
+    expect(word(english, 'vivré').description).toMatch(/great teeth whose points are right angles/);
+    expect(word(french, 'denché').description).toMatch(/great teeth/);
+    expect(word(french, 'vivré').description).toMatch(/great teeth whose points are right angles/);
   });
 });
 
@@ -361,10 +368,16 @@ describe('the words that say more than one drawing can', () => {
   });
 
   test('shows a band under every line it may be drawn along', () => {
-    expect(labelled(word(english, 'fess'), 'Modified')).toEqual(['Indented']);
-    expect(blazoned(word(english, 'fess'), 'Modified')).toEqual(['Argent a fess indented gules.']);
+    expect(labelled(word(english, 'fess'), 'Modified')).toEqual(['Indented', 'Dancetty', 'Vivré']);
+    expect(blazoned(word(english, 'fess'), 'Modified')).toEqual([
+      'Argent a fess indented gules.',
+      'Argent a fess dancetty gules.',
+      'Argent a fess vivré gules.',
+    ]);
     expect(blazoned(word(french, 'fasce'), 'Modified')).toEqual([
       "D'argent à la fasce dentelée de gueules.",
+      "D'argent à la fasce denchée de gueules.",
+      "D'argent à la fasce vivrée de gueules.",
     ]);
     // A band the model gives no modified line is asked nothing about one.
     expect(asked(word(english, 'cross'))).toEqual([]);

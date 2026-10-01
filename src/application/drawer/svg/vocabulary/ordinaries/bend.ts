@@ -1,7 +1,7 @@
-import { Modifier } from '../../../../../domain/models/Modifier';
 import { spaced } from '../../painting/arrange';
-import { inBend, inBendIndented } from '../../shapes/bands';
+import { inBend, inBendCut } from '../../shapes/bands';
 import { OrdinaryFigure } from '../Figures';
+import { alongLines } from '../lines';
 
 /**
  * The room the diagonals share, measured across the top edge of the field. It is
@@ -16,9 +16,7 @@ export const bend: OrdinaryFigure = {
   // The teeth are cut sideways, as the band's own width is measured sideways: a
   // bend is drawn by sliding its edges across the field rather than square to
   // itself, and a tooth reckoned otherwise would leave it wider in places.
-  modified: {
-    [Modifier.indented]: {
-      shapes: (frame, count) => spaced(count, -DIAGONALS / 2, DIAGONALS).map(inBendIndented(frame)),
-    },
-  },
+  modified: alongLines((cut) => ({
+    shapes: (frame, count) => spaced(count, -DIAGONALS / 2, DIAGONALS).map(inBendCut(frame, cut)),
+  })),
 };

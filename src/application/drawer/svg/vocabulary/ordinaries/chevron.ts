@@ -1,7 +1,7 @@
-import { Modifier } from '../../../../../domain/models/Modifier';
 import { spaced } from '../../painting/arrange';
-import { bent, bentIndented } from '../../shapes/bands';
+import { bent, bentCut } from '../../shapes/bands';
 import { OrdinaryFigure } from '../Figures';
+import { alongLines } from '../lines';
 
 /** The room the chevrons share, measured down the field from their highest point. */
 const CHEVRONS_FROM = 8;
@@ -13,9 +13,7 @@ export const chevron: OrdinaryFigure = {
   // Both limbs are cut, and the point between them is left where it was: the
   // teeth are counted along each limb rather than along the whole line, so
   // neither limb ends on half a tooth and the chevron keeps its point.
-  modified: {
-    [Modifier.indented]: {
-      shapes: (frame, count) => spaced(count, CHEVRONS_FROM, CHEVRONS).map(bentIndented(frame)),
-    },
-  },
+  modified: alongLines((cut) => ({
+    shapes: (frame, count) => spaced(count, CHEVRONS_FROM, CHEVRONS).map(bentCut(frame, cut)),
+  })),
 };

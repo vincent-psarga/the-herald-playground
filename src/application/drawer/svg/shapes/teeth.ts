@@ -5,22 +5,63 @@ import { polygon } from './polygon';
 export type Point = readonly [x: number, y: number];
 
 /**
- * How far apart the points of an indented line stand, measured along the line,
- * and how far the teeth reach across it.
+ * How a modified line is cut: how far apart its points stand, measured along the
+ * line, and how far its teeth reach across it.
  *
- * Indented is the small-toothed line — "notched after the manner of dancetty,
- * but with smaller teeth" — so the tooth is fixed rather than reckoned off what
- * is being cut: a fess, a bend and the edge of the shield are cut with the same
- * teeth, which is what makes the line recognisable wherever it is drawn. Half a
- * dozen of them cross the field, which is what the armorials draw and what the
- * dancetty would have three of.
+ * The tooth is fixed rather than reckoned off what is being cut, so that a fess,
+ * a bend and the edge of the shield are cut with the same teeth — which is what
+ * makes a line recognisable wherever it is drawn. What a blazon chose between is
+ * exactly these two numbers: a tooth is a triangle, and a triangle is settled by
+ * how long it is and how deep.
+ *
+ * Between them they settle the angle at the point, which is what the dictionaries
+ * actually compare: a tooth longer than it is deep comes to a sharp point, and
+ * one as long as it is deep comes to a right angle.
+ *
+ * A line is cut into whole teeth, so the length asked for is rarely the length
+ * cut: what is kept is the shape of the tooth rather than its size, and both
+ * numbers are scaled together to whatever the line came out at. A vivré cut a
+ * tenth short is a right angle still, which it would not be if the depth stood
+ * while the length gave way.
  */
-const TOOTH = 20;
-const BITE = 10;
+export interface Cut {
+  /** How far along the line one tooth reaches, which is half of its period. */
+  readonly tooth: number;
+  /** How far across the line the teeth reach, from the point to the notch. */
+  readonly bite: number;
+}
+
+/**
+ * The small-toothed line — "notched after the manner of dancetty, but with
+ * smaller teeth". Half a dozen of them cross the field, which is what the
+ * armorials draw.
+ */
+export const INDENTED: Cut = { tooth: 20, bite: 10 };
+
+/**
+ * The same teeth cut larger, and so fewer: three of them cross a fess, which is
+ * the count Parker draws and what tells a dancetty from an indented at sight.
+ * Deeper than it is long, which brings the point to the acute angle Parker says
+ * the armorials usually draw this line with.
+ */
+export const DANCETTY: Cut = { tooth: 35, bite: 40 };
+
+/**
+ * The dancetty's teeth with the angle at the point opened to a right one, which
+ * is the vivré: as deep as it is long, which is exactly what makes the angle
+ * square.
+ *
+ * It is the point that is square and not the tooth. Parker's "appearance of
+ * rectangular steps" is what a right-angled zigzag looks like when the band it
+ * is cut in runs at a slant — on a bend the limbs of each tooth stand upright
+ * and flat, and the band reads as a staircase. Across a fess the same cut is a
+ * zigzag of right angles and nothing stair-like at all.
+ */
+export const VIVRE: Cut = { tooth: 35, bite: 35 };
 
 /** The two ways a tooth reaches from a line that runs flat, or from one that stands. */
-export const DOWNWARD: Point = [0, BITE];
-export const SIDEWAYS: Point = [BITE, 0];
+export const DOWNWARD: Point = [0, 1];
+export const SIDEWAYS: Point = [1, 0];
 
 /**
  * The way a tooth reaches when it is cut square to the line it is cut in, which
@@ -31,10 +72,13 @@ export const SIDEWAYS: Point = [BITE, 0];
  * steps rather than as teeth. Both edges are pushed alike whichever way is
  * chosen, so the band keeps its width either way; this is the way that looks
  * like the line it is.
+ *
+ * It comes back as a direction and not a distance, as the other two do: how far
+ * the tooth reaches is the cut's to say.
  */
 export const square = ([fromX, fromY]: Point, [toX, toY]: Point): Point => {
   const run = Math.hypot(toX - fromX, toY - fromY);
-  return [(-(toY - fromY) * BITE) / run, ((toX - fromX) * BITE) / run];
+  return [-(toY - fromY) / run, (toX - fromX) / run];
 };
 
 /**
@@ -52,19 +96,26 @@ export const square = ([fromX, fromY]: Point, [toX, toY]: Point): Point => {
  * sliding its edges sideways, so its teeth are cut sideways too, and the band
  * keeps the width it would have had.
  */
-export function toothed(line: readonly Point[], [biteX, biteY]: Point): readonly Point[] {
+export function toothed(
+  line: readonly Point[],
+  [wayX, wayY]: Point,
+  { tooth, bite }: Cut
+): readonly Point[] {
   const cut: Point[] = [];
+  const at = (x: number, y: number, deep: number, point: number): Point => [
+    x + wayX * deep * pushed(point),
+    y + wayY * deep * pushed(point),
+  ];
   for (let corner = 1; corner < line.length; corner += 1) {
     const [fromX, fromY] = line[corner - 1];
     const [toX, toY] = line[corner];
-    const teeth = Math.max(1, Math.round(Math.hypot(toX - fromX, toY - fromY) / (2 * TOOTH)));
+    const run = Math.hypot(toX - fromX, toY - fromY);
+    const teeth = Math.max(1, Math.round(run / (2 * tooth)));
     const points = 2 * teeth;
+    const deep = bite * (run / points / tooth);
     for (let point = corner === 1 ? 0 : 1; point <= points; point += 1) {
       const along = point / points;
-      cut.push([
-        fromX + (toX - fromX) * along + biteX * pushed(point),
-        fromY + (toY - fromY) * along + biteY * pushed(point),
-      ]);
+      cut.push(at(fromX + (toX - fromX) * along, fromY + (toY - fromY) * along, deep, point));
     }
   }
   return cut;
@@ -75,15 +126,15 @@ function pushed(point: number): number {
   return point % 2 === 0 ? -1 / 2 : 1 / 2;
 }
 /**
- * A band that follows an outline, with its inner edge cut into teeth: how deep
- * the plain band beneath the teeth runs, and the teeth standing on it.
+ * A band that follows an outline, with its inner edge cut along a modified line:
+ * how deep the plain band beneath the teeth runs, and the teeth standing on it.
  *
  * This is what a band following the edge of the shield needs and no band
  * crossing the field does. The outer edge of such a band is the outline itself
  * and is not the band's to cut, so the teeth are all on the one side, and the
  * band is deeper where a tooth reaches and shallower where a notch does. That is
- * how the armorials draw it; every other indented band keeps its width, both its
- * edges being free.
+ * how the armorials draw it; every other band cut along a line keeps its width,
+ * both its edges being free.
  *
  * It comes back as a band and a row of teeth rather than as one outline, because
  * an outline brought inside a corner crosses itself there — the two sides reach
@@ -111,35 +162,53 @@ function pushed(point: number): number {
 export interface Toothed {
   /** How deep the band the teeth stand on runs, which is shallower than the whole. */
   readonly beneath: number;
-  /** The teeth, each a triangle standing on that band and reaching a bite deeper. */
+  /** The teeth, each standing on that band and reaching a bite deeper. */
   readonly teeth: readonly Shape[];
 }
 
-/** How far back into the band a tooth reaches, which is more than any curve of it. */
-const ROOT = BITE / 2;
+/**
+ * How far back into the band a tooth reaches, as a part of its bite, which is
+ * more than any curve of the outline it stands on.
+ */
+const ROOT = 1 / 2;
 
-export function toothedInside(outline: readonly Point[], depth: number): Toothed {
+export function toothedInside(
+  outline: readonly Point[],
+  depth: number,
+  { tooth: along, bite }: Cut
+): Toothed {
   const walked = walking(outline);
-  const count = Math.max(1, Math.round(walked.length / (2 * TOOTH)));
+  // A band with one free edge has only its own depth to spend, and a cut deeper
+  // than the band would leave nothing of it between the notches. So a tooth too
+  // big for the band is scaled down whole rather than trimmed: it keeps the
+  // angle at its point, which is what the line is, and loses the size, which is
+  // what the band cannot carry. Every line is cut smaller round a bordure than
+  // across a fess, and each is cut smaller than the next by the same measure.
+  const fits = Math.min(1, depth / bite);
+  const cut = { along: along * fits, bite: bite * fits };
+  const count = Math.max(1, Math.round(walked.length / (2 * cut.along)));
   const points = 2 * count;
   const inward = turning(outline);
-  const beneath = depth - BITE / 2;
+  // Scaled again to the teeth the outline came out with, as a band's are, so
+  // that the point of a tooth is the same angle round a bordure as across a fess.
+  const deep = cut.bite * (walked.length / points / cut.along);
+  const beneath = depth - deep / 2;
+  const root = beneath - deep * ROOT;
   const at = (point: number, deep: number): Point => {
     const [[x, y], [alongX, alongY]] = walked.at((point * walked.length) / points);
     return [x - inward * alongY * deep, y + inward * alongX * deep];
   };
+  // Each tooth stands on the whole of its period, so that the teeth meet where
+  // they come down and the edge is a saw with no flat in it.
+  const toothed = (tooth: number): readonly Point[] => [
+    at(2 * tooth, beneath),
+    at(2 * tooth + 1, beneath + deep),
+    at(2 * tooth + 2, beneath),
+    at(2 * tooth + 1, root),
+  ];
   return {
     beneath,
-    teeth: Array.from({ length: count }, (_, tooth) =>
-      polygon(
-        pointsOf([
-          at(2 * tooth, beneath),
-          at(2 * tooth + 1, beneath + BITE),
-          at(2 * tooth + 2, beneath),
-          at(2 * tooth + 1, beneath - ROOT),
-        ])
-      )
-    ),
+    teeth: Array.from({ length: count }, (_, tooth) => polygon(pointsOf(toothed(tooth)))),
   };
 }
 

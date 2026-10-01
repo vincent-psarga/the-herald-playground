@@ -96,6 +96,7 @@ export const RULES: readonly Rule[] = [
     cases: [
       en('Argent a border gules'),
       en('Azure a bezant'),
+      en('Azure a fess dancetté or'),
       en('Pily counter pily of four or and azure'),
       fr("D'argent au losange de gueules"),
       fr("D'or aux trois tourteaux de gueules"),
@@ -345,6 +346,49 @@ export const RULES: readonly Rule[] = [
       laLangueDuBlason('« plain » et « plein »', '2012/08/plain-et-plein-en-langue-du-blason.html'),
     ],
     cases: [fr('De gueules plain'), fr("D'hermine plain"), fr("D'or plain au chef de gueules")],
+  },
+  {
+    id: 'a-word-one-tongue-never-had',
+    heading: 'A tongue with no word of its own is written in the word it borrowed',
+    law: (
+      <>
+        <p className="rule__law">
+          English cut the saw-toothed line in two and named both halves — indented for the small
+          teeth, dancetty for the great ones — and never named the third, where the great teeth come
+          to a right angle at the point instead of a sharper one. French named it vivré. So that is
+          the word English is written in: a bend vivré, where the same arms in French are à la bande
+          vivrée.
+        </p>
+        <p className="rule__law">
+          The alternative would be to answer vivré with dancetty, which is the nearest English word
+          and not the same drawing — one line comes to a sharper point than the other. A reader told
+          dancetty would draw the wrong band. Borrowing the word says what was meant and says, by
+          being foreign, that English never settled a word for it.
+        </p>
+        <p className="rule__law">
+          It is borrowed only where there is nothing to borrow it over. Where English has a word of
+          its own the English word is written, however freely the armorials write the French one:
+          vairy is written where vairé and vaire are read, all three being the one field.
+        </p>
+      </>
+    ),
+    authority: (
+      <>
+        Parker files Vivré as an entry of an English glossary, “a French term applied to the fesse,
+        bend, &amp;c.”, and blazons English arms with it: it is “practically equivalent to dancetty,
+        except that the indentations are more open, i.e. the lines forming them produce right
+        angles, instead of the acute angles which are usually represented in the drawing of indented
+        or dancetty”. Au blason des armoiries files the same word under its own, where the pieces
+        are “sinueuses et ondées, mais avec des entailles faites d’angles saillants et rentrants”.
+      </>
+    ),
+    sources: [parker('Vivre'), blasonArmoiries('Vivré', 'vivree'), parker('Vair')],
+    cases: [
+      en('Azure a fess vivré or'),
+      fr("D'or à la bande vivrée d'azur"),
+      en('Azure a fess dancetty or'),
+      en('Vairé azure and or'),
+    ],
   },
   {
     id: 'a-modifier-is-written-last',
