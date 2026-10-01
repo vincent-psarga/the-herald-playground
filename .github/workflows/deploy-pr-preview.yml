@@ -1,0 +1,56 @@
+name: Deploy PR preview
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+# The preview is written onto the same branch Pages serves, and its address is
+# left on the pull request as a comment.
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency: preview-${{ github.ref }}
+
+jobs:
+  preview:
+    name: Build and publish the preview
+    # A pull request opened from a fork is handed a read-only token, so there
+    # is no branch for it to write a preview to. The build itself is still
+    # checked on every pull request by the quality workflow.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        if: github.event.action != 'closed'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: github.event.action != 'closed'
+        run: npm ci
+
+      # A preview is served from deeper than the demo itself, under the
+      # umbrella directory and a directory of its own. That whole prefix is
+      # what the build has to be told: the demo reads it back out of
+      # import.meta.env.BASE_URL, and every asset and route is written from it.
+      - name: Build demo
+        if: github.event.action != 'closed'
+        run: npm run build:demo -- --base="/${{ github.event.repository.name }}/pr-preview/pr-${{ github.event.number }}/"
+
+      - name: Answer deep links with the app
+        if: github.event.action != 'closed'
+        run: cp demo/dist/index.html demo/dist/404.html
+
+      # On a closed pull request this takes the preview down again instead of
+      # putting one up, which is what `auto` reads the event to mean.
+      - name: Deploy preview
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: demo/dist
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: auto
