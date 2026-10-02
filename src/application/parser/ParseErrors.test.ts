@@ -68,6 +68,14 @@ describe('a tincture that never arrives', () => {
   test.each([
     ['a division whose tinctures never arrive', 'Coupé'],
     ['a division whose second tincture never arrives', "Coupé d'azur et"],
+    // A field cut between two tinctures owes the second as soon as the first is
+    // read, so a blazon that simply stops is missing a tincture rather than the
+    // conjunction that would have introduced it — which is the grammar's own
+    // plumbing, and names nothing a reader was trying to write.
+    ['a division that stops after its first half', "Parti d'azur"],
+    ['a division whose charged first half is all there is', "Parti d'azur à la fasce d'or"],
+    ['a varied field that stops after its first tincture', "Fascé d'or"],
+    ['a furred field that stops after its first tincture', "Vairé d'or"],
     ['an ordinary borne in no tincture', "D'azur à la fasce"],
   ])('%s', (_why, blazon) => {
     expect(() => french.parse(blazon)).toThrow(MissingTincture);
@@ -75,6 +83,9 @@ describe('a tincture that never arrives', () => {
 
   test.each([
     ['a division whose tinctures never arrive', 'Per pale'],
+    ['a division that stops after its charged first half', 'Per pale azure a fess or'],
+    ['a varied field that stops after its first tincture', 'Barry of six or'],
+    ['a furred field that stops after its first tincture', 'Vairy or'],
     ['an ordinary borne in no tincture', 'Azure a fess'],
   ])('%s, in English', (_why, blazon) => {
     expect(() => english.parse(blazon)).toThrow(MissingTincture);
@@ -94,6 +105,12 @@ describe('a tincture that never arrives', () => {
     expect((refused(() => french.parse("Coupé d'azur et")) as MissingTincture).context).toBe(
       "Coupé d'azur et"
     );
+  });
+
+  test('names the whole of a charged first half, which is all the division got', () => {
+    expect(
+      (refused(() => french.parse("Parti d'azur à la fasce d'or")) as MissingTincture).context
+    ).toBe("Parti d'azur à la fasce d'or");
   });
 
   test('says so plainly when there was no blazon at all', () => {

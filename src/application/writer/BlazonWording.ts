@@ -14,11 +14,14 @@ import {
   isDivision,
   isFurred,
   isVariation,
+  saidInTwo,
+  sameArms,
   usualPieces,
 } from '../../domain/models/Field';
 import { OrdinaryType, SEVERAL, borne } from '../../domain/models/Ordinary';
 import { Tincture } from '../../domain/models/Tinctures';
 import { NumberWords, counted } from '../../domain/translations/Numbers';
+import { FIRST } from '../../domain/translations/Ranks';
 import { Strewings, strewnIn } from '../../domain/translations/Strewings';
 import {
   Translation,
@@ -86,6 +89,17 @@ export interface BlazonWording<W extends Word = Word> {
   readonly strew: (word: W) => string;
   /** The conjunction joining the halves of a divided field. */
   readonly conjunction: string;
+  /**
+   * How the language names the rank of one part of a divided field: "au
+   * premier", "au second". The rank arrives as the number it is, counting from
+   * one, the language having said how it spells its ranks.
+   *
+   * A language that does not rank the parts leaves this off — English sets two
+   * whole coats side by side another way, naming the dexter first and saying
+   * "impaled with" between them — and writes the unranked form, which can say
+   * only what the first part bears.
+   */
+  readonly rank?: (ranks: readonly number[]) => string;
 }
 
 /**
@@ -113,11 +127,23 @@ const SEPARATOR = ',';
  * covers the bends.
  */
 export function writeBlazon<W extends Word>(wording: BlazonWording<W>, blazon: Blazon): string {
-  const field = capitalise(writeField(wording, blazon.field));
+  return `${capitalise(writeArms(wording, blazon))}.`;
+}
+
+/**
+ * A field and whatever it bears, which is the same phrase wherever it stands:
+ * the whole shield says it, and so does either half of a divided field.
+ *
+ * The sentence is what a blazon is written as, and a half is no sentence — it is
+ * written inside one — so the capital and the full stop are put on by the caller
+ * that has a sentence to make.
+ */
+function writeArms<W extends Word>(wording: BlazonWording<W>, blazon: Blazon): string {
+  const field = writeField(wording, blazon.field);
   const borne = (blazon.chargesOrOrdinaries ?? [])
     .map((one) => writeBorne(wording, one))
     .join(`${SEPARATOR} `);
-  return `${borne === '' ? field : `${field} ${borne}`}.`;
+  return borne === '' ? field : `${field} ${borne}`;
 }
 
 /**
@@ -260,30 +286,81 @@ function writeVariation<W extends Word>(wording: BlazonWording<W>, variation: Va
   );
 }
 
+/**
+ * The name of the line, then the parts: as two arms joined by the conjunction
+ * where the blazon can be written that way, and ranked where it cannot.
+ *
+ * The unranked form is preferred wherever it says the whole truth, because it is
+ * what the armorials write: "parti d'azur et d'or" comes back out as itself, and
+ * a first half carrying more says more in the same place — "Parti d'azur à trois
+ * fleurs de lys d'or et d'hermine".
+ *
+ * It cannot say everything. What the first half bears reads back as the first
+ * half's, both tongues writing it between that half's tincture and the
+ * conjunction; what the second half bears does not, a blazon written that way
+ * laying it on the shield when it is read again. And a field of four parts has
+ * no unranked form at all beyond its two tinctures. So the ranked form is
+ * written wherever the unranked one would come back as different arms, and the
+ * choice is made by asking what the unranked form would say rather than by
+ * listing the cases.
+ *
+ * A tongue with no ranks writes the unranked form regardless. It is the only
+ * form it has, and what it cannot say it cannot say: English ranks quarters but
+ * not the halves of a partition, and marshals two coats with "impaled with"
+ * instead.
+ */
 function writeDivision<W extends Word>(wording: BlazonWording<W>, division: Division): string {
-  return writeBetween(wording, nameOf(wording.divisions, division.type), division);
+  const ranked = wording.rank;
+  const name = nameOf(wording.divisions, division.type);
+  if (ranked === undefined || saidInTwo(division)) {
+    const [first, second] = division.parts;
+    return [name, writeArms(wording, first), wording.conjunction, writeArms(wording, second)].join(
+      ' '
+    );
+  }
+  const phrases = repeating(division.parts).map(
+    ({ ranks, arms }) => `${ranked(ranks)} ${writeArms(wording, arms)}`
+  );
+  return [`${name}${SEPARATOR}`, phrases.join(`${SEPARATOR} `)].join(' ');
 }
 
 /**
- * A furred field is written as a division is — the name, then the two tinctures
- * — because that is all there is to say: no count stands anywhere in the phrase,
- * and neither tongue puts anything between the name and the pair.
+ * The parts gathered into the phrases a ranked blazon writes: the parts carrying
+ * the same arms under one rank, in the order their first rank comes.
+ *
+ * This is how the armorials write a quartered field — "aux 1 et 4 d'azur au
+ * chevron d'or ; aux 2 et 3, d'azur à trois colombes d'argent" — and saying it
+ * part by part instead would be writing the coat twice where heraldry writes it
+ * once. Parts are gathered only where they carry the very same arms, which is
+ * the only thing one phrase can claim about several.
  */
-function writeFurred<W extends Word>(wording: BlazonWording<W>, furred: Furred): string {
-  return writeBetween(wording, nameOf(wording.furs, furred.type), furred);
+function repeating(
+  parts: readonly Blazon[]
+): readonly { readonly ranks: readonly number[]; readonly arms: Blazon }[] {
+  const phrases: { ranks: number[]; arms: Blazon }[] = [];
+  parts.forEach((arms, part) => {
+    const already = phrases.find((phrase) => sameArms(phrase.arms, arms));
+    if (already === undefined) {
+      phrases.push({ ranks: [FIRST + part], arms });
+    } else {
+      already.ranks.push(FIRST + part);
+    }
+  });
+  return phrases;
 }
 
-/** A named term and the two tinctures it takes, joined by the conjunction. */
-function writeBetween<W extends Word>(
-  wording: BlazonWording<W>,
-  name: string,
-  between: Division | Furred
-): string {
+/**
+ * A furred field is written as a division of two bare halves is — the name, then
+ * the two tinctures — because that is all there is to say: no count stands
+ * anywhere in the phrase, neither tongue puts anything between the name and the
+ * pair, and a pelt has no halves for anything to be laid on.
+ */
+function writeFurred<W extends Word>(wording: BlazonWording<W>, furred: Furred): string {
   return [
-    name,
-    writeTincture(wording, between.firstTincture),
+    nameOf(wording.furs, furred.type),
+    writeTincture(wording, furred.firstTincture),
     wording.conjunction,
-    writeTincture(wording, between.secondTincture),
+    writeTincture(wording, furred.secondTincture),
   ].join(' ');
 }
 

@@ -1,4 +1,4 @@
-import { Parser, alt, apply, kleft, kright, seq, tok } from 'typescript-parsec';
+import { Parser, alt, apply, kleft, kright, list_sc, seq, tok } from 'typescript-parsec';
 import { FrenchDivisionType } from '../../domain/translations/fr/Divisions';
 import { FrenchFurType } from '../../domain/translations/fr/Furs';
 import { FrenchVariationType, PIECES } from '../../domain/translations/fr/Variations';
@@ -12,13 +12,14 @@ import { WrongOrdinaryArticle } from '../../domain/errors/parsing/WrongOrdinaryA
 import { WrongTinctureArticle } from '../../domain/errors/parsing/WrongTinctureArticle';
 import { FrenchModifiers } from '../../domain/translations/fr/Modifiers';
 import { FrenchNumbers } from '../../domain/translations/fr/Numbers';
+import { FrenchRanks } from '../../domain/translations/fr/Ranks';
 import { FrenchTinctures } from '../../domain/translations/fr/Tinctures';
 import { Modifier } from '../../domain/models/Modifier';
 import { asSeveral, wordsOf, writtenAs } from '../../domain/translations/Translation';
 import { TokenKind } from '../lexer/Lexer';
 import { BlazonGrammar } from '../parser/BlazonGrammar';
 import { anyKeyword, guard, keyword, optional, spelledTerm, term } from '../parser/Combinators';
-import { asOrdinary, asDivision, asTincture } from '../parser/Failures';
+import { asOrdinary, asDivision, asRank, asTincture } from '../parser/Failures';
 import { NOT_IN_NUMBER, alone, bearings, modifiable, several } from '../parser/Borne';
 import { ModifierForm, modifying } from '../parser/Modifiers';
 import { number } from '../parser/Numbers';
@@ -193,6 +194,27 @@ const SOWN_CHARGE = kright(
 
 // A field of one tincture may be called bare, or be said to have been sown, and
 // is never both: what "plain" promises is that nothing was sown on it either.
+/**
+ * The ranks one phrase of a divided field names: "au premier", "au second", and
+ * the same ranks in figures or in Roman numerals — "au 1", "au II" — which the
+ * armorials write as readily.
+ *
+ * One phrase may name several, which is how the armorials write a quartered
+ * field whose quarters repeat: "Écartelé : aux 1 et 4 d'azur au chevron d'or ;
+ * aux 2 et 3, d'azur à trois colombes d'argent". The article turns plural when
+ * it does, as it does before a count, and the ranks are joined by the same "et"
+ * that joins the halves of a field — so "aux" is read with a list behind it and
+ * "au" with a single rank, and a blazon that writes one article where it meant
+ * the other has said something neither form reads.
+ *
+ * The article is the one that stands before a charge, so a list of what a part
+ * bears has to be told that a rank may stand where it is looking for one.
+ */
+const RANK = alt(
+  apply(kright(AU, number(FrenchRanks, asRank)), (rank) => [rank]),
+  kright(keyword('aux'), list_sc(number(FrenchRanks, asRank), AND))
+);
+
 const TREATMENT = alt(
   apply(PLAIN, () => BARE),
   strewing(alt(NAMED_STREWING, SOWN_CHARGE), TINCTURE)
@@ -211,4 +233,5 @@ export const FrenchBlazonGrammar: BlazonGrammar = {
   treatment: TREATMENT,
   borne: BORNE,
   and: AND,
+  rank: RANK,
 };

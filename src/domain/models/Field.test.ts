@@ -12,6 +12,7 @@ import {
   Variation,
   VariationType,
   cutInPieces,
+  half,
   isDivision,
   isFurred,
   isPlain,
@@ -19,14 +20,14 @@ import {
   kindOf,
   usualPieces,
 } from './Field';
+import { ChargeType } from './Charge';
 import { Colours, Metals } from './Tinctures';
 
 const PLAIN: Plain = { type: FieldType.plain, tincture: Metals.or };
 
 const DIVIDED: Division = {
   type: FieldType.fess,
-  firstTincture: Metals.or,
-  secondTincture: Colours.azure,
+  parts: [half(Metals.or), half(Colours.azure)],
 };
 
 const VARIED: Variation = {
@@ -110,6 +111,34 @@ describe('telling one kind of field from another', () => {
 
   test.each(FURS)('%s is a furred field', (type) => {
     expect(isFurred({ ...FURRED, type })).toBe(true);
+  });
+});
+
+describe('the halves of a divided field', () => {
+  test('a half of one tincture is a plain field bearing nothing', () => {
+    expect(half(Metals.or)).toEqual({ field: { type: FieldType.plain, tincture: Metals.or } });
+  });
+
+  test('leaves the list off rather than bearing an empty one', () => {
+    // Which is what keeps one half from having two ways to be written: a half
+    // that bears nothing reads back as the tincture it was written as, exactly
+    // as a plain field bearing nothing does.
+    expect(half(Metals.or).chargesOrOrdinaries).toBeUndefined();
+  });
+
+  test('a half is arms, so it bears what a shield bears', () => {
+    const charged: Division = {
+      type: FieldType.pale,
+      parts: [
+        {
+          field: { type: FieldType.plain, tincture: Colours.azure },
+          chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count: 3 }],
+        },
+        half(Colours.gules),
+      ],
+    };
+    expect(isDivision(charged)).toBe(true);
+    expect(charged.parts[0].chargesOrOrdinaries).toHaveLength(1);
   });
 });
 

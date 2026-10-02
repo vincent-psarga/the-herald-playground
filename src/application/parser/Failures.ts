@@ -68,6 +68,16 @@ export const asCount: Vocabulary = {
   unknown: (word, position) => new BlazonParseError(`Not a number: ${word}`, position),
 };
 
+/**
+ * A rank names no heraldic term either — it says which part of a divided field
+ * the arms after it are laid in — so a word standing where one is expected has
+ * simply failed to be a rank, and the complaint names no kind of its own.
+ */
+export const asRank: Vocabulary = {
+  unknown: (word, position) => new BlazonParseError(`Not a rank: ${word}`, position),
+  owed: (context) => new BlazonParseError(`Missing the other part in: ${context}`),
+};
+
 export const asOrdinary: Vocabulary = {
   unknown: (word, position) => new UnknownOrdinary(word, position),
   owed: (context) => new MissingOrdinary(context),
@@ -91,6 +101,32 @@ export function owed(vocabulary: Vocabulary): ParseError {
     owed: complain,
   };
   return failure;
+}
+
+/**
+ * A phrase whose absence at the end of the blazon is a term going missing.
+ *
+ * A rule that has read enough to know what it is owed can say so plainly: a
+ * division has named one tincture where it names two, so a blazon that simply
+ * stops is missing a tincture. Left to the leaf parsers, the complaint would be
+ * about whatever word stands first in the phrase — the conjunction, which is the
+ * grammar's own plumbing and names nothing a reader was trying to write.
+ *
+ * Only the end of the blazon is answered for. A word that arrived and was the
+ * wrong one names itself, and the parser that read it complains better than this
+ * could.
+ */
+export function owedAtEnd<TResult>(
+  parser: Parser<TokenKind, TResult>,
+  vocabulary: Vocabulary
+): Parser<TokenKind, TResult> {
+  return {
+    parse(token) {
+      return token === undefined
+        ? { successful: false, error: owed(vocabulary) }
+        : parser.parse(token);
+    },
+  };
 }
 
 /**
@@ -125,12 +161,15 @@ export function within<TResult>(parser: Parser<TokenKind, TResult>): Parser<Toke
  * where nothing says otherwise.
  *
  * The lexer drops the spaces, so they are put back between every pair of tokens
- * but those an elision binds: "d'" and "azur" were one word and stay one.
+ * but those an elision binds: "d'" and "azur" were one word and stay one. A mark
+ * binds the other way round, leaning on the word before it: "au premier d'azur,
+ * au second" is how a blazon writes it and how a complaint quoting it should
+ * read.
  */
 export function textBetween(token: Token<TokenKind> | undefined, until?: Token<TokenKind>): string {
   let text = '';
   for (let current = token; current !== undefined && current !== until; current = current.next) {
-    if (text !== '' && !/['’]$/.test(text)) {
+    if (text !== '' && !/['’]$/.test(text) && current.kind !== TokenKind.Separator) {
       text += ' ';
     }
     text += current.text;

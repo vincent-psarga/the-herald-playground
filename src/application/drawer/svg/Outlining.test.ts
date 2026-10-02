@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { Blazon } from '../../../domain/models/Blazon';
 import { ChargeType } from '../../../domain/models/Charge';
-import { FieldType } from '../../../domain/models/Field';
+import { FieldType, half } from '../../../domain/models/Field';
 import { OrdinaryType } from '../../../domain/models/Ordinary';
 import { Colours, Metals } from '../../../domain/models/Tinctures';
 import { HatchingColours } from '../../../infra/colours/HatchingColours';
@@ -115,11 +115,7 @@ describe('the outline a hatched drawing carries', () => {
 
   test('draws a line along the cut of a divided field', () => {
     const svg = hatched.draw({
-      field: {
-        type: FieldType.pale,
-        firstTincture: Metals.or,
-        secondTincture: Colours.gules,
-      },
+      field: { type: FieldType.pale, parts: [half(Metals.or), half(Colours.gules)] },
     });
     expect(outlines(svg)).toHaveLength(2);
   });

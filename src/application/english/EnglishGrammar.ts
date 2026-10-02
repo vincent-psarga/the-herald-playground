@@ -1,6 +1,8 @@
 import { alt } from 'typescript-parsec';
 import { Word } from '../../domain/translations/Word';
 import { keyword } from '../parser/Combinators';
+import { EnglishRanks } from '../../domain/translations/en/Ranks';
+import { nameOf } from '../../domain/translations/Translation';
 
 // English plumbing, not heraldry: what holds a blazon together between the terms.
 // English names a tincture bare — "Azure." — so there is no article to agree with.
@@ -48,4 +50,17 @@ export function bearing(word: Word, count?: string): string {
   return count === undefined
     ? `${indefiniteArticle(word)} ${word.value}`
     : `${count} ${word.plural}`;
+}
+
+/**
+ * How English names the rank of one part of a divided field, or of several parts
+ * carrying the same arms: "first", "second and third".
+ *
+ * A bare ordinal and no article, which is how Parker writes it — "Quarterly;
+ * first and fourth gules, three cinquefoils ... ; second gules, three cinquefoils
+ * argent" — and several ranks to a phrase are joined by the conjunction that
+ * joins anything else.
+ */
+export function ranked(ranks: readonly number[]): string {
+  return ranks.map((rank) => nameOf(EnglishRanks, `${rank}`)).join(` ${CONJUNCTION} `);
 }

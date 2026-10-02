@@ -11,6 +11,7 @@ import {
   FurType,
   Plain,
   VariationType,
+  painted,
   usualPieces,
 } from '../../src/domain/models/Field';
 import { OrdinaryDefinitions, OrdinaryType } from '../../src/domain/models/Ordinary';
@@ -346,13 +347,13 @@ function armsOf<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W): Bl
   switch (sense.rank) {
     case 'tincture':
       return { field: { type: FieldType.plain, tincture: sense.term } };
-    // A division and a furred field are written the same way and are kept apart
-    // because the model declares their terms under different kinds: it asks
-    // which of the two a field is by the term it carries, and answering with
-    // either would be answering with neither.
+    // A division and a furred field are blazoned the same way — the name, then
+    // two tinctures — and are built apart because the model declares their terms
+    // under different kinds: a division divides the field between two halves,
+    // where a pelt covers it entire and has no halves for anything to be laid on.
     case 'division':
       return {
-        field: { type: sense.term, firstTincture: METAL, secondTincture: COLOUR },
+        field: { type: sense.term, parts: painted(sense.term, METAL, COLOUR) },
       };
     case 'furred field':
       return {

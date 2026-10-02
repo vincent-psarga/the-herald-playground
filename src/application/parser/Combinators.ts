@@ -221,6 +221,34 @@ function began<TKind>(token: Token<TKind> | undefined, error: ParseError): boole
 }
 
 /**
+ * Matches a phrase except where another phrase stands in its place.
+ *
+ * It refuses at the very token it would have begun on, so a rule reading it
+ * optionally treats it as absent rather than as begun and gone wrong. That is
+ * the whole point: French opens a bearing and a rank with the same word, so a
+ * list of what a part bears would read "au second" as far as the article before
+ * finding no charge there, and a reading that had got that far is a reading the
+ * grammar owes an explanation for. Told what else may stand there, it stops
+ * instead, and the rank is left for the rule that was waiting for it.
+ */
+export function unless<TKind, TResult>(
+  parser: Parser<TKind, TResult>,
+  other: Parser<TKind, unknown>
+): Parser<TKind, TResult> {
+  return {
+    parse(token: Token<TKind> | undefined): ParserOutput<TKind, TResult> {
+      if (!other.parse(token).successful) {
+        return parser.parse(token);
+      }
+      return {
+        successful: false,
+        error: { kind: 'Error', pos: token?.pos, message: 'Another phrase stands here.' },
+      };
+    },
+  };
+}
+
+/**
  * Matches something optional, without reporting why it was absent.
  *
  * typescript-parsec's own opt_sc carries the failed branch's error forward, and

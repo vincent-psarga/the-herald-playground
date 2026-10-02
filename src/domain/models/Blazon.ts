@@ -21,6 +21,10 @@ export function isCharge(borne: ChargeOrOrdinary): borne is Charge {
  * A field, and whatever is laid on it. The list is optional because most of the
  * blazons the vocabulary can read carry nothing at all.
  *
+ * It is what a whole shield says and what either half of a divided field says:
+ * a half is a field with its own bearings, so heraldry charges one exactly as it
+ * charges a shield, and one type holds both.
+ *
  * Bands and charges share one list rather than having one apiece, because they
  * are kept in the order the blazon named them and that order says which covers
  * which: a bordure blazoned after three bends is drawn over them, and a bend

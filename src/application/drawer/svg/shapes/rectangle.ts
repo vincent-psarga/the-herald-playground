@@ -7,8 +7,12 @@ export const rectangle =
   (brush) =>
     `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${brush.fill}"${swelling(brush)}/>`;
 
-/** The outline of such a rectangle, written as a path so it can enclose another. */
-const outline = (x: number, y: number, width: number, height: number): string =>
+/**
+ * The outline of such a rectangle, written as a path so it can enclose another —
+ * or clip whatever is drawn into it, a part of a divided field being a box like
+ * any other.
+ */
+export const rectangleOutline = (x: number, y: number, width: number, height: number): string =>
   `M ${x} ${y} H ${x + width} V ${y + height} H ${x} Z`;
 
 /**
@@ -24,8 +28,13 @@ export const hollowRectangle = (
   band: number
 ): Shape =>
   hollow(
-    outline(x, y, width, height),
-    outline(x + band, y + band, Math.max(0, width - 2 * band), Math.max(0, height - 2 * band))
+    rectangleOutline(x, y, width, height),
+    rectangleOutline(
+      x + band,
+      y + band,
+      Math.max(0, width - 2 * band),
+      Math.max(0, height - 2 * band)
+    )
   );
 
 /**
@@ -46,6 +55,6 @@ export const piercedRectangle = (
   radius: number
 ): Shape =>
   hollow(
-    outline(x, y, width, height),
+    rectangleOutline(x, y, width, height),
     circleOutline(x + Math.round(width / 2), y + Math.round(height / 2), radius)
   );

@@ -4,7 +4,7 @@ import { InvalidTincture } from '../../domain/errors/parsing/InvalidTincture';
 import { UnknownOrdinary } from '../../domain/errors/parsing/UnknownOrdinary';
 import { UnknownTincture } from '../../domain/errors/parsing/UnknownTincture';
 import { ChargeType } from '../../domain/models/Charge';
-import { Field, FieldType, Semy, isPlain } from '../../domain/models/Field';
+import { Field, FieldType, Semy, half, isPlain } from '../../domain/models/Field';
 import { OrdinaryType } from '../../domain/models/Ordinary';
 import { Colours, Furs, Metals } from '../../domain/models/Tinctures';
 import { FrenchBlazonParser } from '../parser/FrenchBlazonParser';
@@ -79,10 +79,35 @@ describe('a field sown with a charge', () => {
     expect(() => parser.parse("D'azur billeté de fuchsia")).toThrow(UnknownTincture);
   });
 
-  test('leaves a divided field unsown: which half was sown is not read', () => {
-    expect(() => parser.parse("Parti d'azur et d'or semé de billettes d'argent")).toThrow();
-    expect(parser.parse("Parti d'azur et d'or").field).toMatchObject({
+  // A half is a field, so the sowing belongs to the half whose tincture it
+  // follows — which is how the armorials write it: "Parti de gueules semé de
+  // larmes d'argent, et de sinople semé de larmes d'or" sows each half with its
+  // own. There is still no sowing of a divided field entire: nothing in the
+  // model holds one, and nothing in either tongue says it here.
+  test('sows the half whose tincture it follows, not the field entire', () => {
+    expect(parser.parse("Parti d'azur et d'or semé de billettes d'argent").field).toEqual({
       type: FieldType.pale,
+      parts: [
+        half(Colours.azure),
+        {
+          field: {
+            type: FieldType.plain,
+            tincture: Metals.or,
+            semy: { type: ChargeType.billet, tincture: Metals.argent },
+          },
+        },
+      ],
+    });
+  });
+
+  test('sows the first half where the blazon sows it there', () => {
+    expect(parser.parse("Parti d'azur semé de billettes d'or et d'argent").field).toMatchObject({
+      parts: [
+        {
+          field: { semy: { type: ChargeType.billet, tincture: Metals.or } },
+        },
+        { field: { tincture: Metals.argent } },
+      ],
     });
   });
 });
@@ -191,8 +216,19 @@ describe('a field the blazon calls plain', () => {
     });
   });
 
-  test('is not written of a divided field, which is no plain field at all', () => {
-    expect(() => parser.parse("Parti d'azur et d'or plain")).toThrow();
+  // Said of a half rather than of the division, a half being a field like any
+  // other: "Parti d'azur à six macles d'argent, et d'hermine plain" is how the
+  // armorials write it, the word telling the charged half from the bare one. It
+  // promises what it always promises, and the half that breaks the promise is
+  // refused.
+  test('is said of a half, which is a field like any other', () => {
+    expect(parser.parse("Parti d'azur et d'or plain").field).toEqual({
+      type: FieldType.pale,
+      parts: [half(Colours.azure), half(Metals.or)],
+    });
+    expect(() => parser.parse("Parti de vair plain à la fasce d'or, et de gueules")).toThrow(
+      ChargedPlainField
+    );
   });
 
   test('is never both plain and sown', () => {

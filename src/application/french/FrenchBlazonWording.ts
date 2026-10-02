@@ -9,7 +9,15 @@ import { FrenchTinctures } from '../../domain/translations/fr/Tinctures';
 import { FrenchVariationType } from '../../domain/translations/fr/Variations';
 import { FrenchWord } from '../../domain/translations/fr/FrenchWord';
 import { BlazonWording } from '../writer/BlazonWording';
-import { CONJUNCTION, agreeing, bearing, cutIn, sownIn, withArticle } from './FrenchGrammar';
+import {
+  CONJUNCTION,
+  agreeing,
+  bearing,
+  cutIn,
+  ranked,
+  sownIn,
+  withArticle,
+} from './FrenchGrammar';
 
 export const FrenchBlazonWording: BlazonWording<FrenchWord> = {
   tinctures: FrenchTinctures,
@@ -32,4 +40,7 @@ export const FrenchBlazonWording: BlazonWording<FrenchWord> = {
   // introduced by, elided on the word's own terms.
   strew: (word) => `${SOWN.value} ${sownIn(word)}`,
   conjunction: CONJUNCTION,
+  // "Parti, au premier d'azur à trois fleurs de lys d'or, au second d'hermine":
+  // the rank is written where the unranked form could not say what a part bears.
+  rank: ranked,
 };
