@@ -305,6 +305,8 @@ describe('every refusal', () => {
     "Parti d'azur",
     "D'azur fasce d'or",
     "D'argent au besant d'azur",
+    "D'azur à la bordure de l'un à l'autre",
+    "Parti d'azur et d'or au besant de l'un à l'autre",
     '.',
     "D'azur..",
   ];
@@ -328,6 +330,12 @@ describe('every refusal', () => {
     expect(refused(() => french.parse("D'azur à la")).name).toBe('MissingOrdinary');
     expect(refused(() => french.parse('de or')).name).toBe('WrongTinctureArticle');
     expect(refused(() => french.parse("D'argent au besant d'azur")).name).toBe('InvalidTincture');
+    expect(refused(() => french.parse("D'azur à la bordure de l'un à l'autre")).name).toBe(
+      'UndividedField'
+    );
+    expect(
+      refused(() => french.parse("Parti d'azur et d'or au besant de l'un à l'autre")).name
+    ).toBe('InvalidTincture');
   });
 
   test('says where it gave up, counting rows and columns from one', () => {

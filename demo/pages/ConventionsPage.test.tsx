@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
+import { isCounterchanged } from '../../src/domain/models/Counterchanged';
 import { isDivision, isFurred, isPlain, isVariation } from '../../src/domain/models/Field';
 import { Languages } from '../../src/domain/models/Languages';
 import { METALS, Tincture, isFur } from '../../src/domain/models/Tinctures';
@@ -54,6 +55,7 @@ const HEADINGS = [
   'A French modifier agrees with the charge the blazon named',
   'A modifier is said only of a charge that can show it',
   'A word the armorials keep for one charge is written of that charge alone',
+  'Counterchanging is one thing, whatever French calls it',
   'The smaller settlements',
 ];
 
@@ -141,6 +143,61 @@ describe('what each rule shows', () => {
   test('keeps the tincture where the name means no single one', () => {
     mount(<ConventionsPage />);
     expect(shown("D'or au tourteau de gueules").written).toContain("D'or au tourteau de gueules.");
+  });
+
+  test('writes counterchanging in the one phrase each tongue keeps for it', () => {
+    mount(<ConventionsPage />);
+    // Both French phrases are read and the one comes back, which is the same
+    // settling every other spelling on this page is under.
+    expect(shown("Parti d'or et de sable à la bordure de l'un en l'autre").written).toEqual([
+      "Parti d'or et de sable à la bordure de l'un à l'autre.",
+      'Per pale or and sable a bordure counterchanged.',
+    ]);
+    expect(shown("Parti d'or et de sable à la bordure de l'un à l'autre").written).toEqual([
+      "Parti d'or et de sable à la bordure de l'un à l'autre.",
+      'Per pale or and sable a bordure counterchanged.',
+    ]);
+    expect(shown('Per pale argent and sable a fess counterchanged').written).toEqual([
+      "Parti d'argent et de sable à la fasce de l'un à l'autre.",
+      'Per pale argent and sable a fess counterchanged.',
+    ]);
+  });
+
+  test('refuses counterchanging where there is nothing to counterchange, and draws no arms', () => {
+    mount(<ConventionsPage />);
+    const refused = shown('Or a bordure counterchanged');
+    expect(refused.refused).toBe(
+      'Nothing to counterchange: the field is not divided between two tinctures'
+    );
+    expect(refused.written).toEqual([]);
+    expect(refused.arms).toBe(0);
+  });
+
+  test('counterchanges a charge, and several, and one under a modifier', () => {
+    mount(<ConventionsPage />);
+    expect(shown("Coupé d'or et de sable à deux losanges de l'un à l'autre").written).toEqual([
+      "Coupé d'or et de sable à deux losanges de l'un à l'autre.",
+      'Per fess or and sable two lozenges counterchanged.',
+    ]);
+    // A lozenge voided is a mascle, and the name says the voiding by being
+    // written: the phrase follows it and nothing stands between.
+    expect(shown('Per pale argent and sable three lozenges voided counterchanged').written).toEqual(
+      [
+        "Parti d'argent et de sable à trois macles de l'un à l'autre.",
+        'Per pale argent and sable three mascles counterchanged.',
+      ]
+    );
+  });
+
+  test('refuses a name that has already said what the figure is painted with', () => {
+    mount(<ConventionsPage />);
+    // The plain name takes it and the name that means gold does not.
+    expect(shown('Per pale or and sable a roundel counterchanged').written).toContain(
+      'Per pale or and sable a roundel counterchanged.'
+    );
+    const refused = shown('Per pale or and sable a besant counterchanged');
+    expect(refused.refused).toBe('Wrong tincture: besant is never counterchanged');
+    expect(refused.arms).toBe(0);
   });
 
   test('refuses a tincture the name cannot mean, and draws no arms for it', () => {
@@ -350,6 +407,13 @@ describe('the rule of tincture, which every example must keep', () => {
         ...(blazon.chargesOrOrdinaries ?? []),
       ];
       for (const one of over) {
+        // A band that takes the field's own tinctures reversed keeps the rule by
+        // being what it is — metal falls on colour and colour on metal because
+        // that is the whole of what the phrase says — and it names no tincture
+        // for this to weigh.
+        if (isCounterchanged(one.tincture)) {
+          continue;
+        }
         const laid = rank(one.tincture);
         expect(
           ground === 'fur' || laid === 'fur' || ground !== laid,

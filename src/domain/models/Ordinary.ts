@@ -1,4 +1,4 @@
-import { Tincture } from './Tinctures';
+import { Tinctured } from './Counterchanged';
 
 /**
  * The ordinaries: the plain geometric bands a field is charged with, named after
@@ -112,12 +112,19 @@ export const SEVERAL = 2;
  * may itself be charged, and may be drawn with a modified line, but neither is
  * in the vocabulary yet: an ordinary here is a plain band of a plain tincture.
  *
+ * The tincture may be no tincture at all but the field's own two, reversed —
+ * which is a thing said where a tincture is said and answers the same question,
+ * so it is held where a tincture is held. What that comes out as is the field's
+ * to settle rather than the band's, which is exactly why the band cannot name
+ * it: a bordure counterchanged is gold against the sable half and sable against
+ * the gold, and neither of those is what the blazon said.
+ *
  * The count is left off rather than set to one when a single band is borne, so
  * that a fess reads back as the fess it was before a field could bear two.
  */
 export type Ordinary = {
   type: OrdinaryType;
-  tincture: Tincture;
+  tincture: Tinctured;
   /** How many are borne, where more than one is. */
   count?: number;
 };

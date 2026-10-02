@@ -25,6 +25,8 @@ export type {
   ReadEntry,
   UnknownWords,
 } from './application/armorial/ArmorialReading';
+export { COUNTERCHANGED, isCounterchanged } from './domain/models/Counterchanged';
+export type { Counterchanged, Tinctured } from './domain/models/Counterchanged';
 export {
   DIVISIONS,
   FURS,
@@ -35,6 +37,7 @@ export {
   PIECES,
   VARIATIONS,
   cutInPieces,
+  isCounterchangeable,
   isDivision,
   isFurred,
   isPlain,
@@ -84,6 +87,7 @@ export { MissingPieces } from './domain/errors/parsing/MissingPieces';
 export { MissingTincture } from './domain/errors/parsing/MissingTincture';
 export { MissingOrdinary } from './domain/errors/parsing/MissingOrdinary';
 export { ChargedPlainField } from './domain/errors/parsing/ChargedPlainField';
+export { UndividedField } from './domain/errors/parsing/UndividedField';
 export { WrongTinctureArticle } from './domain/errors/parsing/WrongTinctureArticle';
 export { WrongOrdinaryArticle } from './domain/errors/parsing/WrongOrdinaryArticle';
 export { WrongModifier } from './domain/errors/parsing/WrongModifier';

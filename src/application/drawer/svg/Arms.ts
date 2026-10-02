@@ -1,8 +1,17 @@
 import { Blazon, ChargeOrOrdinary, isOrdinary } from '../../../domain/models/Blazon';
 import { Charge, numberBorne } from '../../../domain/models/Charge';
-import { Field, Semy, isDivision, isFurred, isVariation } from '../../../domain/models/Field';
+import { isCounterchanged } from '../../../domain/models/Counterchanged';
+import {
+  Field,
+  Semy,
+  isCounterchangeable,
+  isDivision,
+  isFurred,
+  isVariation,
+} from '../../../domain/models/Field';
 import { borne } from '../../../domain/models/Ordinary';
-import { Painter } from './Ground';
+import { Frame, Painter } from './Ground';
+import { countered } from './painting/countered';
 import { laid } from './painting/laid';
 import { over } from './painting/over';
 import { plain } from './painting/plain';
@@ -31,7 +40,13 @@ import { VARIATIONS } from './vocabulary/coverings/variations';
  * after a billet is drawn over the billet, and before it is drawn under.
  */
 export function arms(blazon: Blazon): Painter {
-  return over(field(blazon.field), ...(blazon.chargesOrOrdinaries ?? []).map(bearing));
+  return over(
+    field(blazon.field),
+    // Handed the field as well as itself: a figure may be painted out of the
+    // field it is laid on rather than out of a tincture of its own, and then
+    // what it comes out as is the field's to answer.
+    ...(blazon.chargesOrOrdinaries ?? []).map((one) => bearing(one, blazon.field))
+  );
 }
 
 /**
@@ -88,12 +103,32 @@ function sown(semy: Semy): Painter {
  * A band or a charge, drawn by whichever vocabulary its term belongs to, however
  * many of it are borne: two chevrons are two bands of one tincture, not two
  * charges each with its own.
+ *
+ * A band may name no tincture and take the field's own two instead, reversed,
+ * and then it is painted out of the field rather than out of an ink: the shapes
+ * are the same shapes, and what fills them is the only thing that differs.
  */
-function bearing(one: ChargeOrOrdinary): Painter {
+function bearing(one: ChargeOrOrdinary, field: Field): Painter {
   const [figure, count] = isOrdinary(one)
     ? ([ORDINARIES[one.type], borne(one)] as const)
     : ([drawn(one), numberBorne(one)] as const);
-  return laid((frame) => figure.shapes(frame, count), INKS[one.tincture]);
+  const shapes = (frame: Frame) => figure.shapes(frame, count);
+  if (!isCounterchanged(one.tincture)) {
+    return laid(shapes, INKS[one.tincture]);
+  }
+  // Nothing is drawn where there is nothing to counterchange between. It cannot
+  // arrive — the parser refuses such a blazon — so this says what to do about a
+  // drawing that has fallen behind the model, and there is nothing honest to do:
+  // the figure names no ink, and the field it would have borrowed one from has
+  // only the one.
+  return isCounterchangeable(field)
+    ? countered(
+        shapes,
+        (frame) => DIVISIONS[field.type].halves(frame),
+        INKS[field.firstTincture],
+        INKS[field.secondTincture]
+      )
+    : over();
 }
 
 /**
