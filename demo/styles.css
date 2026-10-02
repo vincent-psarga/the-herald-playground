@@ -1396,6 +1396,48 @@ body {
   color: var(--bone-quiet);
 }
 
+/* What a pull request says of itself. It is written on GitHub, in GitHub's
+   markdown, and shown here as it was written there: a line about the work, the
+   screenshot it was opened with, and a list of what is still to do. */
+.index__said {
+  margin: 0;
+  max-width: var(--measure);
+  color: var(--bone-quiet);
+}
+
+.index__said p {
+  margin: 0 0 0.75rem;
+}
+
+/* A screenshot is pasted at whatever size it was taken, which is wider than a
+   narrow screen. It gives way rather than pushing the page sideways. */
+.index__said img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.75rem 0;
+}
+
+/* What is still to do, ticked off as the work goes. The boxes are GitHub's own
+   and are not for striking here: the page reports the work, and the work is
+   changed where it is done. */
+.index__said ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.index__said li {
+  margin: 0.2rem 0;
+}
+
+.index__said li input {
+  margin-right: 0.4rem;
+}
+
+.index__said code {
+  color: var(--bone);
+}
+
 /* What the index turns to after the vocabulary. It is a step down from the page's
    own title and a step above the name it introduces, and says so by its size
    alone: there is no rule under it and no box around it. */
@@ -1785,6 +1827,23 @@ body {
   letter-spacing: 0.01em;
   color: var(--bone);
   white-space: nowrap;
+}
+
+/*
+ * An entry answers to an address of its own, so a reader can be sent to one row
+ * of a long roll rather than to the head of it. The row is brought to rest clear
+ * of the top of the screen, there being nothing to read in a line flush against
+ * the edge.
+ */
+.roll tbody tr {
+  scroll-margin-block-start: clamp(1.5rem, 6vh, 4rem);
+}
+
+/* And it says which row was asked for, by standing a little nearer than the
+   rest of the roll: lifted off the ground rather than ruled off it. */
+.roll tbody tr:target th,
+.roll tbody tr:target td {
+  background: var(--void-lift);
 }
 
 /* The blazon is the payload, so it is set in the hand a caller would copy. The

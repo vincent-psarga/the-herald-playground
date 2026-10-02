@@ -17,6 +17,7 @@ function armorial(...blazons: readonly string[]): Armorial {
     licence: 'MIT',
     entries: blazons.map((blazon, index) => ({
       name: `Entry ${index}`,
+      slug: `entry-${index}`,
       blazon,
       image: '',
     })),

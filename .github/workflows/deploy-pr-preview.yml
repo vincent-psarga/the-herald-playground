@@ -5,10 +5,15 @@ on:
     types: [opened, reopened, synchronize, closed]
 
 # The preview is written onto the same branch Pages serves, and its address is
-# left on the pull request as a comment.
+# left on the pull request as a comment. The blazons the branch newly reads are
+# counted against a coverage reading kept by a Quality run on main, which is an
+# artifact of that run; and the preview is waited on, which is a reading of the
+# deployment publishing it makes.
 permissions:
   contents: write
   pull-requests: write
+  actions: read
+  deployments: read
 
 concurrency: preview-${{ github.ref }}
 
@@ -45,12 +50,56 @@ jobs:
         if: github.event.action != 'closed'
         run: cp demo/dist/index.html demo/dist/404.html
 
+      # What main last read, which is what "newly" is measured against.
+      - name: Find the last coverage measured on main
+        id: baseline
+        if: github.event.action != 'closed'
+        uses: ./.github/actions/baseline-coverage
+
+      # Into the build and not beside it: a comment can only show an image that
+      # is served from somewhere, and the only thing serving this branch's work
+      # is its own preview. After the build rather than before, the build
+      # emptying its output directory as it starts.
+      - name: Draw the blazons this branch newly reads
+        if: github.event.action != 'closed' && steps.baseline.outputs.found == 'true'
+        run: node scripts/new-blazons.mjs baseline/coverage.json demo/dist/arms new-blazons.json
+
       # On a closed pull request this takes the preview down again instead of
       # putting one up, which is what `auto` reads the event to mean.
       - name: Deploy preview
+        id: preview
         uses: rossjrw/pr-preview-action@v1
         with:
           source-dir: demo/dist
           preview-branch: gh-pages
           umbrella-dir: pr-preview
           action: auto
+          # Pages publishes a push to the branch in its own time, and the
+          # comment below names files it serves. Written before Pages holds
+          # them, every drawing in it is fetched once by GitHub's image proxy,
+          # found missing, and remembered missing for as long as that proxy
+          # cares to remember. Nothing waits on a teardown: what follows one is
+          # a line of text, which needs nothing served to be true.
+          wait-for-pages-deployment: ${{ github.event.action != 'closed' }}
+
+      - name: Say which blazons it newly reads
+        if: github.event.action != 'closed' && steps.baseline.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PULL_NUMBER: ${{ github.event.number }}
+          PREVIEW_URL: ${{ steps.preview.outputs.preview-url }}
+          # The head rather than the merge commit: the merge commit changes when
+          # main moves under a branch that did not, and what the drawings were
+          # drawn from is the branch.
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/blazon-comment.mjs new-blazons.json
+
+      # The preview goes down with the pull request and the arms go down with
+      # it, so the comment is brought down to a line rather than left showing
+      # pictures nothing serves any more.
+      - name: Take the comment down with the preview
+        if: github.event.action == 'closed'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PULL_NUMBER: ${{ github.event.number }}
+        run: node scripts/blazon-comment.mjs --gone
