@@ -74,32 +74,9 @@ jobs:
           name: coverage
           path: current
 
-      # A pull request asks what merging would change, so what it is held
-      # against is main as it stands rather than the branch's own earlier push.
-      # The runs are walked newest first because the nearest one may have let
-      # its artifact expire, or predate there being one to keep.
       - name: Find the last coverage measured on main
         id: baseline
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          runs=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow quality.yml \
-            --branch main --limit 20 --json databaseId,status \
-            --jq '.[] | select(.status == "completed") | .databaseId')
-          for run in $runs; do
-            if [ "$run" = "$GITHUB_RUN_ID" ]; then
-              continue
-            fi
-            rm -rf baseline
-            if gh run download "$run" --repo "$GITHUB_REPOSITORY" --name coverage --dir baseline; then
-              url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run"
-              echo "label=[the last run on main]($url)" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-          done
-          rm -rf baseline
-          echo "No coverage has been kept on main to compare against."
+        uses: ./.github/actions/baseline-coverage
 
       - name: Show the changes
         env:

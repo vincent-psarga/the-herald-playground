@@ -11,3 +11,7 @@ tmp/
 
 # Design tooling state: briefs, critiques, screenshots and caches. Not source.
 .impeccable/
+
+# Written by a run saying which blazons a branch newly reads. Not source.
+new-blazons.json
+baseline/
