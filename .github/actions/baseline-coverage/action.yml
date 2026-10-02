@@ -1,0 +1,61 @@
+name: Baseline coverage
+description: The last coverage measured on main, for a run to hold itself against.
+
+# A pull request asks what merging would change, so what it is held against is
+# main as it stands rather than the branch's own earlier push. Two workflows want
+# that answer — the one that prints what moved, and the one that says which
+# blazons a branch newly reads — and the hunt is written once here so that they
+# cannot come to different ideas of what "before" means.
+
+inputs:
+  path:
+    description: The directory to download the reading into.
+    required: false
+    default: baseline
+  runs:
+    description: How many of main's runs to look back through.
+    required: false
+    default: '20'
+
+outputs:
+  found:
+    description: Whether a reading was found at all.
+    value: ${{ steps.hunt.outputs.found }}
+  label:
+    description: What the baseline was taken from, written as a markdown link.
+    value: ${{ steps.hunt.outputs.label }}
+
+runs:
+  using: composite
+  steps:
+    # The runs are walked newest first because the nearest one may have let its
+    # artifact expire, or predate there being one to keep. Only the runs that
+    # finished and passed: one cancelled partway through can have uploaded its
+    # coverage before being stopped, and half a reading taken for a whole one is
+    # worse than none, because it looks like an answer.
+    - id: hunt
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        INTO: ${{ inputs.path }}
+        LOOK_BACK: ${{ inputs.runs }}
+      run: |
+        set -euo pipefail
+        runs=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow quality.yml \
+          --branch main --limit "$LOOK_BACK" --json databaseId,status,conclusion \
+          --jq '.[] | select(.status == "completed" and .conclusion == "success") | .databaseId')
+        for run in $runs; do
+          if [ "$run" = "$GITHUB_RUN_ID" ]; then
+            continue
+          fi
+          rm -rf "$INTO"
+          if gh run download "$run" --repo "$GITHUB_REPOSITORY" --name coverage --dir "$INTO"; then
+            url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run"
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "label=[the last run on main]($url)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+        done
+        rm -rf "$INTO"
+        echo "found=false" >> "$GITHUB_OUTPUT"
+        echo "No coverage has been kept on main to compare against."
