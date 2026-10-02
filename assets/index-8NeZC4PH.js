@@ -42,8 +42,8 @@ Please change the parent <Route path="${e}"> to <Route path="${e===`/`?`*`:`${e}
 <img width="484" height="310" alt="Capture d’écran 2026-10-01 à 14 33 51" src="https://github.com/user-attachments/assets/ddec5399-34e4-4ea0-8ede-8f02c9609492" />
 
 Also, add support for:
-- [ ] \`denché\`
-- [ ] \`vivré\`
+- [x] \`denché\`
+- [x] \`vivré\`
 - [ ] \`engrelée\`
 - [ ] a specific color for the line itself (like in Lanval example: "D'or à la bande de gueules engrêlée de sable."`,url:`https://github.com/vincent-psarga/the-herald-playground/pull/1`},{id:2,title:`Support composed arms`,description:`Add support for composed arms, such as:
 
