@@ -15,7 +15,9 @@ import { ConventionsPage } from './pages/ConventionsPage';
 import { DocIndexPage } from './pages/DocIndexPage';
 import { PresentationsPage } from './pages/PresentationsPage';
 import { VocabularyPage } from './pages/VocabularyPage';
+import { WorkInProgressPage } from './pages/WorkInProgressPage';
 import { ARMORIALS } from './armorials';
+import { currentPullRequests } from './preview/PullRequests';
 import { Languages } from '../src/domain/models/Languages';
 import { languageIn } from './utils/Languages';
 import { PRESENTATIONS, presentationNamed } from './utils/Presentations';
@@ -63,6 +65,9 @@ export function App() {
         <Route path="/doc/presentations/:slug" element={<ReadPresentation />} />
         <Route path="/armorials" element={<ArmorialsPage armorials={ARMORIALS} />} />
         <Route path="/armorial/:slug" element={<ReadArmorial />} />
+        {currentPullRequests.length !== 0 && (
+          <Route path="/pr-preview" element={<WorkInProgressPage />} />
+        )}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
@@ -161,6 +166,13 @@ function Rail() {
       <Link to="/armorials" aria-current={pathname.startsWith('/armorial') ? 'page' : undefined}>
         Armorials
       </Link>
+      {/* Only where there is work open to look at. A preview is built from a
+          branch, which knows of none, so a preview offers no way into one. */}
+      {currentPullRequests.length !== 0 && (
+        <Link to="/pr-preview" aria-current={pathname === '/pr-preview' ? 'page' : undefined}>
+          WIP
+        </Link>
+      )}
     </nav>
   );
 }

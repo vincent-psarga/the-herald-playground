@@ -14,6 +14,8 @@
     "demo/**/*.ts",
     "demo/**/*.mts",
     "demo/**/*.tsx",
+    "scripts/**/*.ts",
+    "scripts/**/*.d.mts",
     "vitest.config.mts",
     "vitest.setup.ts"
   ],

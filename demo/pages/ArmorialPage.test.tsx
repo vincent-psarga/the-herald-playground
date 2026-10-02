@@ -14,6 +14,7 @@ afterEach(cleanup);
 
 const HALBERSTADT = {
   name: 'Halberstadt',
+  slug: 'halberstadt',
   blazon: "Parti d'argent et de gueules",
   image: 'https://example.invalid/halberstadt.png',
 };
@@ -27,6 +28,7 @@ const HALBERSTADT = {
  */
 const FLANDERS = {
   name: 'Flanders',
+  slug: 'flanders',
   blazon: "D'or au lion de sable",
   image: 'https://example.invalid/flanders.png',
   source: {
@@ -95,6 +97,14 @@ describe('ArmorialPage', () => {
     expect(rows()).toHaveLength(2);
     expect(row('Halberstadt')).toBeInTheDocument();
     expect(row('Flanders')).toBeInTheDocument();
+  });
+
+  // A roll runs to hundreds of entries, and a reader sent to one of them is to
+  // arrive at it rather than at the head of the roll.
+  test('gives each row the entry’s own slug, so an address can name one entry', () => {
+    mount(<ArmorialPage armorial={ARMORIAL} />);
+    expect(row('Halberstadt')).toHaveAttribute('id', 'halberstadt');
+    expect(row('Flanders')).toHaveAttribute('id', 'flanders');
   });
 
   test('shows the blazon as the source wrote it, marked in the armorial’s tongue', () => {
@@ -239,8 +249,8 @@ describe('ArmorialPage', () => {
       ...ARMORIAL,
       entries: [
         { ...HALBERSTADT, blazon: 'De fuchsia' },
-        { ...HALBERSTADT, name: 'Second', blazon: "Gironné d'azur et d'or" },
-        { ...HALBERSTADT, name: 'Third', blazon: "D'azur à la champagne d'or" },
+        { ...HALBERSTADT, name: 'Second', slug: 'second', blazon: "Gironné d'azur et d'or" },
+        { ...HALBERSTADT, name: 'Third', slug: 'third', blazon: "D'azur à la champagne d'or" },
       ],
     };
 
@@ -263,7 +273,7 @@ describe('ArmorialPage', () => {
             ...ARMORIAL,
             entries: [
               { ...HALBERSTADT, blazon: 'De fuchsia' },
-              { ...HALBERSTADT, name: 'Second', blazon: 'De mauve' },
+              { ...HALBERSTADT, name: 'Second', slug: 'second', blazon: 'De mauve' },
             ],
           }}
         />
@@ -312,9 +322,14 @@ describe('ArmorialPage', () => {
     const ROLL: Armorial = {
       ...ARMORIAL,
       entries: [
-        { ...HALBERSTADT, name: 'Nevers', blazon: "Parti d'or et de gueules" },
-        { ...HALBERSTADT, name: 'Poitiers', blazon: "De gueules à la bordure d'argent" },
-        { ...HALBERSTADT, name: 'Vannes', blazon: "D'azur à la macle d'or" },
+        { ...HALBERSTADT, name: 'Nevers', slug: 'nevers', blazon: "Parti d'or et de gueules" },
+        {
+          ...HALBERSTADT,
+          name: 'Poitiers',
+          slug: 'poitiers',
+          blazon: "De gueules à la bordure d'argent",
+        },
+        { ...HALBERSTADT, name: 'Vannes', slug: 'vannes', blazon: "D'azur à la macle d'or" },
       ],
     };
 

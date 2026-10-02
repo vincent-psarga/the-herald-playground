@@ -3,18 +3,13 @@
  * many tests it holds, how much of its own sources those tests reach, and how
  * much of the armorials its parsers can read.
  *
- * The armorials are TypeScript and lean on the library's own sources, so they
- * are loaded through Vite rather than by Node alone. The project already carries
- * Vite for the demo, which spares this a build step and a second copy of the
- * armorials in some other form.
- *
  * The test count is read from the report Vitest leaves behind rather than
  * counted here: the tests are run by the workflow anyway, and counting them
  * twice would let the two answers disagree.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { createServer } from 'vite';
+import { readArmorials, readSlugs } from './armorials.mjs';
 
 const TEST_REPORT = process.argv[2] ?? 'coverage/tests.json';
 const OUTPUT = process.argv[3] ?? 'coverage/coverage.json';
@@ -81,39 +76,27 @@ function codeCoverage(path) {
 }
 
 async function armorialCoverage() {
-  // Middleware mode with no config file: nothing is served and nothing of the
-  // demo's own build is wanted, only Vite's reading of TypeScript.
-  const vite = await createServer({
-    configFile: false,
-    logLevel: 'warn',
-    server: { middlewareMode: true },
-    appType: 'custom',
+  const { armorials: rolls } = await readArmorials();
+  const armorials = rolls.map((armorial) => {
+    const slugs = readSlugs(armorial);
+    const total = armorial.entries.length;
+    return {
+      slug: armorial.slug,
+      name: armorial.name,
+      read: slugs.length,
+      // Which blazons were read, and not merely how many: a count that holds
+      // still between two runs can still be a count of other entries, and each
+      // slug is the address of the entry on the demo, so a report can lead a
+      // reader straight to the row it is speaking of.
+      readSlug: slugs,
+      total,
+      percentage: percentage(slugs.length, total),
+    };
   });
-  try {
-    const { EnglishBlazonParser, FrenchBlazonParser, readArmorial } =
-      await vite.ssrLoadModule('/src/index.ts');
-    const { ARMORIALS } = await vite.ssrLoadModule('/demo/armorials/index.ts');
 
-    // An armorial names the tongue it is written in, and is read by the parser
-    // of that tongue: read by the other, every entry would refuse.
-    const parsers = { french: new FrenchBlazonParser(), english: new EnglishBlazonParser() };
-    const armorials = ARMORIALS.map((armorial) => {
-      const { read, total } = readArmorial(armorial, parsers[armorial.language]);
-      return {
-        slug: armorial.slug,
-        name: armorial.name,
-        read,
-        total,
-        percentage: percentage(read, total),
-      };
-    });
-
-    const read = sum(armorials.map((armorial) => armorial.read));
-    const total = sum(armorials.map((armorial) => armorial.total));
-    return { read, total, percentage: percentage(read, total), each: armorials };
-  } finally {
-    await vite.close();
-  }
+  const read = sum(armorials.map((armorial) => armorial.read));
+  const total = sum(armorials.map((armorial) => armorial.total));
+  return { read, total, percentage: percentage(read, total), each: armorials };
 }
 
 /**
