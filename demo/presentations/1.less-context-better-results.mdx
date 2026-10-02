@@ -1,0 +1,104 @@
+---
+title: Less context for better results
+summary:
+context: Packmind · veille tech
+date: 2026/09/25
+---
+
+# Less context for better results
+
+<Blazon blazon={"D'argent semé de croisettes de sable; à la croix d'azur"} language={'fr'} />
+
+---
+
+## The issue
+
+Blazon is easy (until it isn't anymore):
+
+```
+<FIELD> [<ORDINARY>] [<CHARGE>]
+```
+
+<Side>
+  <Blazon language={'en'} blazon={'Azure a pale argent an annulet gules'} />
+</Side>
+
+---
+
+<Side>
+# Ordinary
+
+<Blazon blazon={"D'argent à la bande de gueules"} language={'fr'} size={'xs'} showBlazon={false} />
+
+- Simple shape
+- Can receive modification
+- Touches the shield sides
+- May have charges
+
+</Side>
+
+<Side>
+# Charge
+
+<Blazon blazon={"d'argent à l'étoile de gueules"} language={'fr'} size={'xs'} showBlazon={false} />
+
+- Any shape (from a disc to a dragon)
+- Can receive modifications
+- Has various placements
+- Has own attributes
+
+</Side>
+
+---
+
+# The cross issue
+
+<Side align={"center"}>
+    <Blazon blazon={"D'argent à la croix de gueules"} language={"fr"} size={"xs"} showBlazon={false} />
+
+    Cross is an ordinary...
+
+</Side>
+
+<Side align={'center'}>
+  <Blazon
+    blazon={"D'argent à la croisette de gueules"}
+    language={'fr'}
+    size={'xs'}
+    showBlazon={false}
+  />
+  ... or a charge
+</Side>
+
+---
+
+# Determining the cross type
+
+- Plain: ordinary
+- Charged\*: ordinary
+- Repeated: charge
+- Modified\*: depends on the modification
+- With attributes\*: charge
+
+<Side>
+  <Blazon blazon={"De gueules à la croisette d'argent"} language={'fr'} />
+</Side>
+
+---
+
+# The experiment
+
+<Side>
+  <Blazon blazon={"D'azur à la croix d'or"} language={'fr'} />
+</Side>
+
+Two variable parameters:
+
+- an incomplete grammar
+- existing code about the cross
+
+Shared context:
+
+- a unique prompt for each
+- same harness
+- same model (Opus)
