@@ -131,6 +131,13 @@ describe('what a word means', () => {
     expect(word(english, 'cross humetty').description).toMatch(/four equal arms/);
     expect(word(english, 'border').description).toMatch(/whole edge of the shield/);
     expect(word(english, 'pily counter pily').description).toMatch(/long triangles/);
+    // The three saw-toothed lines are told apart by the size and the point of
+    // the tooth, and each of them says its own: "the same teeth" sends a reader
+    // to a word they have not read.
+    expect(word(english, 'dancetty').description).toMatch(/great teeth/);
+    expect(word(english, 'vivré').description).toMatch(/great teeth whose points are right angles/);
+    expect(word(french, 'denché').description).toMatch(/great teeth/);
+    expect(word(french, 'vivré').description).toMatch(/great teeth whose points are right angles/);
   });
 });
 
@@ -334,8 +341,11 @@ describe('the words that say more than one drawing can', () => {
   });
 
   test('says why an ordinary is borne but once, where it is', () => {
-    expect(word(english, 'chief').otherwise).toEqual([]);
+    // The chief is asked nothing about number, being borne but once — and is
+    // still asked what line it may be drawn along, which is another question.
+    expect(asked(word(english, 'chief'))).toEqual(['Modified']);
     expect(word(english, 'chief').note).toMatch(/shield has one top/);
+    expect(asked(word(english, 'cross'))).toEqual([]);
   });
 
   test("says why without naming the band, the reason being the shield's", () => {
@@ -351,9 +361,43 @@ describe('the words that say more than one drawing can', () => {
     // the other two.
     expect(asked(word(french, 'croisette'))).toEqual(['Borne in number', 'Sown']);
     expect(asked(word(french, 'billette'))).toEqual(['Borne in number', 'Sown', 'Modified']);
-    expect(asked(word(english, 'chevron'))).toEqual(['Borne in number']);
+    expect(asked(word(english, 'chevron'))).toEqual(['Borne in number', 'Modified']);
     expect(asked(word(english, 'barry'))).toEqual(['Cut otherwise']);
     expect(asked(word(english, 'voided'))).toEqual(['Said of']);
+    expect(asked(word(english, 'indented'))).toEqual(['Said of']);
+  });
+
+  test('shows a band under every line it may be drawn along', () => {
+    expect(labelled(word(english, 'fess'), 'Modified')).toEqual(['Indented', 'Dancetty', 'Vivré']);
+    expect(blazoned(word(english, 'fess'), 'Modified')).toEqual([
+      'Argent a fess indented gules.',
+      'Argent a fess dancetty gules.',
+      'Argent a fess vivré gules.',
+    ]);
+    expect(blazoned(word(french, 'fasce'), 'Modified')).toEqual([
+      "D'argent à la fasce dentelée de gueules.",
+      "D'argent à la fasce denchée de gueules.",
+      "D'argent à la fasce vivrée de gueules.",
+    ]);
+    // A band the model gives no modified line is asked nothing about one.
+    expect(asked(word(english, 'cross'))).toEqual([]);
+  });
+
+  test('shows a modifier on the bands as readily as on the charges', () => {
+    // Indented is said of no charge at all, so a page that asked only about the
+    // charges would show the word doing its work on nothing.
+    expect(labelled(word(english, 'indented'), 'Said of')).toEqual([
+      'Chief',
+      'Pale',
+      'Fess',
+      'Bend',
+      'Bend sinister',
+      'Chevron',
+      'Bordure',
+    ]);
+    expect(blazoned(word(french, 'dentelé'), 'Said of')[0]).toBe(
+      "D'argent au chef dentelé de gueules."
+    );
   });
 
   test('bears a charge in number and sows it, every charge being both', () => {
@@ -448,7 +492,11 @@ describe('the words that say more than one drawing can', () => {
     // blazon, said once on the conventions page for both tongues — repeating it
     // under every English modifier would be filling the page with what the word
     // itself does not say.
-    expect(word(french, 'percé').note).toMatch(/agrees with the charge in gender and in number/);
+    expect(word(french, 'percé').note).toMatch(
+      /agrees with what it is said of in gender and in number/
+    );
+    // And says the same of the word said of a band, the rule being one rule.
+    expect(word(french, 'dentelé').note).toMatch(/Said of a band or a charge/);
     expect(word(english, 'pierced').note).toBeUndefined();
     expect(word(english, 'voided').note).toBeUndefined();
   });

@@ -10,12 +10,14 @@ import {
 import { BlazonParseError, TextPosition } from '../../domain/errors/parsing/BlazonParseError';
 import { InvalidTincture } from '../../domain/errors/parsing/InvalidTincture';
 import { RepeatedOrdinary } from '../../domain/errors/parsing/RepeatedOrdinary';
+import { BorneType } from '../../domain/models/Blazon';
 import { ChargeType, allowsModifier, isChargeType } from '../../domain/models/Charge';
 import { Modifier } from '../../domain/models/Modifier';
 import {
   OrdinaryDefinitions,
   OrdinaryType,
   SEVERAL,
+  admitsModifier,
   isOrdinaryType,
 } from '../../domain/models/Ordinary';
 import { Tincture } from '../../domain/models/Tinctures';
@@ -171,8 +173,12 @@ function begunByTheCount<T>(
  * the other. Tried separately, every word in neither list would fail both
  * readings at the same place, and the complaint would be settled by whichever
  * was listed first rather than by anything about the blazon.
+ *
+ * The union is the model's own, the writer having the same two vocabularies to
+ * ask about; it is named again here because this is where a reader of the
+ * grammar meets it.
  */
-export type BorneType = OrdinaryType | ChargeType;
+export type { BorneType };
 
 export type BorneTerm = Borne<BorneType>;
 
@@ -194,13 +200,14 @@ export function modifiable<T extends string, W extends Word>(
 /**
  * Whether what is borne may be borne under a modifier.
  *
- * Only a charge may, and only the modifiers its own definition declares. A band
- * takes none: what a blazon does to an ordinary it does to the line the band is
- * drawn with — indented, embattled — which is another vocabulary and is not read
- * yet, so nothing is quietly accepted here in its name.
+ * Both vocabularies declare their own, and neither holds the other's: a charge
+ * is voided or pierced, which is done to its middle, and a band is indented,
+ * which is done to the line it is named after. So the question is put to
+ * whichever vocabulary named the term, and a charge indented is refused by the
+ * same reckoning as a fess voided.
  */
 export function bornUnder(type: BorneType, modifier: Modifier): boolean {
-  return isChargeType(type) && allowsModifier(type, modifier);
+  return isChargeType(type) ? allowsModifier(type, modifier) : admitsModifier(type, modifier);
 }
 
 /** The two vocabularies a field's bearings are named from, as one. */

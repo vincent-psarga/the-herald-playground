@@ -1,5 +1,6 @@
 import { Blazon, ChargeOrOrdinary, isOrdinary } from '../../../domain/models/Blazon';
-import { Charge, numberBorne } from '../../../domain/models/Charge';
+import { numberBorne } from '../../../domain/models/Charge';
+import { Modifier } from '../../../domain/models/Modifier';
 import { Field, Semy, isDivision, isFurred, isVariation } from '../../../domain/models/Field';
 import { borne } from '../../../domain/models/Ordinary';
 import { Painter } from './Ground';
@@ -8,7 +9,7 @@ import { over } from './painting/over';
 import { plain } from './painting/plain';
 import { split } from './painting/split';
 import { escapeAttribute } from './escaping';
-import { BorneFigure, ChargeFigure } from './vocabulary/Figures';
+import { BorneFigure, ChargeFigure, OrdinaryFigure } from './vocabulary/Figures';
 import { CHARGES } from './vocabulary/charges';
 import { DIVISIONS } from './vocabulary/coverings/divisions';
 import { peltOf } from './vocabulary/coverings/furred';
@@ -92,20 +93,24 @@ function sown(semy: Semy): Painter {
 function bearing(one: ChargeOrOrdinary): Painter {
   const [figure, count] = isOrdinary(one)
     ? ([ORDINARIES[one.type], borne(one)] as const)
-    : ([drawn(one), numberBorne(one)] as const);
-  return laid((frame) => figure.shapes(frame, count), INKS[one.tincture]);
+    : ([CHARGES[one.type], numberBorne(one)] as const);
+  return laid((frame) => drawn(figure, one.modifier).shapes(frame, count), INKS[one.tincture]);
 }
 
 /**
- * The figure a charge is drawn as: its own, or the one a modifier leaves of it.
+ * The figure something is drawn as: its own, or the one a modifier leaves of it.
  *
- * A charge the blazon modified in a way the vocabulary has no second drawing for
+ * A band and a charge are asked alike, though what each is asked about differs:
+ * the charge's middle is taken out and the band's line is cut into teeth. Which
+ * modifier either may carry is settled long before the drawing, so all there is
+ * to do here is look the second drawing up.
+ *
+ * Anything the blazon modified in a way the vocabulary has no second drawing for
  * is drawn plain rather than not at all. It cannot arrive here — the parser
- * refuses a modifier the charge does not take, and every one it does take is
+ * refuses a modifier the term does not take, and every one it does take is
  * drawn — so this says what to do about a drawing that has fallen behind the
  * model rather than about anything a blazon can say.
  */
-function drawn(one: Charge): BorneFigure {
-  const figure: ChargeFigure = CHARGES[one.type];
-  return one.modifier === undefined ? figure : (figure.modified[one.modifier] ?? figure);
+function drawn(figure: OrdinaryFigure | ChargeFigure, modifier?: Modifier): BorneFigure {
+  return modifier === undefined ? figure : (figure.modified[modifier] ?? figure);
 }

@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'vitest';
-import { OrdinaryDefinitions, OrdinaryType, SEVERAL, borne } from './Ordinary';
+import { LINES, Modifier } from './Modifier';
+import {
+  OrdinaryDefinitions,
+  OrdinaryType,
+  SEVERAL,
+  admitsModifier,
+  borne,
+  modifiersOn,
+} from './Ordinary';
 import { Metals } from './Tinctures';
 
 describe('an ordinary borne in number', () => {
@@ -30,6 +38,49 @@ describe('an ordinary borne in number', () => {
     for (const type of Object.values(OrdinaryType)) {
       expect(OrdinaryDefinitions[type].type).toBe(type);
     }
+  });
+});
+
+describe('what an ordinary may be drawn under', () => {
+  test.each([
+    OrdinaryType.chief,
+    OrdinaryType.pale,
+    OrdinaryType.fess,
+    OrdinaryType.bend,
+    OrdinaryType.bendSinister,
+    OrdinaryType.chevron,
+    OrdinaryType.bordure,
+  ])('%s is drawn along every modified line', (type) => {
+    expect(modifiersOn(type)).toEqual(LINES);
+    for (const line of LINES) {
+      expect(admitsModifier(type, line)).toBe(true);
+    }
+  });
+
+  test.each([OrdinaryType.barGemel, OrdinaryType.cross, OrdinaryType.saltire])(
+    '%s is drawn along the line it was always drawn along',
+    (type) => {
+      expect(modifiersOn(type)).toEqual([]);
+      for (const line of LINES) {
+        expect(admitsModifier(type, line)).toBe(false);
+      }
+    }
+  );
+
+  test('takes none of what is done to a charge, a band having no middle to take out', () => {
+    for (const type of Object.values(OrdinaryType)) {
+      expect(admitsModifier(type, Modifier.voided)).toBe(false);
+      expect(admitsModifier(type, Modifier.pierced)).toBe(false);
+    }
+  });
+
+  test('is declared with the ordinary rather than with either vocabulary', () => {
+    expect(OrdinaryDefinitions[OrdinaryType.fess].allowedModifiers).toEqual([
+      Modifier.indented,
+      Modifier.dancetty,
+      Modifier.vivre,
+    ]);
+    expect(OrdinaryDefinitions[OrdinaryType.cross].allowedModifiers).toEqual([]);
   });
 });
 

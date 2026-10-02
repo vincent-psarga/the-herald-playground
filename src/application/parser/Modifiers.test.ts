@@ -4,7 +4,7 @@ import { WrongModifier } from '../../domain/errors/parsing/WrongModifier';
 import { ChargeType, allowsModifier, modifiersOf } from '../../domain/models/Charge';
 import { Modifier } from '../../domain/models/Modifier';
 import { UnknownOrdinary } from '../../domain/errors/parsing/UnknownOrdinary';
-import { OrdinaryType } from '../../domain/models/Ordinary';
+import { OrdinaryType, admitsModifier, modifiersOn } from '../../domain/models/Ordinary';
 import { Colours, Metals } from '../../domain/models/Tinctures';
 import { WikipediaColours } from '../../infra/colours/WikipediaColours';
 import { SvgBlazonDrawer } from '../drawer/svg/SvgBlazonDrawer';
@@ -23,6 +23,7 @@ const writeEnglish = new EnglishBlazonWriter();
 const drawer = new SvgBlazonDrawer(WikipediaColours);
 
 const CHARGES = Object.values(ChargeType);
+const ORDINARIES = Object.values(OrdinaryType);
 const MODIFIERS = Object.values(Modifier);
 
 describe('a charge borne under a modifier', () => {
@@ -150,9 +151,18 @@ describe('what a charge will take', () => {
     );
   });
 
-  test('refuses a band, whose modifiers are lines drawn otherwise and are not read', () => {
+  test('refuses a band what is done to a charge, a band having no middle to take out', () => {
     expect(() => inFrench.parse("D'azur à la fasce évidée d'or")).toThrow(WrongModifier);
     expect(() => inEnglish.parse('Azure a fess voided or')).toThrow(WrongModifier);
+  });
+
+  test('refuses a charge what is done to a band, the two lists never meeting', () => {
+    expect(() => inEnglish.parse('Azure a lozenge indented or')).toThrow(
+      'Wrong modifier: lozenge is never indented'
+    );
+    expect(() => inFrench.parse("D'azur à la losange dentelée d'or")).toThrow(
+      'Wrong modifier: losange is never dentelé'
+    );
   });
 
   test.each(CHARGES)('is asked of %s before the blazon is allowed to say it', (type) => {
@@ -328,13 +338,310 @@ describe('writing a modified charge', () => {
     }
   });
 
-  test('says nothing of a band, which carries none', () => {
+  test('says nothing of a band the blazon said nothing of', () => {
     expect(
       writeEnglish.write({
         field: { type: FieldType.plain, tincture: Colours.azure },
         chargesOrOrdinaries: [{ type: OrdinaryType.fess, tincture: Metals.or }],
       })
     ).toBe('Azure a fess or.');
+  });
+});
+
+describe('a band drawn along a modified line', () => {
+  test('is the same band, with the line beside the tincture', () => {
+    expect(inEnglish.parse('Azure a fess indented or')).toEqual({
+      field: { type: FieldType.plain, tincture: Colours.azure },
+      chargesOrOrdinaries: [
+        { type: OrdinaryType.fess, tincture: Metals.or, modifier: Modifier.indented },
+      ],
+    });
+  });
+
+  test('is read in either tongue into the one model', () => {
+    expect(inFrench.parse("D'azur à la fasce dentelée d'or")).toEqual(
+      inEnglish.parse('Azure a fess indented or')
+    );
+  });
+
+  // The line a band is drawn along is the band's own, so however the field
+  // beneath it was cut makes no difference — a quartered field least of all,
+  // its line crossing itself where the band's does not.
+  test.each<[string, FieldType]>([
+    ['Quarterly', FieldType.cross],
+    ['Per saltire', FieldType.saltire],
+  ])('is borne on a field %s as readily as on a plain one', (named, type) => {
+    expect(inEnglish.parse(`${named} argent and azure a fess indented gules`)).toEqual({
+      field: { type, firstTincture: Metals.argent, secondTincture: Colours.azure },
+      chargesOrOrdinaries: [
+        { type: OrdinaryType.fess, tincture: Colours.gules, modifier: Modifier.indented },
+      ],
+    });
+  });
+
+  test('stands where a charge’s modifier stands, and is read late as readily', () => {
+    expect(inEnglish.parse('Azure a fess or indented')).toEqual(
+      inEnglish.parse('Azure a fess indented or')
+    );
+    expect(inFrench.parse("D'azur à la fasce d'or dentelée")).toEqual(
+      inFrench.parse("D'azur à la fasce dentelée d'or")
+    );
+  });
+
+  test('carries the line however many bands are borne', () => {
+    expect(inEnglish.parse('Or three bends indented sable').chargesOrOrdinaries).toEqual([
+      {
+        type: OrdinaryType.bend,
+        tincture: Colours.sable,
+        count: 3,
+        modifier: Modifier.indented,
+      },
+    ]);
+  });
+
+  test('leaves the key off entirely where the blazon said nothing', () => {
+    const [borne] = inEnglish.parse('Azure a fess or').chargesOrOrdinaries ?? [];
+    expect(borne).not.toHaveProperty('modifier');
+  });
+
+  test('agrees in French as anything said of a band agrees', () => {
+    // The fasce is feminine and the chef masculine, and the participle takes the
+    // gender of whichever it stands after.
+    expect(inFrench.parse("D'azur au chef dentelé d'or").chargesOrOrdinaries?.[0]).toHaveProperty(
+      'modifier',
+      Modifier.indented
+    );
+    expect(() => inFrench.parse("D'azur au chef dentelée d'or")).toThrow(
+      'Wrong agreement: expected "dentelé"'
+    );
+    expect(() => inFrench.parse("D'azur à la fasce dentelé d'or")).toThrow(
+      'Wrong agreement: expected "dentelée"'
+    );
+    expect(() => inFrench.parse("D'azur à trois bandes dentelée d'or")).toThrow(
+      'Wrong agreement: expected "dentelées"'
+    );
+  });
+
+  test('is refused by a band the model gives no such line', () => {
+    expect(() => inEnglish.parse('Azure a cross indented or')).toThrow(
+      'Wrong modifier: cross is never indented'
+    );
+    expect(() => inFrench.parse("D'azur à la jumelle dentelée d'or")).toThrow(WrongModifier);
+  });
+
+  test('cuts the teeth inside a bordure, whose outer edge is the shield’s own', () => {
+    // Every other band has two free edges and keeps its width between them. A
+    // bordure has one: the shield's outline is not a line a blazon may modify,
+    // so the band is deeper where a tooth reaches and shallower where a notch
+    // does, and what is drawn is the plain band with teeth standing on it.
+    const arms = (modifier?: Modifier) =>
+      drawer.draw({
+        field: { type: FieldType.plain, tincture: Colours.azure },
+        chargesOrOrdinaries: [{ type: OrdinaryType.bordure, tincture: Metals.or, modifier }],
+      });
+    expect(arms(Modifier.indented)).not.toBe(arms());
+    // The stroke that follows the shield's curve is still there, and is what
+    // keeps the outer edge the outline's own.
+    expect(arms(Modifier.indented)).toContain('stroke-width');
+    expect(arms(Modifier.indented)).toContain('<polygon');
+  });
+
+  test.each(ORDINARIES)('is asked of %s before the blazon is allowed to say it', (type) => {
+    // Whatever the model says each band takes, the parser takes exactly that: a
+    // band given a line in the model and refused here would be a promise the
+    // vocabulary could not keep.
+    for (const modifier of MODIFIERS) {
+      const written = writeEnglish.write({
+        field: { type: FieldType.plain, tincture: Colours.azure },
+        chargesOrOrdinaries: [{ type, tincture: Metals.or, modifier }],
+      });
+      if (admitsModifier(type, modifier)) {
+        expect(inEnglish.parse(written).chargesOrOrdinaries?.[0]).toHaveProperty(
+          'modifier',
+          modifier
+        );
+      } else {
+        expect(() => inEnglish.parse(written)).toThrow(WrongModifier);
+      }
+    }
+  });
+
+  test('comes back in either tongue, the line written where the voiding is', () => {
+    const blazon = inEnglish.parse('Azure a fess indented or');
+    expect(writeEnglish.write(blazon)).toBe('Azure a fess indented or.');
+    expect(writeFrench.write(blazon)).toBe("D'azur à la fasce dentelée d'or.");
+    const several = inEnglish.parse('Or three bends indented sable');
+    expect(writeEnglish.write(several)).toBe('Or three bends indented sable.');
+    expect(writeFrench.write(several)).toBe("D'or à trois bandes dentelées de sable.");
+  });
+
+  test('reads back everything it writes, every band under every line it takes', () => {
+    for (const type of ORDINARIES) {
+      for (const modifier of modifiersOn(type)) {
+        const blazon: Blazon = {
+          field: { type: FieldType.plain, tincture: Colours.azure },
+          chargesOrOrdinaries: [{ type, tincture: Metals.or, modifier }],
+        };
+        expect(inFrench.parse(writeFrench.write(blazon))).toEqual(blazon);
+        expect(inEnglish.parse(writeEnglish.write(blazon))).toEqual(blazon);
+      }
+    }
+  });
+
+  test('is drawn with teeth rather than drawn straight', () => {
+    const drawn = (blazon: string) => drawer.draw(inEnglish.parse(blazon));
+    for (const type of ORDINARIES.filter((type) => admitsModifier(type, Modifier.indented))) {
+      const arms = (modifier?: Modifier) =>
+        drawer.draw({
+          field: { type: FieldType.plain, tincture: Colours.azure },
+          chargesOrOrdinaries: [{ type, tincture: Metals.or, modifier }],
+        });
+      expect(arms(Modifier.indented)).not.toBe(arms());
+      // Teeth are corners, and a band of corners is a polygon where the plain
+      // band was a rectangle or a polygon of four.
+      expect(arms(Modifier.indented)).toContain('<polygon');
+    }
+    // The band keeps its place and its number: three indented fesses lie where
+    // three plain ones lay, and there are three of them either way.
+    expect(drawn('Azure three fesses indented or')).not.toBe(drawn('Azure three fesses or'));
+  });
+
+  test('draws a band the model gives no line as the plain band it is', () => {
+    // Nothing can ask for this — the parser refuses the modifier first — so what
+    // it guards is a drawing fallen behind the model, not a blazon.
+    const drawn = (modifier?: Modifier) =>
+      drawer.draw({
+        field: { type: FieldType.plain, tincture: Colours.azure },
+        chargesOrOrdinaries: [{ type: OrdinaryType.cross, tincture: Metals.or, modifier }],
+      });
+    expect(drawn(Modifier.indented)).toBe(drawn());
+  });
+});
+
+/** The angle, in degrees, at the point of the first tooth a band is cut with. */
+function point(blazon: string): number {
+  const [from, apex, to] = corners(blazon);
+  const limb = ([x, y]: readonly [number, number]): readonly [number, number] => [
+    x - apex[0],
+    y - apex[1],
+  ];
+  const [fromX, fromY] = limb(from);
+  const [toX, toY] = limb(to);
+  const cosine = (fromX * toX + fromY * toY) / (Math.hypot(fromX, fromY) * Math.hypot(toX, toY));
+  return (Math.acos(cosine) * 180) / Math.PI;
+}
+
+/** The corners of the first band an English blazon draws. */
+function corners(blazon: string): readonly (readonly [number, number])[] {
+  const [, points] = /<polygon points="([^"]*)"/.exec(drawer.draw(inEnglish.parse(blazon))) ?? [];
+  return (points ?? '')
+    .split(' ')
+    .map((corner) => corner.split(',').map(Number) as [number, number]);
+}
+
+describe('the three modified lines, which differ in the teeth and in nothing else', () => {
+  test('are three terms and not one term written three ways', () => {
+    const line = (blazon: string) => inEnglish.parse(blazon).chargesOrOrdinaries?.[0];
+    expect(line('Azure a fess indented or')).toHaveProperty('modifier', Modifier.indented);
+    expect(line('Azure a fess dancetty or')).toHaveProperty('modifier', Modifier.dancetty);
+    expect(line('Azure a fess vivré or')).toHaveProperty('modifier', Modifier.vivre);
+  });
+
+  test('are the same three in French, which tells them apart by the same measure', () => {
+    const line = (blazon: string) => inFrench.parse(blazon).chargesOrOrdinaries?.[0];
+    expect(line("D'azur à la fasce dentelée d'or")).toHaveProperty('modifier', Modifier.indented);
+    expect(line("D'azur à la fasce denchée d'or")).toHaveProperty('modifier', Modifier.dancetty);
+    expect(line("D'azur à la fasce vivrée d'or")).toHaveProperty('modifier', Modifier.vivre);
+  });
+
+  test('cross the tongues each into its own, denché never answering dentelé', () => {
+    expect(inFrench.parse("D'azur à la fasce denchée d'or")).toEqual(
+      inEnglish.parse('Azure a fess dancetty or')
+    );
+    expect(inFrench.parse("D'azur à la fasce denchée d'or")).not.toEqual(
+      inEnglish.parse('Azure a fess indented or')
+    );
+  });
+
+  // Parker's own example of the line English never named, and the arms the
+  // armorial of Franche-Comté writes the same way.
+  test('read the arms of LA BAUME MONTREVEL, which is what asked for the vivré', () => {
+    const arms = inFrench.parse("D'or à la bande vivrée d'azur.");
+    expect(arms.chargesOrOrdinaries).toEqual([
+      { type: OrdinaryType.bend, tincture: Colours.azure, modifier: Modifier.vivre },
+    ]);
+    expect(writeEnglish.write(arms)).toBe('Or a bend vivré azure.');
+    expect(writeFrench.write(arms)).toBe("D'or à la bande vivrée d'azur.");
+  });
+
+  test('agree the two new French participles as the first one agrees', () => {
+    expect(() => inFrench.parse("D'azur au chef denchée d'or")).toThrow(
+      'Wrong agreement: expected "denché"'
+    );
+    expect(() => inFrench.parse("D'azur à la fasce vivré d'or")).toThrow(
+      'Wrong agreement: expected "vivrée"'
+    );
+    expect(() => inFrench.parse("D'azur à trois bandes denchée d'or")).toThrow(WrongAgreement);
+    expect(inFrench.parse("D'azur à trois bandes vivrées d'or").chargesOrOrdinaries).toEqual([
+      { type: OrdinaryType.bend, tincture: Metals.or, count: 3, modifier: Modifier.vivre },
+    ]);
+  });
+
+  test('read dancetté, which is the accent the armorials keep on the English word', () => {
+    expect(inEnglish.parse('Azure a fess dancetté or')).toEqual(
+      inEnglish.parse('Azure a fess dancetty or')
+    );
+    // Written back under the spelling the vocabulary leads with, as every
+    // alternate spelling is.
+    expect(writeEnglish.write(inEnglish.parse('Azure a fess dancetté or'))).toBe(
+      'Azure a fess dancetty or.'
+    );
+  });
+
+  test('stand unchanged in English however many bands are borne', () => {
+    expect(writeEnglish.write(inEnglish.parse('Or three bends vivré sable'))).toBe(
+      'Or three bends vivré sable.'
+    );
+    expect(writeFrench.write(inEnglish.parse('Or three bends vivré sable'))).toBe(
+      "D'or à trois bandes vivrées de sable."
+    );
+  });
+
+  test('cut fewer teeth for the dancetty than for the indented, being the larger', () => {
+    expect(corners('Azure a fess dancetty or').length).toBeLessThan(
+      corners('Azure a fess indented or').length
+    );
+  });
+
+  test('bring the vivré to a right angle, where the dancetty comes to a sharper one', () => {
+    // What parts the two is the angle at the point of the tooth, so that is
+    // what is measured. The vivré's is square — "the lines forming them produce
+    // right angles" — and the dancetty's is the acute one Parker says the
+    // armorials usually draw, which is what "more open" is said against.
+    expect(point('Azure a fess vivré or')).toBeCloseTo(90, 0);
+    expect(point('Azure a fess dancetty or')).toBeLessThan(90);
+    expect(point('Azure a fess vivré or')).toBeGreaterThan(point('Azure a fess dancetty or'));
+    // The right angle is the line's and not the fess's: it is cut the same
+    // wherever it is cut, which is what makes a bend vivré read as a staircase.
+    expect(point('Azure a bend vivré or')).toBeCloseTo(90, 0);
+    expect(point('Azure a chevron vivré or')).toBeCloseTo(90, 0);
+  });
+
+  test('draw a different band apiece, of every band that takes them', () => {
+    for (const type of ORDINARIES.filter((type) => admitsModifier(type, Modifier.vivre))) {
+      const arms = (modifier?: Modifier) =>
+        drawer.draw({
+          field: { type: FieldType.plain, tincture: Colours.azure },
+          chargesOrOrdinaries: [{ type, tincture: Metals.or, modifier }],
+        });
+      const drawn = [
+        arms(),
+        arms(Modifier.indented),
+        arms(Modifier.dancetty),
+        arms(Modifier.vivre),
+      ];
+      expect(new Set(drawn).size).toBe(drawn.length);
+    }
   });
 });
 

@@ -1,3 +1,4 @@
+import { LINES, Modifier } from './Modifier';
 import { Tincture } from './Tinctures';
 
 /**
@@ -30,15 +31,13 @@ export enum OrdinaryType {
 }
 
 /**
- * What is true of an ordinary whatever blazon names it: today, whether a field
- * may bear more than one of it.
+ * What is true of an ordinary whatever blazon names it: whether a field may bear
+ * more than one of it, and which modified lines it may be drawn with.
  *
  * It is not the drawing and it is not the word. An ordinary is a term of the
  * model, and what may be said of that term is the model's to know — "three
  * chiefs" is refused in either tongue, and for the same reason, so neither
- * vocabulary should have to hold the list. What may yet be said of a band — the
- * modified lines heraldry draws them with — is declared here when it arrives,
- * beside this.
+ * vocabulary should have to hold the list.
  */
 export class OrdinaryDefinition {
   /**
@@ -57,13 +56,32 @@ export class OrdinaryDefinition {
    */
   public readonly canBeBorneInNumbers: boolean;
 
+  /**
+   * The modifiers a blazon may draw it under, which is none for most of them.
+   *
+   * What is done to a band is done to the line it is named after — indented,
+   * embattled — where what is done to a charge is done to its middle, so the two
+   * lists never meet: no band is voided and no charge is indented. Which of them
+   * a band takes is declared here rather than in either vocabulary, the answer
+   * being the same in every tongue: a fasce is no likelier to be dentelée than a
+   * fess is to be indented.
+   *
+   * Empty says the band is drawn with the line it was always drawn with. It is
+   * the answer for a band the armorials do modify but whose teeth this drawing
+   * cannot yet cut — a promise the drawer could not keep is worse than a word
+   * left unread — and each entry below says which of the two it is.
+   */
+  public readonly allowedModifiers: readonly Modifier[];
+
   constructor(
     public readonly type: OrdinaryType,
     opts?: Partial<{
       canBeBorneInNumbers: boolean;
+      allowedModifiers: readonly Modifier[];
     }>
   ) {
     this.canBeBorneInNumbers = opts?.canBeBorneInNumbers ?? false;
+    this.allowedModifiers = opts?.allowedModifiers ?? [];
   }
 }
 
@@ -80,37 +98,77 @@ export class OrdinaryDefinition {
  */
 export const OrdinaryDefinitions: Record<OrdinaryType, OrdinaryDefinition> = {
   // The top of the shield itself rather than a band laid anywhere on it, and a
-  // shield has one top.
-  [OrdinaryType.chief]: new OrdinaryDefinition(OrdinaryType.chief),
-  [OrdinaryType.pale]: new OrdinaryDefinition(OrdinaryType.pale, { canBeBorneInNumbers: true }),
-  [OrdinaryType.fess]: new OrdinaryDefinition(OrdinaryType.fess, { canBeBorneInNumbers: true }),
+  // shield has one top. Its one free edge is a line like any other, and cutting
+  // teeth in it is what a chief indented is — or a chef vivré, which Parker
+  // writes of the arms of JAUCHE in Brabant.
+  [OrdinaryType.chief]: new OrdinaryDefinition(OrdinaryType.chief, {
+    allowedModifiers: LINES,
+  }),
+  // The four Parker names as the bands the indenting is applied to — "most
+  // frequently to the fesse, though the bend, the pale, and the chevron are
+  // sometimes thus treated" — and the barre, which is the bande turned and is
+  // drawn along the same line the other way. They are the four the other two
+  // lines are written of as well: Duhoux says the denché "du chef, de la fasce,
+  // de la bande, de la croix, du sautoir, du chevron, de la bordure", and the
+  // vivré "du pal, de la fasce, du chevron, de la bande et de quelques autres
+  // pièces".
+  [OrdinaryType.pale]: new OrdinaryDefinition(OrdinaryType.pale, {
+    canBeBorneInNumbers: true,
+    allowedModifiers: LINES,
+  }),
+  [OrdinaryType.fess]: new OrdinaryDefinition(OrdinaryType.fess, {
+    canBeBorneInNumbers: true,
+    allowedModifiers: LINES,
+  }),
+  // The gemel is a pair of bars in the room of one band, so each bar is a
+  // fraction of a fess wide and teeth deep enough to be seen would eat it. The
+  // armorials ask for it seldom and the drawing cannot yet answer, so it is left
+  // out rather than drawn as a bar that only looks nibbled.
   [OrdinaryType.barGemel]: new OrdinaryDefinition(OrdinaryType.barGemel, {
     canBeBorneInNumbers: true,
   }),
-  [OrdinaryType.bend]: new OrdinaryDefinition(OrdinaryType.bend, { canBeBorneInNumbers: true }),
+  [OrdinaryType.bend]: new OrdinaryDefinition(OrdinaryType.bend, {
+    canBeBorneInNumbers: true,
+    allowedModifiers: LINES,
+  }),
   [OrdinaryType.bendSinister]: new OrdinaryDefinition(OrdinaryType.bendSinister, {
     canBeBorneInNumbers: true,
+    allowedModifiers: LINES,
   }),
   [OrdinaryType.chevron]: new OrdinaryDefinition(OrdinaryType.chevron, {
     canBeBorneInNumbers: true,
+    allowedModifiers: LINES,
   }),
   // A single charge for all that it is drawn as two limbs crossing, and
   // repeating it makes crosslets, which are small charges strewn over the field
   // rather than ordinaries. The saltire is the same figure turned, and answers
   // the same way.
+  //
+  // Neither takes a modified line either, and for the same reason they are one
+  // charge: a cross indented is one outline with teeth all round it, not two
+  // toothed bands laid across each other, and the limbs drawn apart would cut
+  // into one another where they meet. The armorials ask for both — "D'argent, au
+  // sautoir denché de sable" — so this is a drawing that cannot yet answer and
+  // not a blazon nobody writes.
   [OrdinaryType.cross]: new OrdinaryDefinition(OrdinaryType.cross),
   [OrdinaryType.saltire]: new OrdinaryDefinition(OrdinaryType.saltire),
-  // The edge of the shield, and a shield has one of those too.
-  [OrdinaryType.bordure]: new OrdinaryDefinition(OrdinaryType.bordure),
+  // The edge of the shield, and a shield has one of those too. Cut along any of
+  // the lines it is the one band whose teeth are all on the one side: its outer
+  // edge is the outline of the shield and no blazon may cut that, so what the
+  // line modifies is where the band ends rather than where it begins.
+  [OrdinaryType.bordure]: new OrdinaryDefinition(OrdinaryType.bordure, {
+    allowedModifiers: LINES,
+  }),
 };
 
 /** The fewest of an ordinary that is more than one of it. */
 export const SEVERAL = 2;
 
 /**
- * One ordinary, in its own tincture, borne once or several times over. A charge
- * may itself be charged, and may be drawn with a modified line, but neither is
- * in the vocabulary yet: an ordinary here is a plain band of a plain tincture.
+ * One ordinary, in its own tincture, borne once or several times over, and drawn
+ * with whatever line the blazon asked for. A band may itself be charged, but
+ * that is not in the vocabulary yet: an ordinary here carries a plain tincture
+ * and nothing upon it.
  *
  * The count is left off rather than set to one when a single band is borne, so
  * that a fess reads back as the fess it was before a field could bear two.
@@ -120,7 +178,37 @@ export type Ordinary = {
   tincture: Tincture;
   /** How many are borne, where more than one is. */
   count?: number;
+  /**
+   * What the blazon says the band is drawn with, where it says anything: a fess
+   * indented is a fess still, and is drawn along a line with teeth in it.
+   *
+   * Left off rather than named where nothing was said, as the count is, so that
+   * a plain fess reads back as the fess it was written as.
+   */
+  modifier?: Modifier;
 };
+
+/**
+ * The modifiers an ordinary may be drawn under, in the order they are declared.
+ *
+ * Named apart from the charges' own pair of questions rather than beside them,
+ * the two vocabularies being answered from one place: a band and a charge are
+ * asked the same thing and neither list is the other's.
+ */
+export function modifiersOn(type: OrdinaryType): readonly Modifier[] {
+  return OrdinaryDefinitions[type].allowedModifiers;
+}
+
+/**
+ * Whether an ordinary may be drawn under a modifier.
+ *
+ * Asked of the term rather than of the word, because the answer is the same in
+ * every tongue: a fasce is no likelier to be dentelée than a fess is to be
+ * indented.
+ */
+export function admitsModifier(type: OrdinaryType, modifier: Modifier): boolean {
+  return modifiersOn(type).includes(modifier);
+}
 
 /** How many of an ordinary a blazon bears: one, unless it says otherwise. */
 export function borne(ordinary: Ordinary): number {

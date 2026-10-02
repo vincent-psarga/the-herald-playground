@@ -1,5 +1,9 @@
-import { stroked } from '../../shapes/path';
-import { BorneFigure } from '../Figures';
+import { Frame } from '../../Ground';
+import { corners, stroked } from '../../shapes/path';
+import { Shape, all } from '../../shapes/Shape';
+import { Cut, toothedInside } from '../../shapes/teeth';
+import { OrdinaryFigure } from '../Figures';
+import { alongLines } from '../lines';
 
 /** How far a bordure reaches in from the edge: an eighth of the field, as armorials draw it. */
 const DEEP = 1 / 8;
@@ -14,6 +18,28 @@ const DEEP = 1 / 8;
  * The bordure crosses the field nowhere: it follows the edge, and a shield has
  * one edge, so there is nothing for a count to narrow or space out.
  */
-export const bordure: BorneFigure = {
+export const bordure: OrdinaryFigure = {
   shapes: ({ path, width }) => [stroked(path, width * DEEP * 2)],
+  modified: alongLines((cut) => ({ shapes: (frame) => [cutInside(frame, cut)] })),
 };
+
+/**
+ * The same band with its inner edge cut along a modified line, the outer one
+ * being the shield's own and not the band's to cut.
+ *
+ * It is the one cut figure whose two edges do not answer alike, and the only
+ * figure it could be: a bordure is the edge of the shield, so what a blazon
+ * modifies is where the band ends and not where it begins. The band is therefore
+ * deeper where a tooth reaches and shallower where a notch does, which is what
+ * the armorials draw — every other cut band keeps its width, both its edges
+ * being free.
+ *
+ * It is the plain band, drawn shallower, with the teeth laid on it: a stroke
+ * follows the curve of the base and miters its own corners, which is the whole
+ * reason the plain bordure is one, and the teeth are painted in the same
+ * tincture and so simply join it.
+ */
+function cutInside(frame: Frame, cut: Cut): Shape {
+  const { beneath, teeth } = toothedInside(corners(frame.path), frame.width * DEEP, cut);
+  return all([stroked(frame.path, beneath * 2), ...teeth]);
+}

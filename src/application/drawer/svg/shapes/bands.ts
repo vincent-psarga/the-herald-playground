@@ -2,6 +2,7 @@ import { Frame } from '../Ground';
 import { Shape, all } from './Shape';
 import { polygon } from './polygon';
 import { rectangle } from './rectangle';
+import { Cut, DOWNWARD, Point, SIDEWAYS, pointsOf, square, toothed } from './teeth';
 
 /** A band's place across the room it crosses: where it begins, and how far it runs. */
 export type Band = readonly [at: number, across: number];
@@ -67,3 +68,141 @@ export const twinned =
       rectangle(0, at + span - bar, frame.width, bar),
     ]);
   };
+
+/**
+ * A band whose two edges are cut along a modified line: the line it is drawn
+ * along, the way across to its other edge, the way the teeth reach, and the cut
+ * they are cut with.
+ *
+ * Both edges are cut alike and in step, so the band keeps the width it had — it
+ * is the line the band follows that was modified, not the band's size — and what
+ * is drawn is one ribbon of teeth rather than a row of triangles.
+ */
+const toothedBand = (
+  line: readonly Point[],
+  [acrossX, acrossY]: Point,
+  way: Point,
+  cut: Cut
+): Shape =>
+  polygon(
+    pointsOf([
+      ...toothed(line, way, cut),
+      ...[
+        ...toothed(
+          line.map(([x, y]): Point => [x + acrossX, y + acrossY]),
+          way,
+          cut
+        ),
+      ].reverse(),
+    ])
+  );
+
+/** A band straight across the frame, its edges cut along a modified line. */
+export const acrossCut =
+  (frame: Frame, cut: Cut) =>
+  ([at, span]: Band): Shape =>
+    toothedBand(
+      [
+        [0, at],
+        [frame.width, at],
+      ],
+      [0, span],
+      DOWNWARD,
+      cut
+    );
+
+/**
+ * A band across the top of the frame with its lower edge alone cut, the upper
+ * one being the shield's own and not the band's to cut.
+ *
+ * It is what a chief needs and no band crossing the field does. A band with two
+ * free edges keeps its width, both edges being cut alike; this one is deeper
+ * where a tooth reaches and shallower where a notch does, which is how the
+ * armorials draw it and how a bordure — the other single-edged band — is drawn
+ * here.
+ *
+ * Cutting both edges and trusting the outline to hide the upper teeth is what
+ * this replaces. It held only while the teeth were smaller than the inset of the
+ * shield's own edge: a larger tooth reaches back inside it and bites the top of
+ * the shield, which is a line no blazon modifies.
+ */
+const belowOnly = (
+  [from, to]: readonly [Point, Point],
+  span: number,
+  way: Point,
+  cut: Cut
+): Shape =>
+  polygon(
+    pointsOf([
+      from,
+      to,
+      ...[
+        ...toothed(
+          [
+            [to[0] + way[0] * span, to[1] + way[1] * span],
+            [from[0] + way[0] * span, from[1] + way[1] * span],
+          ],
+          way,
+          cut
+        ),
+      ],
+    ])
+  );
+
+/** A band across the top of the frame, its lower edge alone cut. */
+export const acrossCutBelow =
+  (frame: Frame, cut: Cut) =>
+  ([at, span]: Band): Shape =>
+    belowOnly(
+      [
+        [0, at],
+        [frame.width, at],
+      ],
+      span,
+      DOWNWARD,
+      cut
+    );
+
+/** A band straight down the frame, its edges cut along a modified line. */
+export const downCut =
+  (frame: Frame, cut: Cut) =>
+  ([at, span]: Band): Shape =>
+    toothedBand(
+      [
+        [at, 0],
+        [at, frame.height],
+      ],
+      [span, 0],
+      SIDEWAYS,
+      cut
+    );
+
+/** A band corner to corner, its edges cut square to its own slant. */
+export const inBendCut =
+  ({ width, height }: Frame, cut: Cut) =>
+  ([at, span]: Band): Shape =>
+    diagonal([at, 0], [width + at, height], span, cut);
+
+export const inBendSinisterCut =
+  ({ width, height }: Frame, cut: Cut) =>
+  ([at, span]: Band): Shape =>
+    diagonal([width + at, 0], [at, height], span, cut);
+
+/** A band running from one corner of the frame towards another, its edges cut. */
+const diagonal = (from: Point, to: Point, span: number, cut: Cut): Shape =>
+  toothedBand([from, to], [span, 0], square(from, to), cut);
+
+/** A band bent to a point, its edges cut along both limbs. */
+export const bentCut =
+  ({ width }: Frame, cut: Cut) =>
+  ([at, span]: Band): Shape =>
+    toothedBand(
+      [
+        [0, at + RISE],
+        [width / 2, at],
+        [width, at + RISE],
+      ],
+      [0, span],
+      DOWNWARD,
+      cut
+    );

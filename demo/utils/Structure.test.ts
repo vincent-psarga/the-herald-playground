@@ -228,6 +228,33 @@ describe('the arms a word is shown by', () => {
     });
   });
 
+  test('sets a band’s modified line under the band, as a charge’s modifier is', () => {
+    // A band is said of exactly as a charge is, so the line it is drawn along is
+    // a word of the blazon and a line of its taking-apart.
+    expect(drawn(of("D'argent au chevron vivré de gueules", Languages.fr))).toBe(
+      ['argent', 'chevron', '  vivré', '  gueules', ''].join('\n')
+    );
+    expect(drawn(of('Argent a chevron vivré gules', Languages.en))).toBe(
+      ['argent', 'chevron', '  vivré', '  gules', ''].join('\n')
+    );
+    // The French word agrees with the band it is shown under, as it does in the
+    // sentence: three bandes are dentelées.
+    expect(drawn(of("D'argent à trois bandes dentelées de gueules", Languages.fr))).toBe(
+      ['argent', 'bande ×3', '  dentelé', '  gueules', ''].join('\n')
+    );
+  });
+
+  test('shows a band’s line doing its work on the very band it was said of', () => {
+    const read = of('Argent three bends dancetty gules', Languages.en);
+    expect(found(read, 'dancetty').arms).toEqual({
+      field: { type: FieldType.plain, tincture: Metals.argent },
+      chargesOrOrdinaries: [
+        { type: OrdinaryType.bend, tincture: Colours.gules, modifier: 'Modifier.dancetty' },
+      ],
+    });
+    expect(found(read, 'bend').arms?.chargesOrOrdinaries?.[0]).toMatchObject({ count: 3 });
+  });
+
   test('shows a modifier doing its work on the very charge it was said of', () => {
     // There is no picture of "voided" on its own, so what it does to that charge
     // is the whole of what can be drawn — borne once, the count being the

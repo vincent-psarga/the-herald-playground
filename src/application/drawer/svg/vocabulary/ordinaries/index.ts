@@ -1,5 +1,5 @@
 import { OrdinaryType } from '../../../../../domain/models/Ordinary';
-import { BorneFigure } from '../Figures';
+import { OrdinaryFigure } from '../Figures';
 import { barGemel } from './barGemel';
 import { bend } from './bend';
 import { bendSinister } from './bendSinister';
@@ -20,7 +20,7 @@ import { saltire } from './saltire';
  * curve. Being keyed on OrdinaryType, an ordinary added to the vocabulary breaks
  * this until it is given a shape.
  */
-export const ORDINARIES: Record<OrdinaryType, BorneFigure> = {
+export const ORDINARIES: Record<OrdinaryType, OrdinaryFigure> = {
   [OrdinaryType.chief]: chief,
   [OrdinaryType.pale]: pale,
   [OrdinaryType.fess]: fess,

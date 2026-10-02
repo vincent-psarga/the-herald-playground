@@ -96,6 +96,7 @@ export const RULES: readonly Rule[] = [
     cases: [
       en('Argent a border gules'),
       en('Azure a bezant'),
+      en('Azure a fess dancetté or'),
       en('Pily counter pily of four or and azure'),
       fr("D'argent au losange de gueules"),
       fr("D'or aux trois tourteaux de gueules"),
@@ -347,8 +348,51 @@ export const RULES: readonly Rule[] = [
     cases: [fr('De gueules plain'), fr("D'hermine plain"), fr("D'or plain au chef de gueules")],
   },
   {
+    id: 'a-word-one-tongue-never-had',
+    heading: 'A tongue with no word of its own is written in the word it borrowed',
+    law: (
+      <>
+        <p className="rule__law">
+          English cut the saw-toothed line in two and named both halves — indented for the small
+          teeth, dancetty for the great ones — and never named the third, where the great teeth come
+          to a right angle at the point instead of a sharper one. French named it vivré. So that is
+          the word English is written in: a bend vivré, where the same arms in French are à la bande
+          vivrée.
+        </p>
+        <p className="rule__law">
+          The alternative would be to answer vivré with dancetty, which is the nearest English word
+          and not the same drawing — one line comes to a sharper point than the other. A reader told
+          dancetty would draw the wrong band. Borrowing the word says what was meant and says, by
+          being foreign, that English never settled a word for it.
+        </p>
+        <p className="rule__law">
+          It is borrowed only where there is nothing to borrow it over. Where English has a word of
+          its own the English word is written, however freely the armorials write the French one:
+          vairy is written where vairé and vaire are read, all three being the one field.
+        </p>
+      </>
+    ),
+    authority: (
+      <>
+        Parker files Vivré as an entry of an English glossary, “a French term applied to the fesse,
+        bend, &amp;c.”, and blazons English arms with it: it is “practically equivalent to dancetty,
+        except that the indentations are more open, i.e. the lines forming them produce right
+        angles, instead of the acute angles which are usually represented in the drawing of indented
+        or dancetty”. Au blason des armoiries files the same word under its own, where the pieces
+        are “sinueuses et ondées, mais avec des entailles faites d’angles saillants et rentrants”.
+      </>
+    ),
+    sources: [parker('Vivre'), blasonArmoiries('Vivré', 'vivree'), parker('Vair')],
+    cases: [
+      en('Azure a fess vivré or'),
+      fr("D'or à la bande vivrée d'azur"),
+      en('Azure a fess dancetty or'),
+      en('Vairé azure and or'),
+    ],
+  },
+  {
     id: 'a-modifier-is-written-last',
-    heading: 'A modifier stands after the charge and before its tincture',
+    heading: 'A modifier stands after what it qualifies and before its tincture',
     law: (
       <>
         <p className="rule__law">
@@ -357,6 +401,14 @@ export const RULES: readonly Rule[] = [
           takes its word order from French, so the word qualifying the charge follows the charge and
           the tincture comes last of all — two bars voided gules, à la croix vidée de gueules. That
           is where it is written.
+        </p>
+        <p className="rule__law">
+          A band is said of in the same place and by the same rule. What is done to it is done to
+          the line it is named after rather than to its middle — a fess indented is a fess whose
+          edges are cut into teeth — so the two take different words, and neither takes the other’s:
+          a fess is never voided and a lozenge is never indented. Which band takes which line is
+          declared with the band, as which charge takes which modifier is declared with the charge,
+          so the answer is the same in either tongue and a band that takes none refuses one by name.
         </p>
         <p className="rule__law">
           It is read after the tincture as well. The model holds which modifier and not where the
@@ -386,6 +438,7 @@ export const RULES: readonly Rule[] = [
     cases: [
       en('Azure a billet voided or'),
       en('Azure a billet or voided'),
+      en('Azure a fess indented or'),
       en('Azure a voided lozenge or'),
     ],
   },
@@ -406,6 +459,10 @@ export const RULES: readonly Rule[] = [
           gender the charge is written back in, which is the word’s own rather than the blazon’s.
           English agrees with nothing, and writes the one word after one charge or three.
         </p>
+        <p className="rule__law">
+          A band agrees as a charge does, and carries its own gender to be agreed with: au chef
+          dentelé, à la fasce dentelée, à trois bandes dentelées.
+        </p>
       </>
     ),
     authority: (
@@ -420,20 +477,23 @@ export const RULES: readonly Rule[] = [
       fr("D'azur à la billette vidée d'or"),
       fr("D'or à trois billettes de sable vidées"),
       fr("D'azur à la losange vidée d'or"),
+      fr("D'azur au chef dentelé d'or"),
+      fr("D'or à trois bandes dentelées de sable"),
       fr("D'azur à la billette vidé d'or"),
     ],
   },
   {
     id: 'a-modifier-said-of-what-can-show-it',
-    heading: 'A modifier is said only of a charge that can show it',
+    heading: 'A modifier is said only of what can show it',
     law: (
       <>
         <p className="rule__law">
-          Neither word is said of an ordinary here. Heraldry says them — Parker blazons a cross
-          voided — but no voided band is drawn, and a vocabulary that read the word would promise a
-          drawing it cannot make. A band told it is voided is refused by name. So is a charge that
-          is already what the word says: an annulet is a roundel voided, and voiding it again names
-          no figure.
+          Neither voiding nor piercing is said of a band here. Heraldry says them — Parker blazons a
+          cross voided — but no voided band is drawn, and a vocabulary that read the word would
+          promise a drawing it cannot make. A band told it is voided is refused by name, and a
+          charge told it is indented is refused the same way, a charge having no line to cut. So is
+          a charge that is already what the word says: an annulet is a roundel voided, and voiding
+          it again names no figure.
         </p>
         <p className="rule__law">
           The two words are never traded for one another. A billette percée is not a billette vidée,
@@ -454,6 +514,7 @@ export const RULES: readonly Rule[] = [
     sources: [parker('Mascle'), parker('Rustre')],
     cases: [
       en('Azure a fess voided or'),
+      en('Azure a lozenge indented or'),
       en('Azure an annulet voided or'),
       fr("D'azur à la billette percée d'or"),
     ],
