@@ -36,25 +36,27 @@ export const billet: ChargeFigure = charge(
     return rectangle(x - Math.round(across / 2), y - Math.round(size / 2), across, size);
   },
   {
-    [Modifier.voided]: ({ x, y, size }) => {
-      const across = Math.round(size * WIDE);
-      return hollowRectangle(
-        x - Math.round(across / 2),
-        y - Math.round(size / 2),
-        across,
-        size,
-        Math.round(across * BAND)
-      );
-    },
-    [Modifier.pierced]: ({ x, y, size }) => {
-      const across = Math.round(size * WIDE);
-      return piercedRectangle(
-        x - Math.round(across / 2),
-        y - Math.round(size / 2),
-        across,
-        size,
-        Math.round((across * HOLE) / 2)
-      );
+    modified: {
+      [Modifier.voided]: ({ x, y, size }) => {
+        const across = Math.round(size * WIDE);
+        return hollowRectangle(
+          x - Math.round(across / 2),
+          y - Math.round(size / 2),
+          across,
+          size,
+          Math.round(across * BAND)
+        );
+      },
+      [Modifier.pierced]: ({ x, y, size }) => {
+        const across = Math.round(size * WIDE);
+        return piercedRectangle(
+          x - Math.round(across / 2),
+          y - Math.round(size / 2),
+          across,
+          size,
+          Math.round((across * HOLE) / 2)
+        );
+      },
     },
   }
 );

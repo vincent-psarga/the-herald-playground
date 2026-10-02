@@ -1,3 +1,4 @@
+import { Attribute } from '../../../../domain/models/Attributes';
 import { Modifier } from '../../../../domain/models/Modifier';
 import { Frame } from '../Ground';
 import { Shape } from '../shapes/Shape';
@@ -88,4 +89,34 @@ export type ChargeFigure = BorneFigure & {
    * that there was a modifier at all.
    */
   readonly modified: Readonly<Partial<Record<Modifier, ChargeFigure>>>;
+  /**
+   * The parts of the figure a blazon may paint on their own, for the attributes
+   * it may be borne with, and empty for the charges that have none.
+   *
+   * A part is not the charge as an attribute leaves it: the charge is drawn
+   * entire and the part is drawn over it in a tincture of its own, which is what
+   * makes a gem-ring one figure in two paints rather than a ring and a gem
+   * beside it. So what is held here is the part alone, laid at the same spots
+   * and in the same number as the figure it sits on.
+   *
+   * Whether the figure draws the part when nothing paints it is the figure's own
+   * to settle, and the two answers are both right. A beast has claws whatever a
+   * blazon says of them, so they are drawn with it and in its tincture, and
+   * armed paints over what was there. A ring has no stone until something says
+   * there is one, so the plain figure draws none and stoned adds it. Naming the
+   * part is the same either way; what differs is what it was named against.
+   */
+  readonly parts: Readonly<Partial<Record<Attribute, BorneFigure>>>;
+  /**
+   * The marks the figure is modelled by, for the figures that are modelled at
+   * all, and nothing for the ones that are not.
+   *
+   * A plain shape needs none: a billet is a rectangle and there is nothing in it
+   * to be told from anything else. A beast is a tangle of limbs that pass behind
+   * one another, and painted in one flat tincture it reads as a blot — so the
+   * folio it was traced from paints it in two, and these are the marks of the
+   * second. They are laid last of all and in no tincture of the blazon's, being
+   * a fact about drawing beasts rather than about what the blazon said.
+   */
+  readonly modelling?: (frame: Frame, count: number) => readonly Shape[];
 };

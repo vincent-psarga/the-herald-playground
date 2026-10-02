@@ -1,14 +1,16 @@
+import { paintedIn } from '../../../domain/models/Attributes';
 import { Blazon, ChargeOrOrdinary, isOrdinary } from '../../../domain/models/Blazon';
 import { Charge, numberBorne } from '../../../domain/models/Charge';
 import { Field, Semy, isDivision, isFurred, isVariation } from '../../../domain/models/Field';
 import { borne } from '../../../domain/models/Ordinary';
 import { Painter } from './Ground';
 import { laid } from './painting/laid';
+import { modelled } from './painting/modelled';
 import { over } from './painting/over';
 import { plain } from './painting/plain';
 import { split } from './painting/split';
 import { escapeAttribute } from './escaping';
-import { BorneFigure, ChargeFigure } from './vocabulary/Figures';
+import { ChargeFigure } from './vocabulary/Figures';
 import { CHARGES } from './vocabulary/charges';
 import { DIVISIONS } from './vocabulary/coverings/divisions';
 import { peltOf } from './vocabulary/coverings/furred';
@@ -90,10 +92,53 @@ function sown(semy: Semy): Painter {
  * charges each with its own.
  */
 function bearing(one: ChargeOrOrdinary): Painter {
-  const [figure, count] = isOrdinary(one)
-    ? ([ORDINARIES[one.type], borne(one)] as const)
-    : ([drawn(one), numberBorne(one)] as const);
-  return laid((frame) => figure.shapes(frame, count), INKS[one.tincture]);
+  if (isOrdinary(one)) {
+    return laid((frame) => ORDINARIES[one.type].shapes(frame, borne(one)), INKS[one.tincture]);
+  }
+  const figure = drawn(one);
+  const count = numberBorne(one);
+  return over(
+    laid((frame) => figure.shapes(frame, count), INKS[one.tincture]),
+    ...painting(one, figure, count),
+    ...modelling(figure, count)
+  );
+}
+
+/**
+ * The marks the figure is modelled by, washed over everything the blazon painted
+ * and in no tincture of its own.
+ *
+ * Last of all, the parts included: a lion armed gules has its claws shaded like
+ * the rest of it, the modelling being a fact about the drawing rather than about
+ * which paint lies where. Nothing at all for the figures that are not modelled,
+ * which is every one of them but the beast.
+ */
+function modelling(figure: ChargeFigure, count: number): readonly Painter[] {
+  const marks = figure.modelling;
+  return marks === undefined ? [] : [modelled((frame) => marks(frame, count))];
+}
+
+/**
+ * The parts of a charge painted apart from the rest, each over the whole figure
+ * in a tincture of its own: a gem-ring's stone, standing on the hoop.
+ *
+ * Laid after the charge and in the order the blazon named them, a part being a
+ * part of the figure rather than something beside it. A part whose tincture the
+ * blazon never named is painted in the charge's own, which draws it as the name
+ * that said it means: a gem-ring or is a gold hoop with a gold stone.
+ *
+ * A part the vocabulary has no drawing for is not drawn, exactly as a modifier
+ * it has no drawing for leaves the charge plain. It cannot arrive here — the
+ * parser refuses a part the charge has not got — so this says what to do about a
+ * drawing that has fallen behind the model.
+ */
+function painting(one: Charge, figure: ChargeFigure, count: number): readonly Painter[] {
+  return (one.attributes ?? []).flatMap((painted) => {
+    const part = figure.parts[painted.attribute];
+    return part === undefined
+      ? []
+      : [laid((frame) => part.shapes(frame, count), INKS[paintedIn(painted, one.tincture)])];
+  });
 }
 
 /**
@@ -105,7 +150,7 @@ function bearing(one: ChargeOrOrdinary): Painter {
  * drawn — so this says what to do about a drawing that has fallen behind the
  * model rather than about anything a blazon can say.
  */
-function drawn(one: Charge): BorneFigure {
+function drawn(one: Charge): ChargeFigure {
   const figure: ChargeFigure = CHARGES[one.type];
   return one.modifier === undefined ? figure : (figure.modified[one.modifier] ?? figure);
 }

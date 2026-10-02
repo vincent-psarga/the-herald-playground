@@ -1,3 +1,4 @@
+import { Attribute } from '../models/Attributes';
 import { ChargeType } from '../models/Charge';
 import { Modifier } from '../models/Modifier';
 import { Tincture } from '../models/Tinctures';
@@ -61,19 +62,27 @@ export function wordOf<T extends string, W extends Word>(
  * answered wrongly: every word is considered again, the plain name wins, and the
  * modifier is written after it in the ordinary way.
  *
- * The two questions do not cross today, no charge having both a name per
- * tincture and a name per modifier. Asked in this order they could: the tincture
- * is chosen among the words that mean what was done, which is the way round that
+ * Which parts were painted is asked alongside it, and answered the same way:
+ * heraldry names the ring with a stone in it outright — a gem-ring, the French
+ * anneau — where the plain word names the ring with none, so a charge whose
+ * stone was painted comes back under the name that says there is one. The
+ * tincture written after such a name is the stone's, the name having said only
+ * that there is a stone.
+ *
+ * The questions do not cross today, no charge having both a name per tincture
+ * and a name per modifier or part. Asked in this order they could: the tincture
+ * is chosen among the words that mean what was said, which is the way round that
  * keeps a name meaning what it says.
  */
 export function wordIn<T extends string, W extends Word>(
   translation: Translation<T, W>,
   term: T,
   tincture: Tincture,
-  modifier?: Modifier
+  modifier?: Modifier,
+  attributes: readonly Attribute[] = []
 ): W {
   const words = wordsOf(translation, term);
-  const meaning = words.filter((word) => word.means(modifier));
+  const meaning = words.filter((word) => word.means(modifier) && word.shows(attributes));
   const among = meaning.length === 0 ? words : meaning;
   return (
     among.find((word) => word.defaultTincture === tincture) ??

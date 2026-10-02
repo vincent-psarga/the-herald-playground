@@ -65,13 +65,17 @@ export {
   ChargeDefinition,
   ChargeDefinitions,
   ChargeType,
+  allowsAttribute,
   allowsModifier,
+  attributesOf,
   isChargeType,
   modifiersOf,
   numberBorne,
 } from './domain/models/Charge';
 export type { Charge } from './domain/models/Charge';
 export { Modifier } from './domain/models/Modifier';
+export { Attribute, namesPart, paintedIn } from './domain/models/Attributes';
+export type { Attributed } from './domain/models/Attributes';
 
 export { BlazonParseError } from './domain/errors/parsing/BlazonParseError';
 export type { TextPosition } from './domain/errors/parsing/BlazonParseError';
@@ -87,6 +91,8 @@ export { ChargedPlainField } from './domain/errors/parsing/ChargedPlainField';
 export { WrongTinctureArticle } from './domain/errors/parsing/WrongTinctureArticle';
 export { WrongOrdinaryArticle } from './domain/errors/parsing/WrongOrdinaryArticle';
 export { WrongModifier } from './domain/errors/parsing/WrongModifier';
+export { WrongAttribute } from './domain/errors/parsing/WrongAttribute';
+export { RepeatedAttribute } from './domain/errors/parsing/RepeatedAttribute';
 export { WrongAgreement } from './domain/errors/parsing/WrongAgreement';
 export type { Ordinary } from './domain/models/Ordinary';
 export {
@@ -138,6 +144,7 @@ export { EnglishNumbers } from './domain/translations/en/Numbers';
 export { EnglishOrdinaryType } from './domain/translations/en/Ordinaries';
 export { EnglishChargeType } from './domain/translations/en/Charges';
 export { EnglishModifiers } from './domain/translations/en/Modifiers';
+export { EnglishAttributes } from './domain/translations/en/Attributes';
 export { EnglishStrewings } from './domain/translations/en/Strewings';
 export {
   EnglishColours,
@@ -151,6 +158,7 @@ export { FrenchNumbers } from './domain/translations/fr/Numbers';
 export { FrenchOrdinaryType } from './domain/translations/fr/Ordinaries';
 export { FrenchChargeType } from './domain/translations/fr/Charges';
 export { FrenchModifiers } from './domain/translations/fr/Modifiers';
+export { FrenchAttributes } from './domain/translations/fr/Attributes';
 export { FrenchStrewings } from './domain/translations/fr/Strewings';
 export {
   FrenchColours,

@@ -57,7 +57,7 @@ describe('a field sown with a charge', () => {
   });
 
   test('refuses a figure the vocabulary does not hold', () => {
-    expect(() => parser.parse('Azure semy of lions or')).toThrow(UnknownOrdinary);
+    expect(() => parser.parse('Azure semy of castles or')).toThrow(UnknownOrdinary);
   });
 
   test('says nothing of a field being plain: English has no such word for one', () => {

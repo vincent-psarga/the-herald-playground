@@ -49,6 +49,10 @@ export const EnglishStrewings: Strewings = {
   // borrowing the word would promise a figure this does not draw.
   [ChargeType.crossCouped]: undefined,
   [ChargeType.crescent]: undefined,
+  // Neither tongue names a field sown with lions, the beast being borne rather
+  // than sown: a shield covered in them would be blazoned semy of lions in as
+  // many words, and no armorial here writes even that.
+  [ChargeType.lion]: undefined,
   [ChargeType.fleurDeLis]: new Word(
     'semy-de-lis',
     {

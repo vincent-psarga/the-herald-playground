@@ -1,4 +1,5 @@
-import { Blazon } from '../../../domain/models/Blazon';
+import { paintedIn } from '../../../domain/models/Attributes';
+import { Blazon, isCharge } from '../../../domain/models/Blazon';
 import { isDivision, isFurred, isVariation } from '../../../domain/models/Field';
 import { Tincture } from '../../../domain/models/Tinctures';
 import { ColorModel, DrawOptions, IBlazonDrawer } from '../../../domain/services/IBlazonDrawer';
@@ -38,9 +39,10 @@ export class SvgBlazonDrawer implements IBlazonDrawer {
 
 /**
  * Every tincture the drawing will ask for, so that whatever each is painted with
- * is defined beside it. What a field is sown with counts among them: a semy is
- * painted with a tincture like anything else, and a hatched one needs its ruling
- * placed or it is drawn in nothing at all.
+ * is defined beside it. What a field is sown with counts among them, and so does
+ * a part of a charge painted apart from the rest: each is painted with a tincture
+ * like anything else, and a hatched one needs its ruling placed or it is drawn
+ * in nothing at all.
  */
 function tincturesOf(blazon: Blazon): readonly Tincture[] {
   const painted = blazon.field;
@@ -48,7 +50,15 @@ function tincturesOf(blazon: Blazon): readonly Tincture[] {
     isDivision(painted) || isVariation(painted) || isFurred(painted)
       ? [painted.firstTincture, painted.secondTincture]
       : [painted.tincture, ...(painted.semy === undefined ? [] : [painted.semy.tincture])];
-  return [...field, ...(blazon.chargesOrOrdinaries ?? []).map(({ tincture }) => tincture)];
+  return [
+    ...field,
+    ...(blazon.chargesOrOrdinaries ?? []).flatMap((one) => [
+      one.tincture,
+      ...(isCharge(one)
+        ? (one.attributes ?? []).map((painted) => paintedIn(painted, one.tincture))
+        : []),
+    ]),
+  ];
 }
 
 /** The pelt a furred field is covered with, where the field is furred at all. */

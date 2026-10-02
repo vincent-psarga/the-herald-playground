@@ -17,5 +17,7 @@ import { charge } from './Charge';
  * it twice differently would be saying something heraldry does not.
  */
 export const roundel: ChargeFigure = charge(({ x, y, size }) => disc(x, y, Math.round(size / 2)), {
-  [Modifier.voided]: annulet.at,
+  modified: {
+    [Modifier.voided]: annulet.at,
+  },
 });

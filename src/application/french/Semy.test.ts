@@ -72,7 +72,7 @@ describe('a field sown with a charge', () => {
   });
 
   test('refuses a figure the vocabulary does not hold', () => {
-    expect(() => parser.parse("D'azur semé de lions d'or")).toThrow(UnknownOrdinary);
+    expect(() => parser.parse("D'azur semé de châteaux d'or")).toThrow(UnknownOrdinary);
   });
 
   test('refuses a tincture the vocabulary does not hold', () => {
