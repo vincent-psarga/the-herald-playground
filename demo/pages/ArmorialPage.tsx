@@ -130,8 +130,13 @@ export function ArmorialPage({ armorial, colours = COLOURINGS[0]?.colours }: Arm
               </tr>
             </thead>
             <tbody role="rowgroup">
-              {shown.map(({ entry, blazon }, index) => (
-                <tr role="row" key={`${index}-${entry.name}`}>
+              {shown.map(({ entry, blazon }) => (
+                /* The entry's slug is its address within the roll, so a reader
+                   can be sent to one entry of a long armorial rather than to
+                   the head of it: /armorial/franche-comte#de-vaudrey. The row
+                   is what the address names, that being the whole of what an
+                   entry is here. */
+                <tr role="row" id={entry.slug} key={entry.slug}>
                   <th scope="row" role="rowheader">
                     {entry.name}
                   </th>

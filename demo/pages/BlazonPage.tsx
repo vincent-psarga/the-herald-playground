@@ -45,7 +45,7 @@ export function BlazonPage({
 
   return (
     <main className="plane">
-      <h1>Blazon</h1>
+      <h1>The Herald Playground</h1>
       <p className="plane__extent">Written in one tongue · read in the other</p>
 
       <div className="compose">

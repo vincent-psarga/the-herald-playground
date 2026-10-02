@@ -8,6 +8,7 @@ export const SampleArmorial: Armorial = {
   entries: [
     {
       name: 'Halberstadt',
+      slug: 'halberstadt',
       blazon: "Parti d'argent et de gueules",
       image:
         'https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bd/FRA_heraldy_-_parti.svg/120px-FRA_heraldy_-_parti.svg.png?utm_source=fr.wikipedia.org&utm_campaign=parser&utm_content=thumbnail',
@@ -19,6 +20,7 @@ export const SampleArmorial: Armorial = {
     },
     {
       name: 'France',
+      slug: 'france',
       blazon: "D'azur semé de fleurs-de-lis d'or",
       image:
         'https://thumb.wikimedia.org/wikipedia/commons/thumb/0/06/Arms_of_the_Kingdom_of_France_%28Ancien%29.svg/120px-Arms_of_the_Kingdom_of_France_%28Ancien%29.svg.png?utm_source=fr.wikipedia.org&utm_campaign=parser&utm_content=thumbnail',
@@ -30,6 +32,7 @@ export const SampleArmorial: Armorial = {
     },
     {
       name: 'Bourgogne (Capétien)',
+      slug: 'bourgogne-capetien',
       blazon: "Bandé d'or et d'azur en six pièces, à la bordure de gueules",
       image:
         'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fe/Blason_Ducs_Bourgogne_%28ancien%29.svg/langfr-250px-Blason_Ducs_Bourgogne_%28ancien%29.svg.png?utm_source=fr.wikipedia.org&utm_campaign=parser&utm_content=thumbnail',
@@ -41,6 +44,7 @@ export const SampleArmorial: Armorial = {
     },
     {
       name: 'Anne de Bretagne',
+      slug: 'anne-de-bretagne',
       blazon: "Parti d'azur à trois fleurs de lys d'or et d'hermine",
       image:
         'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e2/Blason_Anne_de_Bretagne_%281476-1514%29_Reine_de_France.svg/250px-Blason_Anne_de_Bretagne_%281476-1514%29_Reine_de_France.svg.png?utm_source=fr.wikipedia.org&utm_campaign=parser&utm_content=thumbnail',
