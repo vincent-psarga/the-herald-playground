@@ -9,7 +9,7 @@ import { over } from './painting/over';
 import { plain } from './painting/plain';
 import { split } from './painting/split';
 import { escapeAttribute } from './escaping';
-import { BorneFigure, ChargeFigure, OrdinaryFigure } from './vocabulary/Figures';
+import { BorneFigure, ChargeFigure, CutBand, OrdinaryFigure } from './vocabulary/Figures';
 import { CHARGES } from './vocabulary/charges';
 import { DIVISIONS } from './vocabulary/coverings/divisions';
 import { peltOf } from './vocabulary/coverings/furred';
@@ -89,12 +89,40 @@ function sown(semy: Semy): Painter {
  * A band or a charge, drawn by whichever vocabulary its term belongs to, however
  * many of it are borne: two chevrons are two bands of one tincture, not two
  * charges each with its own.
+ *
+ * One tincture, unless the blazon painted the band's line in one of its own. Then
+ * the cut band is laid in the line's tincture and the band inside the cut is laid
+ * over it in the band's, so that what shows of the line is the teeth and nothing
+ * else, pinching away to nothing where a notch comes back to the band. The band
+ * keeps its place and its width either way: what a blazon paints there is the
+ * line, not a second band laid underneath.
  */
 function bearing(one: ChargeOrOrdinary): Painter {
   const [figure, count] = isOrdinary(one)
     ? ([ORDINARIES[one.type], borne(one)] as const)
     : ([CHARGES[one.type], numberBorne(one)] as const);
-  return laid((frame) => drawn(figure, one.modifier).shapes(frame, count), INKS[one.tincture]);
+  const cut = drawn(figure, one.modifier);
+  const line = isOrdinary(one) ? one.modifierTincture : undefined;
+  if (line === undefined || !isCutBand(cut)) {
+    return laid((frame) => cut.shapes(frame, count), INKS[one.tincture]);
+  }
+  return over(
+    laid((frame) => cut.shapes(frame, count), INKS[line]),
+    laid((frame) => cut.within(frame, count), INKS[one.tincture])
+  );
+}
+
+/**
+ * Whether a figure knows what it looks like inside its own cut, which every band
+ * drawn along a line does.
+ *
+ * Nothing can arrive here without it — the parser gives a tincture to no modifier
+ * but a line, and every line a band may be drawn along is drawn both ways — so
+ * what this guards is a drawing fallen behind the model, which is painted in the
+ * one tincture as it would have been before a line could be painted at all.
+ */
+function isCutBand(figure: BorneFigure | CutBand): figure is CutBand {
+  return 'within' in figure;
 }
 
 /**
@@ -111,6 +139,6 @@ function bearing(one: ChargeOrOrdinary): Painter {
  * drawn — so this says what to do about a drawing that has fallen behind the
  * model rather than about anything a blazon can say.
  */
-function drawn(figure: OrdinaryFigure | ChargeFigure, modifier?: Modifier): BorneFigure {
+function drawn(figure: OrdinaryFigure | ChargeFigure, modifier?: Modifier): BorneFigure | CutBand {
   return modifier === undefined ? figure : (figure.modified[modifier] ?? figure);
 }

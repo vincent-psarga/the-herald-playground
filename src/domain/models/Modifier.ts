@@ -159,3 +159,21 @@ export const LINES: readonly Modifier[] = [
   Modifier.vivre,
   Modifier.engrailed,
 ];
+
+/**
+ * Whether a blazon may give a modifier a tincture of its own: "à la bande de
+ * gueules engrêlée de sable", where the bande is red and its engrailing black.
+ *
+ * The lines may and nothing else does, and the reason is what each modifier is
+ * done to. A line is an edge, and an edge is a thing that can be drawn: the band
+ * keeps its own tincture between the notches and the cut beyond them is painted
+ * in whatever the blazon named, which is why the armorials can name one at all.
+ * What is taken out of a charge's middle is not drawn — a lozenge voided shows
+ * the field through it, which is the whole of what voiding means — so a tincture
+ * named there would not be colouring the voiding but filling it, and a filled
+ * lozenge is another figure drawn another way. The armorials write that too
+ * ("deux molletts d'or, voydes vert") and it is left for the day it is read.
+ */
+export function takesTincture(modifier: Modifier): boolean {
+  return LINES.includes(modifier);
+}

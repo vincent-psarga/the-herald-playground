@@ -192,6 +192,24 @@ export type Ordinary = {
    * a plain fess reads back as the fess it was written as.
    */
   modifier?: Modifier;
+  /**
+   * The tincture the line is drawn in, where the blazon gives it one of its own
+   * rather than letting it take the band's: "D'or à la bande de gueules engrêlée
+   * de sable", where the bande is red and the engrailing black.
+   *
+   * It is the line that is painted and not a second band laid under the first.
+   * The band keeps its width and its place and its own tincture between the
+   * notches; what this paints is the cut beyond them, which is the part of the
+   * band the line added. So it is carried beside the modifier rather than being
+   * a bearing of its own, exactly as the modifier is carried beside the term.
+   *
+   * It says nothing without a modifier to say it of, and only a modified line
+   * will take one — which is the model's to know and is declared with the
+   * modifier. Left off where the blazon named none, the line then being drawn in
+   * the band's own tincture, which is what every armorial that says nothing
+   * means.
+   */
+  modifierTincture?: Tincture;
 };
 
 /**

@@ -161,9 +161,7 @@ export function toothed(
   // chevron is cut along two of them, and each hollow is square to the limb it
   // is cut in. A saw is pushed the one way all along, which is what leaves the
   // chevron's teeth leaning as they always have.
-  const ways: readonly Point[] = line
-    .slice(1)
-    .map((to, limb) => (scalloped ? facing(square(line[limb], to), way) : way));
+  const ways = squares(line, way, { tooth, bite, scalloped });
   const at = ([wayX, wayY]: Point, x: number, y: number, deep: number, point: number): Point => [
     x + wayX * deep * outward * across(point),
     y + wayY * deep * outward * across(point),
@@ -196,6 +194,57 @@ export function toothed(
     }
   }
   return cut;
+}
+
+/**
+ * The line a cut notches at: every corner of it pushed half a bite into the band,
+ * and none of it pushed out.
+ *
+ * It is what a band whose line carries a tincture of its own is painted down to.
+ * The cut band is laid in the line's tincture and the band is laid over it in
+ * its own, reaching exactly this far — so the line's tincture shows in the teeth
+ * and nowhere else, and pinches to nothing where a notch comes back to the band.
+ *
+ * Reckoned by the same arithmetic the cut is, rather than by insetting the band
+ * by the bite it was given: a line is cut into whole teeth and the cut scaled to
+ * what the line came out at, so an inset guessed from the bite would miss the
+ * notches by however much the scaling moved them. It is pushed the same way too,
+ * which is the whole of the difference on a chevron — a hollow is cut square to
+ * its limb, so the band inside it is drawn in square to its limb, and a band
+ * drawn in the way the saw's teeth lean would cover the hollows it is supposed
+ * to meet.
+ */
+export function notched(
+  line: readonly Point[],
+  way: Point,
+  cut: Cut,
+  outward = 1
+): readonly Point[] {
+  const ways = squares(line, way, cut);
+  const deeps = line.slice(1).map((to, limb) => reach(line[limb], to, cut));
+  return line.map((at, corner) => {
+    // A corner between two limbs is pushed along the one way between their
+    // squares, as the cut's own corners are, and by what the two reach between
+    // them: the limbs of every bent band drawn here are of a length, so the
+    // second is the first and the mean is either.
+    const before = corner === 0 ? corner : corner - 1;
+    const after = Math.min(corner, ways.length - 1);
+    const [wayX, wayY] = between(ways[before], ways[after]);
+    const deep = (deeps[before] + deeps[after]) / 2;
+    return [at[0] - wayX * deep * outward, at[1] - wayY * deep * outward] as Point;
+  });
+}
+
+/** How far a cut reaches to either side of the line, on a limb of a given length. */
+function reach([fromX, fromY]: Point, [toX, toY]: Point, { tooth, bite }: Cut): number {
+  const run = Math.hypot(toX - fromX, toY - fromY);
+  const points = 2 * Math.max(1, Math.round(run / (2 * tooth)));
+  return (bite * (run / points / tooth)) / 2;
+}
+
+/** Which way across itself each limb of a line is cut, which a saw never asks. */
+function squares(line: readonly Point[], way: Point, { scalloped = false }: Cut): readonly Point[] {
+  return line.slice(1).map((to, limb) => (scalloped ? facing(square(line[limb], to), way) : way));
 }
 
 /**

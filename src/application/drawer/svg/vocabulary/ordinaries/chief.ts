@@ -1,4 +1,4 @@
-import { acrossCutBelow } from '../../shapes/bands';
+import { acrossCutBelow, acrossWithinBelow } from '../../shapes/bands';
 import { rectangle } from '../../shapes/rectangle';
 import { OrdinaryFigure } from '../Figures';
 import { alongLines } from '../lines';
@@ -16,5 +16,8 @@ export const chief: OrdinaryFigure = {
   // its upper edge is the top of the shield, which no blazon modifies, so only
   // the edge along the base is cut and the chief is deeper where a tooth reaches
   // and shallower where a notch does.
-  modified: alongLines((cut) => ({ shapes: (frame) => [acrossCutBelow(frame, cut)([0, DEEP])] })),
+  modified: alongLines((cut) => ({
+    shapes: (frame) => [acrossCutBelow(frame, cut)([0, DEEP])],
+    within: (frame) => [acrossWithinBelow(frame, cut)([0, DEEP])],
+  })),
 };

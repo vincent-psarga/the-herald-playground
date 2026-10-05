@@ -123,6 +123,21 @@ Supported vocabulary as it stands:
   other spelling, and writes engrailed. The invected — the same hollows turned so that "the points
   are inwards" — is a second drawing and is not read.
 
+  A line may also be painted in a tincture of its own, which no other modifier may: the band keeps
+  its tincture between the notches and the cut beyond them is drawn in whatever the blazon named —
+  "D'or à la bande de gueules engrêlée de sable", the bend red and its engrailing black. It is the
+  line that is painted and not a second band laid underneath: the band lies where it lay and is as
+  wide as it was, and what the second tincture takes is the teeth. A line a blazon says nothing of
+  is drawn in the band's own tincture, as it always was. Voided and pierced take no tincture and
+  are refused one by name, the reason being what each is done to: a line is an edge and an edge can
+  be drawn, where a lozenge voided shows the field through it, so a tincture there would be filling
+  the hole rather than colouring it — another figure, which the armorials also write ("deux
+  molletts d'or, voydes vert") and which is not read yet. Where the line is painted the band's own
+  tincture is written first and the modifier between the two, so that each tincture stands beside
+  what it belongs to; English has no form of its own for this — Parker's fimbriated is "a narrow
+  edging of some other tincture all round it", which is another figure — and is given the French
+  order.
+
   The seven bands that take the lines are the four Parker names the indenting of, the mirror of the
   bend, the chief, and the bordure; a band that can be cut at all can be cut by any of the four, and
   the French dictionary writes the engrêlé of exactly that list — "du chef, du pal, du sautoir, du

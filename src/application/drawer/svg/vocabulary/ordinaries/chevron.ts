@@ -1,5 +1,5 @@
 import { spaced } from '../../painting/arrange';
-import { bent, bentCut } from '../../shapes/bands';
+import { bent, bentCut, bentWithin } from '../../shapes/bands';
 import { OrdinaryFigure } from '../Figures';
 import { alongLines } from '../lines';
 
@@ -15,5 +15,6 @@ export const chevron: OrdinaryFigure = {
   // neither limb ends on half a tooth and the chevron keeps its point.
   modified: alongLines((cut) => ({
     shapes: (frame, count) => spaced(count, CHEVRONS_FROM, CHEVRONS).map(bentCut(frame, cut)),
+    within: (frame, count) => spaced(count, CHEVRONS_FROM, CHEVRONS).map(bentWithin(frame, cut)),
   })),
 };

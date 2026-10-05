@@ -1,5 +1,5 @@
 import { spaced } from '../../painting/arrange';
-import { inBendSinister, inBendSinisterCut } from '../../shapes/bands';
+import { inBendSinister, inBendSinisterCut, inBendSinisterWithin } from '../../shapes/bands';
 import { OrdinaryFigure } from '../Figures';
 import { alongLines } from '../lines';
 import { DIAGONALS } from './bend';
@@ -10,5 +10,7 @@ export const bendSinister: OrdinaryFigure = {
   modified: alongLines((cut) => ({
     shapes: (frame, count) =>
       spaced(count, -DIAGONALS / 2, DIAGONALS).map(inBendSinisterCut(frame, cut)),
+    within: (frame, count) =>
+      spaced(count, -DIAGONALS / 2, DIAGONALS).map(inBendSinisterWithin(frame, cut)),
   })),
 };

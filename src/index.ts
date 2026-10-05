@@ -73,7 +73,7 @@ export {
   numberBorne,
 } from './domain/models/Charge';
 export type { Charge } from './domain/models/Charge';
-export { Modifier } from './domain/models/Modifier';
+export { LINES, Modifier, takesTincture } from './domain/models/Modifier';
 
 export { BlazonParseError } from './domain/errors/parsing/BlazonParseError';
 export type { TextPosition } from './domain/errors/parsing/BlazonParseError';
@@ -89,6 +89,7 @@ export { ChargedPlainField } from './domain/errors/parsing/ChargedPlainField';
 export { WrongTinctureArticle } from './domain/errors/parsing/WrongTinctureArticle';
 export { WrongOrdinaryArticle } from './domain/errors/parsing/WrongOrdinaryArticle';
 export { WrongModifier } from './domain/errors/parsing/WrongModifier';
+export { UntincturedModifier } from './domain/errors/parsing/UntincturedModifier';
 export { WrongAgreement } from './domain/errors/parsing/WrongAgreement';
 export type { Ordinary } from './domain/models/Ordinary';
 export {

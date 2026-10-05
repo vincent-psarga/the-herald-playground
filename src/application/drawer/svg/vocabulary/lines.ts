@@ -1,6 +1,6 @@
 import { Modifier } from '../../../../domain/models/Modifier';
 import { Cut, DANCETTY, ENGRAILED, INDENTED, VIVRE } from '../shapes/teeth';
-import { BorneFigure } from './Figures';
+import { CutBand } from './Figures';
 
 /**
  * The teeth each modifier is cut with, and nothing for the modifiers that cut no
@@ -30,8 +30,8 @@ const CUT: Readonly<Record<Modifier, Cut | undefined>> = {
  * drift apart.
  */
 export function alongLines(
-  band: (cut: Cut) => BorneFigure
-): Readonly<Partial<Record<Modifier, BorneFigure>>> {
+  band: (cut: Cut) => CutBand
+): Readonly<Partial<Record<Modifier, CutBand>>> {
   return Object.fromEntries(
     Object.entries(CUT)
       .filter(([, cut]) => cut !== undefined)

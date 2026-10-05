@@ -1,5 +1,5 @@
 import { spaced } from '../../painting/arrange';
-import { across, acrossCut } from '../../shapes/bands';
+import { across, acrossCut, acrossWithin } from '../../shapes/bands';
 import { OrdinaryFigure } from '../Figures';
 import { alongLines } from '../lines';
 
@@ -10,5 +10,6 @@ export const fess: OrdinaryFigure = {
   // the plain fess lay and keeps its width, its two edges cut alike.
   modified: alongLines((cut) => ({
     shapes: (frame, count) => spaced(count, 0, frame.height).map(acrossCut(frame, cut)),
+    within: (frame, count) => spaced(count, 0, frame.height).map(acrossWithin(frame, cut)),
   })),
 };

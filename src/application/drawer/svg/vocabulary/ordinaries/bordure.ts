@@ -20,7 +20,14 @@ const DEEP = 1 / 8;
  */
 export const bordure: OrdinaryFigure = {
   shapes: ({ path, width }) => [stroked(path, width * DEEP * 2)],
-  modified: alongLines((cut) => ({ shapes: (frame) => [cutInside(frame, cut)] })),
+  modified: alongLines((cut) => ({
+    shapes: (frame) => [cutInside(frame, cut)],
+    // The band the teeth stand on is the band inside the cut, which is the one
+    // thing here that was already being reckoned: a bordure is drawn as that
+    // band plus its teeth, so painting the line is simply a matter of laying the
+    // band again, in its own tincture, over teeth laid in the line's.
+    within: (frame) => [stroked(frame.path, beneathOf(frame, cut) * 2)],
+  })),
 };
 
 /**
@@ -42,4 +49,9 @@ export const bordure: OrdinaryFigure = {
 function cutInside(frame: Frame, cut: Cut): Shape {
   const { beneath, teeth } = toothedInside(corners(frame.path), frame.width * DEEP, cut);
   return all([stroked(frame.path, beneath * 2), ...teeth]);
+}
+
+/** How deep the band beneath the teeth runs, which is where the line notches. */
+function beneathOf(frame: Frame, cut: Cut): number {
+  return toothedInside(corners(frame.path), frame.width * DEEP, cut).beneath;
 }

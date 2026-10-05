@@ -2,10 +2,11 @@ import { describe, expect, test } from 'vitest';
 import { WrongAgreement } from '../../domain/errors/parsing/WrongAgreement';
 import { WrongModifier } from '../../domain/errors/parsing/WrongModifier';
 import { ChargeType, allowsModifier, modifiersOf } from '../../domain/models/Charge';
-import { Modifier } from '../../domain/models/Modifier';
+import { LINES, Modifier, takesTincture } from '../../domain/models/Modifier';
+import { UntincturedModifier } from '../../domain/errors/parsing/UntincturedModifier';
 import { UnknownOrdinary } from '../../domain/errors/parsing/UnknownOrdinary';
 import { OrdinaryType, admitsModifier, modifiersOn } from '../../domain/models/Ordinary';
-import { Colours, Metals } from '../../domain/models/Tinctures';
+import { Colours, Metals, Tincture } from '../../domain/models/Tinctures';
 import { WikipediaColours } from '../../infra/colours/WikipediaColours';
 import { SvgBlazonDrawer } from '../drawer/svg/SvgBlazonDrawer';
 import { EnglishBlazonWriter } from '../writer/EnglishBlazonWriter';
@@ -518,6 +519,19 @@ describe('a band drawn along a modified line', () => {
   });
 });
 
+/**
+ * Every paint an SVG uses, which is how many tinctures a drawing came out in.
+ *
+ * Stroked as well as filled: a bordure is a thick line round the shield's own
+ * outline rather than a shape, which is how it keeps the curve of the base, so a
+ * count of fills alone would say it had no tincture at all.
+ */
+function inks(svg: string): ReadonlySet<string> {
+  return new Set(
+    [...svg.matchAll(/(?:fill|stroke)="(#[0-9a-fA-F]+)"/g)].map(([, ink]) => ink.toLowerCase())
+  );
+}
+
 /** The angle, in degrees, at the point of the first tooth a band is cut with. */
 function point(blazon: string): number {
   const [from, apex, to] = corners(blazon);
@@ -852,6 +866,203 @@ describe('the engrailed line, which is cut round where the three are cut straigh
     const cut = corners('Azure a fess engrailed or').map(([, y]) => y);
     expect(Math.min(...cut)).toBeLessThan(Number(edge));
     expect(Math.max(...cut.filter((y) => y < Number(edge) + 40))).toBeGreaterThan(Number(edge));
+  });
+});
+
+describe('a modified line drawn in a tincture of its own', () => {
+  test('reads the arms that asked for it, the band keeping its own tincture', () => {
+    // Lanval du Bois, in the armorial of the Table Ronde: the bande is red and
+    // its engrailing black, which is two tinctures in one band.
+    expect(inFrench.parse("D'or à la bande de gueules engrêlée de sable.")).toEqual({
+      field: { type: FieldType.plain, tincture: Metals.or },
+      chargesOrOrdinaries: [
+        {
+          type: OrdinaryType.bend,
+          tincture: Colours.gules,
+          modifier: Modifier.engrailed,
+          modifierTincture: Colours.sable,
+        },
+      ],
+    });
+  });
+
+  test('is read in either tongue into the one model, and written in either', () => {
+    const arms = inFrench.parse("D'or à la bande de gueules engrêlée de sable.");
+    expect(inEnglish.parse('Or a bend gules engrailed sable')).toEqual(arms);
+    expect(writeFrench.write(arms)).toBe("D'or à la bande de gueules engrêlée de sable.");
+    expect(writeEnglish.write(arms)).toBe('Or a bend gules engrailed sable.');
+  });
+
+  test('is the band’s own tincture where the band has not had one yet', () => {
+    // The same armorial writes both, and the difference is the whole of what
+    // makes the phrase decidable: "au sautoir engrêlé de gueules" is a red
+    // saltire, not a saltire engrailed in red. A band whose tincture is still
+    // owed takes the tincture after the modifier for itself.
+    const [one] = inFrench.parse("D'azur à la fasce dentelée d'or").chargesOrOrdinaries ?? [];
+    expect(one).toEqual({
+      type: OrdinaryType.fess,
+      tincture: Metals.or,
+      modifier: Modifier.indented,
+    });
+    expect(one).not.toHaveProperty('modifierTincture');
+  });
+
+  test('leaves the key off entirely where the blazon painted nothing', () => {
+    const [one] = inEnglish.parse('Azure a fess or indented').chargesOrOrdinaries ?? [];
+    expect(one).not.toHaveProperty('modifierTincture');
+  });
+
+  test('is said of every line, the four being one family in this as in the rest', () => {
+    for (const modifier of LINES) {
+      const blazon: Blazon = {
+        field: { type: FieldType.plain, tincture: Metals.or },
+        chargesOrOrdinaries: [
+          {
+            type: OrdinaryType.fess,
+            tincture: Colours.gules,
+            modifier,
+            modifierTincture: Colours.sable,
+          },
+        ],
+      };
+      expect(inFrench.parse(writeFrench.write(blazon))).toEqual(blazon);
+      expect(inEnglish.parse(writeEnglish.write(blazon))).toEqual(blazon);
+    }
+  });
+
+  test('is carried by every band a line may be cut in, however many are borne', () => {
+    for (const type of ORDINARIES.filter((type) => admitsModifier(type, Modifier.engrailed))) {
+      const blazon: Blazon = {
+        field: { type: FieldType.plain, tincture: Metals.or },
+        chargesOrOrdinaries: [
+          {
+            type,
+            tincture: Colours.gules,
+            modifier: Modifier.engrailed,
+            modifierTincture: Colours.sable,
+          },
+        ],
+      };
+      expect(inFrench.parse(writeFrench.write(blazon))).toEqual(blazon);
+      expect(inEnglish.parse(writeEnglish.write(blazon))).toEqual(blazon);
+    }
+    expect(inEnglish.parse('Or three bends gules engrailed sable').chargesOrOrdinaries).toEqual([
+      {
+        type: OrdinaryType.bend,
+        tincture: Colours.gules,
+        count: 3,
+        modifier: Modifier.engrailed,
+        modifierTincture: Colours.sable,
+      },
+    ]);
+  });
+
+  test('agrees in French as anything said of a band agrees', () => {
+    expect(
+      inFrench.parse("D'or à trois bandes de gueules engrêlées de sable").chargesOrOrdinaries?.[0]
+    ).toHaveProperty('modifierTincture', Colours.sable);
+    expect(() => inFrench.parse("D'or à la bande de gueules engrêlé de sable")).toThrow(
+      'Wrong agreement: expected "engrêlée"'
+    );
+  });
+
+  test('is refused to a modifier that is not drawn, there being nothing to paint', () => {
+    // A lozenge voided shows the field through it, so a tincture there would be
+    // filling the hole rather than colouring the voiding. The armorials write
+    // that too and it is not read yet.
+    expect(takesTincture(Modifier.engrailed)).toBe(true);
+    expect(takesTincture(Modifier.voided)).toBe(false);
+    expect(takesTincture(Modifier.pierced)).toBe(false);
+    expect(() => inEnglish.parse('Azure a lozenge or voided sable')).toThrow(UntincturedModifier);
+    expect(() => inEnglish.parse('Azure a lozenge or voided sable')).toThrow(
+      'Wrong tincture: voided is never drawn in one of its own'
+    );
+    expect(() => inFrench.parse("D'azur à la losange d'or vidée de sable")).toThrow(
+      'Wrong tincture: vidé is never drawn in one of its own'
+    );
+  });
+
+  test('is read only after the band’s own, there being no telling the two apart otherwise', () => {
+    // Written the other way round the two tinctures would stand side by side
+    // with nothing between them to say which belonged to which. So the early
+    // place takes the band's tincture, as it always did, and what follows it is
+    // another bearing or nothing at all.
+    expect(inEnglish.parse('Azure a fess indented or')).toEqual(
+      inEnglish.parse('Azure a fess or indented')
+    );
+    expect(() => inEnglish.parse('Azure a fess indented or sable')).toThrow();
+  });
+
+  test('is written with the band’s tincture first, which is where the armorials put it', () => {
+    // The one thing that moves the modifier: with two tinctures to write, it
+    // stands between them so each is beside what it belongs to. With one, it
+    // stands where it always did.
+    const painted = inEnglish.parse('Or a bend gules engrailed sable');
+    expect(writeEnglish.write(painted)).toBe('Or a bend gules engrailed sable.');
+    expect(writeFrench.write(painted)).toBe("D'or à la bande de gueules engrêlée de sable.");
+    const plain = inEnglish.parse('Or a bend engrailed gules');
+    expect(writeEnglish.write(plain)).toBe('Or a bend engrailed gules.');
+    expect(writeFrench.write(plain)).toBe("D'or à la bande engrêlée de gueules.");
+  });
+
+  test('draws the line in one tincture and the band in the other', () => {
+    const arms = (modifierTincture?: Tincture) =>
+      drawer.draw({
+        field: { type: FieldType.plain, tincture: Metals.or },
+        chargesOrOrdinaries: [
+          {
+            type: OrdinaryType.bend,
+            tincture: Colours.gules,
+            modifier: Modifier.engrailed,
+            modifierTincture,
+          },
+        ],
+      });
+    // Three paints where an unpainted line has two: the field, the band, and the
+    // line. The band is still there and still red — what the sable took is the
+    // teeth.
+    expect(inks(arms(Colours.sable))).toEqual(
+      new Set([...inks(arms()), WikipediaColours[Colours.sable]])
+    );
+    expect(inks(arms())).toContain(WikipediaColours[Colours.gules]);
+    expect(inks(arms(Colours.sable))).toContain(WikipediaColours[Colours.gules]);
+  });
+
+  test('draws it so of every band a line may be cut in', () => {
+    for (const type of ORDINARIES.filter((type) => admitsModifier(type, Modifier.engrailed))) {
+      const arms = (modifierTincture?: Tincture) =>
+        drawer.draw({
+          field: { type: FieldType.plain, tincture: Metals.or },
+          chargesOrOrdinaries: [
+            { type, tincture: Colours.gules, modifier: Modifier.engrailed, modifierTincture },
+          ],
+        });
+      expect(inks(arms(Colours.sable))).toContain(WikipediaColours[Colours.sable]);
+      expect(inks(arms(Colours.sable))).toContain(WikipediaColours[Colours.gules]);
+      expect(arms(Colours.sable)).not.toBe(arms());
+    }
+  });
+
+  test('keeps the band where it was and as wide as it was', () => {
+    // The line is painted, not a second band laid under the first: a painted
+    // bend covers exactly what an unpainted one covers, so the two differ in
+    // what colour the teeth are and in nothing else. The outline of the cut band
+    // is therefore the same shape either way.
+    const outline = (modifierTincture?: Tincture) =>
+      /<polygon points="([^"]*)"/.exec(
+        drawer.draw({
+          field: { type: FieldType.plain, tincture: Metals.or },
+          chargesOrOrdinaries: [
+            {
+              type: OrdinaryType.bend,
+              tincture: Colours.gules,
+              modifier: Modifier.engrailed,
+              modifierTincture,
+            },
+          ],
+        })
+      )?.[1];
+    expect(outline(Colours.sable)).toBe(outline());
   });
 });
 

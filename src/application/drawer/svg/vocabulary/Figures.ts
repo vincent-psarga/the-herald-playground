@@ -80,7 +80,25 @@ export type OrdinaryFigure = BorneFigure & {
    * The same band as each modifier draws it, for the modifiers it may be drawn
    * under, and empty for the bands that take none.
    */
-  readonly modified: Readonly<Partial<Record<Modifier, BorneFigure>>>;
+  readonly modified: Readonly<Partial<Record<Modifier, CutBand>>>;
+};
+
+/**
+ * A band drawn along a modified line, which is two drawings rather than one: the
+ * whole of the cut band, and the band inside the cut.
+ *
+ * The second is there because a blazon may paint the line in a tincture of its
+ * own — "à la bande de gueules engrêlée de sable" — and what is painted is the
+ * part of the band the line added. So the cut band is laid in the line's
+ * tincture and this is laid over it in the band's, the two meeting at the
+ * notches, where the cut comes back to the band it was cut in.
+ *
+ * A band whose line was given no tincture never asks for it: the whole of the
+ * cut band is painted in the one tincture and there is nothing to lay over
+ * anything.
+ */
+export type CutBand = BorneFigure & {
+  readonly within: (frame: Frame, count: number) => readonly Shape[];
 };
 
 /**

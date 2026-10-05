@@ -1,5 +1,5 @@
 import { spaced } from '../../painting/arrange';
-import { down, downCut } from '../../shapes/bands';
+import { down, downCut, downWithin } from '../../shapes/bands';
 import { OrdinaryFigure } from '../Figures';
 import { alongLines } from '../lines';
 
@@ -8,5 +8,6 @@ export const pale: OrdinaryFigure = {
   shapes: (frame, count) => spaced(count, 0, frame.width).map(down(frame)),
   modified: alongLines((cut) => ({
     shapes: (frame, count) => spaced(count, 0, frame.width).map(downCut(frame, cut)),
+    within: (frame, count) => spaced(count, 0, frame.width).map(downWithin(frame, cut)),
   })),
 };

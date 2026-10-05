@@ -2,8 +2,6 @@
 
 - Grow the line modifications past indented, dancetty, vivré and engrailed: embattled, wavy, and
   the invected, which is the engrailed with its points turned inwards
-- Let the line itself take a tincture, which the armorials do: "D'or à la bande de gueules engrêlée
-  de sable"
 - Say which way a denché points, the armorials saying it: "à trois fasces denchées d'or, les
   pointes en bas"
 - Cut the three bands that cannot be yet: the bar gemel, the cross, the saltire ("D'argent, au
@@ -14,7 +12,7 @@
   "Quarterly, embattled argent and sable", which are a quartering's own line cut rather than
   anything laid on it
 - Handle the disposition of charges (en chef, en orle, mal ordonnées)
-- Let a modifier take a tincture (eg: "Monsire Gerard SALVAYN, port d'argent; au cheif de sable deux molletts d'or, voydes vert--Roll, temp. ED. III.")
+- Let a charge's modifier take a tincture, which fills what was taken out rather than colouring it (eg: "Monsire Gerard SALVAYN, port d'argent; au cheif de sable deux molletts d'or, voydes vert--Roll, temp. ED. III."). A band's line already takes one.
 - Grow the modifiers past "voided" and "pierced": alésé, and the rest
 - Allow complex partition (eg: "per fess azur a bend or and argent")
 - Handle a semy of more than one figure ("semé alterné de tours et de fleurs de lys")

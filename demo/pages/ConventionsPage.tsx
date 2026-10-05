@@ -568,6 +568,51 @@ export const RULES: readonly Rule[] = [
     ],
   },
   {
+    id: 'a-painted-line-moves-the-modifier',
+    heading: 'A painted line puts the band’s tincture first',
+    law: (
+      <>
+        <p className="rule__law">
+          What was done to a band is written between the name and the tincture, which is where the
+          armorials of both tongues put it: a fess indented or, à la fasce dentelée d’or. A blazon
+          may also paint the line in a tincture of its own — the band one colour and its teeth
+          another — and then there are two tinctures to write and only one place that can be read
+          back. So the band’s own goes first and the modifier stands between the two, each tincture
+          beside what it belongs to: à la bande de gueules engrêlée de sable.
+        </p>
+        <p className="rule__law">
+          It is the armorials’ own order, and it is the only one. Written the usual way round the
+          two tinctures would stand side by side with nothing between them to say which was the
+          band’s and which the line’s — and a blazon that cannot be read back is not a blazon. A
+          band whose line was given no tincture is untouched by this and comes back as it always
+          did.
+        </p>
+        <p className="rule__law">
+          The same order is written in English, which has no form of its own to follow: Parker’s
+          fimbriated is “a narrow edging of some other tincture all round”, which is another figure,
+          and he names nothing for a line painted apart from its band. So English is given the
+          French order rather than a borrowed French word — the words are all English, and only the
+          sentence is French.
+        </p>
+      </>
+    ),
+    authority: (
+      <>
+        The arms of Lanval du Bois, in the armorial of the Round Table: “D’or à la bande de gueules
+        engrêlée de sable.” Parker’s fimbriated is “said by strict heralds to be applied only to an
+        ordinary or other charge having a narrow edging of some other tincture all round it”, and
+        his Edged sends the reader to it; neither is a line.
+      </>
+    ),
+    sources: [parker('Fimbriated'), blasonArmoiries('Engrêlé')],
+    cases: [
+      fr("D'or à la bande de gueules engrêlée de sable"),
+      en('Or a bend gules engrailed sable'),
+      en('Or a bend engrailed gules'),
+      fr("D'argent à trois bandes de gueules engrêlées de sable"),
+    ],
+  },
+  {
     id: 'the-smaller-settlements',
     heading: 'The smaller settlements',
     law: (

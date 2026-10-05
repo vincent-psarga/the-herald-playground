@@ -55,6 +55,7 @@ const HEADINGS = [
   'A French modifier agrees with the charge the blazon named',
   'A modifier is said only of what can show it',
   'A word the armorials keep for one charge is written of that charge alone',
+  'A painted line puts the band’s tincture first',
   'The smaller settlements',
 ];
 
@@ -110,6 +111,18 @@ describe('what each rule shows', () => {
     expect(shown('Azure a bezant').written).toContain('Azure a besant.');
     expect(shown('Azure a fess dancetté or').written).toContain('Azure a fess dancetty or.');
     expect(shown('Azure a fess ingrailed or').written).toContain('Azure a fess engrailed or.');
+  });
+
+  test('puts the band’s tincture before the modifier where the line carries one', () => {
+    mount(<ConventionsPage />);
+    expect(shown("D'or à la bande de gueules engrêlée de sable").written).toContain(
+      "D'or à la bande de gueules engrêlée de sable."
+    );
+    expect(shown('Or a bend gules engrailed sable').written).toContain(
+      'Or a bend gules engrailed sable.'
+    );
+    // A line given no tincture is untouched: the modifier stays where it was.
+    expect(shown('Or a bend engrailed gules').written).toContain('Or a bend engrailed gules.');
     expect(shown('Pily counter pily of four or and azure').written).toContain(
       'Pily of four or and azure.'
     );

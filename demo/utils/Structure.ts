@@ -232,14 +232,31 @@ function borneBranch<W extends Word>(
                * drawn on its own — there is no picture of "voided" — so what it
                * does to the very charge or band it was said of is the whole of
                * what can be shown, and the count is left to the figure above.
+               *
+               * Painted as the blazon painted it, where it painted the line: the
+               * tincture is what the modifier was said in, so the arms under it
+               * are the ones that show it being said.
                */
               arms: {
                 field: bare(field),
                 chargesOrOrdinaries: [
-                  { type: one.type, tincture: one.tincture, modifier: one.modifier },
+                  {
+                    type: one.type,
+                    tincture: one.tincture,
+                    modifier: one.modifier,
+                    ...(band && one.modifierTincture !== undefined
+                      ? { modifierTincture: one.modifierTincture }
+                      : {}),
+                  },
                 ],
               },
-              children: [],
+              // The tincture the line was painted in hangs under the modifier
+              // and not under the band, which is what the sentence says: it is
+              // the line that carries it, and the band has one of its own.
+              children:
+                band && one.modifierTincture !== undefined
+                  ? [tinctureBranch(wording, one.modifierTincture)]
+                  : [],
             },
           ]),
       ...tinctureSaid(wording, word, one.tincture),

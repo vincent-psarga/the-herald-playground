@@ -244,6 +244,19 @@ describe('the arms a word is shown by', () => {
     );
   });
 
+  test('hangs a painted line’s tincture under the line and not under the band', () => {
+    // "D'or à la bande de gueules engrêlée de sable": the bande carries gueules
+    // and the engrêlée carries sable, so each tincture hangs under the word that
+    // said it. A branch the sentence has and the tree has not is a word the
+    // reader would look for and not find.
+    expect(drawn(of("D'or à la bande de gueules engrêlée de sable", Languages.fr))).toBe(
+      ['or', 'bande', '  engrêlé', '    sable', '  gueules', ''].join('\n')
+    );
+    expect(drawn(of('Or a bend gules engrailed sable', Languages.en))).toBe(
+      ['or', 'bend', '  engrailed', '    sable', '  gules', ''].join('\n')
+    );
+  });
+
   test('shows a band’s line doing its work on the very band it was said of', () => {
     const read = of('Argent three bends dancetty gules', Languages.en);
     expect(found(read, 'dancetty').arms).toEqual({

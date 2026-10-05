@@ -1,5 +1,5 @@
 import { spaced } from '../../painting/arrange';
-import { inBend, inBendCut } from '../../shapes/bands';
+import { inBend, inBendCut, inBendWithin } from '../../shapes/bands';
 import { OrdinaryFigure } from '../Figures';
 import { alongLines } from '../lines';
 
@@ -18,5 +18,7 @@ export const bend: OrdinaryFigure = {
   // itself, and a tooth reckoned otherwise would leave it wider in places.
   modified: alongLines((cut) => ({
     shapes: (frame, count) => spaced(count, -DIAGONALS / 2, DIAGONALS).map(inBendCut(frame, cut)),
+    within: (frame, count) =>
+      spaced(count, -DIAGONALS / 2, DIAGONALS).map(inBendWithin(frame, cut)),
   })),
 };

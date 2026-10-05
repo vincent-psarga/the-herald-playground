@@ -137,6 +137,10 @@ export function writeBlazon<W extends Word>(wording: BlazonWording<W>, blazon: B
  * all. A band answers here exactly as a charge does — "a fess indented or", "à
  * la fasce dentelée d'or" — the two differing in what may be said and never in
  * where it is written.
+ *
+ * Unless the line carries a tincture of its own, which is the one thing that
+ * moves it: there are then two tinctures to write, and the modifier goes between
+ * them so that each stands beside what it belongs to.
  */
 function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdinary): string {
   const { word, count } = named(wording, one);
@@ -145,7 +149,36 @@ function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdi
   const tincture =
     word.defaultTincture === one.tincture ? undefined : writeTincture(wording, one.tincture);
   const modifier = modifying(wording, one, word)?.(several);
-  return [bearing, modifier, tincture].filter((part) => part !== undefined).join(' ');
+  const painted = painting(wording, one);
+  // Where the line carries a tincture of its own, the band's own goes first and
+  // the modifier stands between the two. Written the usual way round, the two
+  // tinctures would come one after the other with nothing between them to say
+  // which belonged to which — and a blazon that cannot be read back is not a
+  // blazon. It is the order the armorials use, which is why they can say it at
+  // all: "à la bande de gueules engrêlée de sable".
+  return (
+    painted === undefined ? [bearing, modifier, tincture] : [bearing, tincture, modifier, painted]
+  )
+    .filter((part) => part !== undefined)
+    .join(' ');
+}
+
+/**
+ * The tincture the line is drawn in, where the blazon gave it one of its own,
+ * and nothing at all where it did not.
+ *
+ * Only a band has a line to paint, so only a band is asked. What it comes back
+ * as is a tincture written the way every other tincture is — "de sable",
+ * "sable" — there being nothing about this one that either tongue says
+ * differently.
+ */
+function painting<W extends Word>(
+  wording: BlazonWording<W>,
+  one: ChargeOrOrdinary
+): string | undefined {
+  return isOrdinary(one) && one.modifierTincture !== undefined
+    ? writeTincture(wording, one.modifierTincture)
+    : undefined;
 }
 
 /**

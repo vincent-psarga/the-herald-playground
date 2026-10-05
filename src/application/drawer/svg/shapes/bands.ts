@@ -2,7 +2,7 @@ import { Frame } from '../Ground';
 import { Shape, all } from './Shape';
 import { polygon } from './polygon';
 import { rectangle } from './rectangle';
-import { Cut, DOWNWARD, Point, SIDEWAYS, pointsOf, square, toothed } from './teeth';
+import { Cut, DOWNWARD, Point, SIDEWAYS, notched, pointsOf, square, toothed } from './teeth';
 
 /** A band's place across the room it crosses: where it begins, and how far it runs. */
 export type Band = readonly [at: number, across: number];
@@ -109,11 +109,50 @@ const toothedBand = (
   );
 };
 
+/**
+ * The same band drawn in to where its line notches, which is the band a blazon
+ * that paints the line leaves in the band's own tincture.
+ *
+ * It is laid over the cut band rather than beside it, so what shows of the
+ * line's tincture is the teeth and nothing else: the two meet exactly at the
+ * notches, where the cut comes back to the band it was cut in.
+ */
+const bandWithin = (
+  line: readonly Point[],
+  [acrossX, acrossY]: Point,
+  [wayX, wayY]: Point,
+  cut: Cut
+): Shape => {
+  const way: Point = [wayX, wayY];
+  const facing = Math.sign(wayX * acrossX + wayY * acrossY) || 1;
+  const far = line.map(([x, y]): Point => [x + acrossX, y + acrossY]);
+  return polygon(
+    pointsOf([
+      ...notched(line, way, cut, -facing),
+      ...[...notched(far, way, cut, facing)].reverse(),
+    ])
+  );
+};
+
 /** A band straight across the frame, its edges cut along a modified line. */
 export const acrossCut =
   (frame: Frame, cut: Cut) =>
   ([at, span]: Band): Shape =>
     toothedBand(
+      [
+        [0, at],
+        [frame.width, at],
+      ],
+      [0, span],
+      DOWNWARD,
+      cut
+    );
+
+/** The same band across the frame, drawn in to where its line notches. */
+export const acrossWithin =
+  (frame: Frame, cut: Cut) =>
+  ([at, span]: Band): Shape =>
+    bandWithin(
       [
         [0, at],
         [frame.width, at],
@@ -180,11 +219,44 @@ export const acrossCutBelow =
       cut
     );
 
+/**
+ * The same band across the top, drawn in to where its one cut edge notches. Its
+ * upper edge is the shield's own and is where it always was.
+ */
+export const acrossWithinBelow =
+  (frame: Frame, cut: Cut) =>
+  ([at, span]: Band): Shape => {
+    const [, [, deep]] = notched(
+      [
+        [0, at + span],
+        [frame.width, at + span],
+      ],
+      DOWNWARD,
+      cut,
+      1
+    );
+    return rectangle(0, at, frame.width, deep - at);
+  };
+
 /** A band straight down the frame, its edges cut along a modified line. */
 export const downCut =
   (frame: Frame, cut: Cut) =>
   ([at, span]: Band): Shape =>
     toothedBand(
+      [
+        [at, 0],
+        [at, frame.height],
+      ],
+      [span, 0],
+      SIDEWAYS,
+      cut
+    );
+
+/** The same band down the frame, drawn in to where its line notches. */
+export const downWithin =
+  (frame: Frame, cut: Cut) =>
+  ([at, span]: Band): Shape =>
+    bandWithin(
       [
         [at, 0],
         [at, frame.height],
@@ -209,11 +281,40 @@ export const inBendSinisterCut =
 const diagonal = (from: Point, to: Point, span: number, cut: Cut): Shape =>
   toothedBand([from, to], [span, 0], square(from, to), cut);
 
+/** The same diagonals, drawn in to where their lines notch. */
+export const inBendWithin =
+  ({ width, height }: Frame, cut: Cut) =>
+  ([at, span]: Band): Shape =>
+    diagonalWithin([at, 0], [width + at, height], span, cut);
+
+export const inBendSinisterWithin =
+  ({ width, height }: Frame, cut: Cut) =>
+  ([at, span]: Band): Shape =>
+    diagonalWithin([width + at, 0], [at, height], span, cut);
+
+const diagonalWithin = (from: Point, to: Point, span: number, cut: Cut): Shape =>
+  bandWithin([from, to], [span, 0], square(from, to), cut);
+
 /** A band bent to a point, its edges cut along both limbs. */
 export const bentCut =
   ({ width }: Frame, cut: Cut) =>
   ([at, span]: Band): Shape =>
     toothedBand(
+      [
+        [0, at + RISE],
+        [width / 2, at],
+        [width, at + RISE],
+      ],
+      [0, span],
+      DOWNWARD,
+      cut
+    );
+
+/** The same bent band, drawn in to where its line notches along both limbs. */
+export const bentWithin =
+  ({ width }: Frame, cut: Cut) =>
+  ([at, span]: Band): Shape =>
+    bandWithin(
       [
         [0, at + RISE],
         [width / 2, at],
