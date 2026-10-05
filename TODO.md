@@ -1,7 +1,7 @@
 # Parsing
 
-- Grow the line modifications past indented, dancetty and vivré: embattled, engrailed (French
-  engrêlé), wavy
+- Grow the line modifications past indented, dancetty, vivré and engrailed: embattled, wavy, and
+  the invected, which is the engrailed with its points turned inwards
 - Let the line itself take a tincture, which the armorials do: "D'or à la bande de gueules engrêlée
   de sable"
 - Say which way a denché points, the armorials saying it: "à trois fasces denchées d'or, les

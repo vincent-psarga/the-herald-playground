@@ -469,7 +469,7 @@ describe('what one drawing cannot say', () => {
     await strike('bordure');
     // Never borne twice, so nothing is shown of a count — and still shown under
     // every line it may be drawn along, which is another question about it.
-    expect(labels('Modified')).toEqual(['Indented', 'Dancetty', 'Vivré']);
+    expect(labels('Modified')).toEqual(['Indented', 'Dancetty', 'Vivré', 'Engrailed']);
     expect(() => section('Borne in number')).toThrow();
     expect(within(showing()).getByText(/shield has one edge/)).toBeInTheDocument();
   });

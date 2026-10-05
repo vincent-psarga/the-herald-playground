@@ -74,28 +74,40 @@ export const twinned =
  * along, the way across to its other edge, the way the teeth reach, and the cut
  * they are cut with.
  *
- * Both edges are cut alike and in step, so the band keeps the width it had — it
- * is the line the band follows that was modified, not the band's size — and what
- * is drawn is one ribbon of teeth rather than a row of triangles.
+ * Both edges are cut alike and in step, so a band cut by a saw keeps the width
+ * it had — it is the line the band follows that was modified, not the band's
+ * size — and what is drawn is one ribbon of teeth rather than a row of
+ * triangles. A band cut by a hollow is in step too, and so is widest at its
+ * points and narrowest between them: the hollows are bitten out of each edge
+ * from the field side, which is what engrailing is and what the two edges have
+ * to be told apart for.
+ *
+ * Which side each edge faces is read off the way across rather than off the way
+ * the teeth reach, the two not always agreeing: a diagonal is slid sideways to
+ * its other edge but cut square to its own slant.
  */
 const toothedBand = (
   line: readonly Point[],
   [acrossX, acrossY]: Point,
-  way: Point,
+  [wayX, wayY]: Point,
   cut: Cut
-): Shape =>
-  polygon(
+): Shape => {
+  const way: Point = [wayX, wayY];
+  const facing = Math.sign(wayX * acrossX + wayY * acrossY) || 1;
+  return polygon(
     pointsOf([
-      ...toothed(line, way, cut),
+      ...toothed(line, way, cut, -facing),
       ...[
         ...toothed(
           line.map(([x, y]): Point => [x + acrossX, y + acrossY]),
           way,
-          cut
+          cut,
+          facing
         ),
       ].reverse(),
     ])
   );
+};
 
 /** A band straight across the frame, its edges cut along a modified line. */
 export const acrossCut =
@@ -125,6 +137,10 @@ export const acrossCut =
  * this replaces. It held only while the teeth were smaller than the inset of the
  * shield's own edge: a larger tooth reaches back inside it and bites the top of
  * the shield, which is a line no blazon modifies.
+ *
+ * The field lies the way the band's depth is measured, the band lying the other
+ * way, so that is the side a hollow is bitten from and the side a point reaches
+ * into — "le chef ne peut être engrêlé que dans sa ligne basse".
  */
 const belowOnly = (
   [from, to]: readonly [Point, Point],
@@ -143,7 +159,8 @@ const belowOnly = (
             [from[0] + way[0] * span, from[1] + way[1] * span],
           ],
           way,
-          cut
+          cut,
+          1
         ),
       ],
     ])

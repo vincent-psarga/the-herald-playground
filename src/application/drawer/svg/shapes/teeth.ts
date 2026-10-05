@@ -29,6 +29,18 @@ export interface Cut {
   readonly tooth: number;
   /** How far across the line the teeth reach, from the point to the notch. */
   readonly bite: number;
+  /**
+   * Whether what is taken out between one point and the next is a round hollow
+   * rather than the straight slope of a saw: which is the whole of what parts
+   * the engrailed line from the three toothed ones.
+   *
+   * It changes more than the shape of the cut. A saw stands evenly about the
+   * line, so either side of it may be called the outside and a band cut on both
+   * edges keeps its width; a hollow is bitten out of one side, so an edge must
+   * be told which side its band lies on, and a band hollowed from both edges at
+   * once is widest at its points.
+   */
+  readonly scalloped?: boolean;
 }
 
 /**
@@ -59,6 +71,28 @@ export const DANCETTY: Cut = { tooth: 35, bite: 40 };
  */
 export const VIVRE: Cut = { tooth: 35, bite: 35 };
 
+/**
+ * The engrailed line: "small semicircular indents, the teeth or points of which
+ * being outward enter the field".
+ *
+ * As deep as it is long, which is what makes the hollow a half circle rather
+ * than a shallower arc — the bite is the sagitta and the tooth the half chord,
+ * so the two being equal puts the centre of the circle on the line. Small, as
+ * both tongues ask: "petites dents à intervalles creux et arrondis", ten of them
+ * across a fess where the indented fess has half a dozen teeth.
+ */
+export const ENGRAILED: Cut = { tooth: 10, bite: 10, scalloped: true };
+
+/**
+ * How many straight steps each half of a hollow is walked in.
+ *
+ * A round line is painted as a polygon like every other, there being nothing
+ * else a band is made of here, so the arc is walked in enough steps that the eye
+ * reads it as an arc. Enough and no more: every step is a pair of numbers in the
+ * drawing, and a bordure carries thirty-odd hollows round the shield.
+ */
+const ARC = 6;
+
 /** The two ways a tooth reaches from a line that runs flat, or from one that stands. */
 export const DOWNWARD: Point = [0, 1];
 export const SIDEWAYS: Point = [1, 0];
@@ -82,9 +116,11 @@ export const square = ([fromX, fromY]: Point, [toX, toY]: Point): Point => {
 };
 
 /**
- * A line run in teeth rather than straight: every other point along it pushed
- * half a tooth one way and the rest half a tooth the other, so that the teeth
- * stand about the line the band would have had rather than to one side of it.
+ * A line run cut rather than straight: walked from end to end and pushed across
+ * itself as it goes, so that what is cut stands about the line the band would
+ * have had rather than to one side of it. A saw is pushed half a tooth one way
+ * at every other point along it and half a tooth the other at the rest; a hollow
+ * is walked round an arc between one point and the next.
  *
  * The line is given as the corners it turns, so that a band bent to a point is
  * cut along both its limbs and keeps its point: each limb is cut into an even
@@ -95,16 +131,42 @@ export const square = ([fromX, fromY]: Point, [toX, toY]: Point): Point => {
  * because a band's own width may be measured that way: a bend is drawn by
  * sliding its edges sideways, so its teeth are cut sideways too, and the band
  * keeps the width it would have had.
+ *
+ * Which side of the line is the outside is handed in as well, and is the one
+ * thing a saw never has to be told: its teeth alternate about the line, so a saw
+ * cut the other way round is the same saw. A hollow is bitten out of one side
+ * only, so an edge that is scalloped has to know which side its band lies on —
+ * the near edge of a band and the far one are hollowed in mirror, which is what
+ * leaves an engrailed band wide at its points and narrow between them.
+ *
+ * A hollow is also cut square to the line whatever way is handed in, where a saw
+ * is cut the way it is told. A saw sheared off the square is a saw still — its
+ * teeth lean, and the chevron's have always leaned — but a hollow measured along
+ * anything but the square is no longer round, and its points stand the way they
+ * were pushed instead of standing out of the band. So the half chord is measured
+ * along the line and the bite square to it, which is the only way the two make a
+ * circle. Which side square is, is settled by the way handed in, so that the
+ * outside stays the side the band was told it was.
  */
 export function toothed(
   line: readonly Point[],
-  [wayX, wayY]: Point,
-  { tooth, bite }: Cut
+  way: Point,
+  { tooth, bite, scalloped = false }: Cut,
+  outward = 1
 ): readonly Point[] {
   const cut: Point[] = [];
-  const at = (x: number, y: number, deep: number, point: number): Point => [
-    x + wayX * deep * pushed(point),
-    y + wayY * deep * pushed(point),
+  const steps = scalloped ? ARC : 1;
+  const across = scalloped ? hollowed(bite / tooth) : pushed;
+  // Reckoned limb by limb, a bent band's limbs not running the same way: the
+  // chevron is cut along two of them, and each hollow is square to the limb it
+  // is cut in. A saw is pushed the one way all along, which is what leaves the
+  // chevron's teeth leaning as they always have.
+  const ways: readonly Point[] = line
+    .slice(1)
+    .map((to, limb) => (scalloped ? facing(square(line[limb], to), way) : way));
+  const at = ([wayX, wayY]: Point, x: number, y: number, deep: number, point: number): Point => [
+    x + wayX * deep * outward * across(point),
+    y + wayY * deep * outward * across(point),
   ];
   for (let corner = 1; corner < line.length; corner += 1) {
     const [fromX, fromY] = line[corner - 1];
@@ -113,17 +175,88 @@ export function toothed(
     const teeth = Math.max(1, Math.round(run / (2 * tooth)));
     const points = 2 * teeth;
     const deep = bite * (run / points / tooth);
-    for (let point = corner === 1 ? 0 : 1; point <= points; point += 1) {
-      const along = point / points;
-      cut.push(at(fromX + (toX - fromX) * along, fromY + (toY - fromY) * along, deep, point));
+    const walked = points * steps;
+    const limb = ways[corner - 1];
+    // Where two limbs meet, both are pushed along the one way between their
+    // squares, so that each reaches the same place and the band keeps its point:
+    // a limb ending where the next begins would otherwise end somewhere else,
+    // and the chevron would be cut flat across its apex.
+    const meeting = between(limb, ways[corner] ?? limb);
+    for (let step = corner === 1 ? 0 : 1; step <= walked; step += 1) {
+      const along = step / walked;
+      cut.push(
+        at(
+          step === walked ? meeting : limb,
+          fromX + (toX - fromX) * along,
+          fromY + (toY - fromY) * along,
+          deep,
+          step / steps
+        )
+      );
     }
   }
   return cut;
 }
 
+/**
+ * The square of a line turned to agree with the way the band was told to reach,
+ * so that the outside of an edge is the same side whichever of the two is used
+ * to measure it.
+ *
+ * Square comes back pointing one way or the other according to which end of the
+ * line was given first, which is the band's own business and nothing a cut
+ * should answer to.
+ */
+function facing([squareX, squareY]: Point, [wayX, wayY]: Point): Point {
+  const agrees = Math.sign(squareX * wayX + squareY * wayY) || 1;
+  return [squareX * agrees, squareY * agrees];
+}
+
+/** The way that lies between two, which is the one a corner is pushed along. */
+function between([oneX, oneY]: Point, [otherX, otherY]: Point): Point {
+  const [x, y] = [oneX + otherX, oneY + otherY];
+  const run = Math.hypot(x, y);
+  return run === 0 ? [oneX, oneY] : [x / run, y / run];
+}
+
+/**
+ * How far a point of a line stands from the line itself, as a part of the bite,
+ * measured outward. The notch is at -1/2 and the point at +1/2, so that whatever
+ * is cut stands about the line the band would have had.
+ *
+ * Where along the line it is asked for is counted in teeth: whole numbers are
+ * the notches and the points, and a scalloped line is the only one that is ever
+ * asked between them.
+ */
+type Across = (point: number) => number;
+
 /** Which side of the line a point of it is pushed to, the teeth alternating. */
-function pushed(point: number): number {
-  return point % 2 === 0 ? -1 / 2 : 1 / 2;
+const pushed: Across = (point) => (point % 2 === 0 ? -1 / 2 : 1 / 2);
+
+/**
+ * The round hollow, for a cut whose notches are "creux et arrondis": an arc
+ * swung from one point of the line to the next, biting inwards all the way.
+ *
+ * The arc is settled by the two numbers the cut already carries — the tooth is
+ * its half chord and the bite its sagitta, so a bite as deep as the tooth is
+ * long is the half circle Parker asks for and a shallower one is a flatter arc.
+ * Both are scaled together with everything else, so the ratio between them is
+ * all this needs and the hollow keeps its roundness on a line cut short.
+ *
+ * Every hollow bites the same way, which is what parts this from a saw and what
+ * makes the points points: a line that alternated would be a wave.
+ */
+function hollowed(ratio: number): Across {
+  const centre = (ratio * ratio - 1) / (2 * ratio);
+  const radius = (ratio * ratio + 1) / (2 * ratio);
+  return (point) => {
+    // Measured from the point of the line rather than from the notch, the arc
+    // being swung between two points; the notches fall at the whole numbers, as
+    // a saw's do, so that a band's two edges stay in step.
+    const along = (((point + 1) % 2) + 2) % 2;
+    const deep = centre + Math.sqrt(Math.max(0, radius * radius - (along - 1) * (along - 1)));
+    return 1 / 2 - deep / ratio;
+  };
 }
 /**
  * A band that follows an outline, with its inner edge cut along a modified line:
@@ -175,7 +308,7 @@ const ROOT = 1 / 2;
 export function toothedInside(
   outline: readonly Point[],
   depth: number,
-  { tooth: along, bite }: Cut
+  { tooth: along, bite, scalloped = false }: Cut
 ): Toothed {
   const walked = walking(outline);
   // A band with one free edge has only its own depth to spend, and a cut deeper
@@ -198,12 +331,22 @@ export function toothedInside(
     const [[x, y], [alongX, alongY]] = walked.at((point * walked.length) / points);
     return [x - inward * alongY * deep, y + inward * alongX * deep];
   };
+  // The edge is cut by the same reckoning a band's two edges are, outward being
+  // towards the field: a notch lies on the band's own edge and a point reaches a
+  // whole bite past it. So the three saws come out as they always did, and the
+  // hollow comes out round.
+  const steps = scalloped ? ARC : 1;
+  const across = scalloped ? hollowed(cut.bite / cut.along) : pushed;
   // Each tooth stands on the whole of its period, so that the teeth meet where
-  // they come down and the edge is a saw with no flat in it.
+  // they come down and the edge is a saw with no flat in it. The hollow is
+  // walked in steps for the same reason a band's is, and closes the same way:
+  // back into the band at the middle of the period, which is the notch for a saw
+  // and the point for a hollow, and under the edge either way.
   const toothed = (tooth: number): readonly Point[] => [
-    at(2 * tooth, beneath),
-    at(2 * tooth + 1, beneath + deep),
-    at(2 * tooth + 2, beneath),
+    ...Array.from({ length: 2 * steps + 1 }, (_, step) => {
+      const point = 2 * tooth + step / steps;
+      return at(point, beneath + deep * (1 / 2 + across(point)));
+    }),
     at(2 * tooth + 1, root),
   ];
   return {

@@ -539,7 +539,7 @@ function corners(blazon: string): readonly (readonly [number, number])[] {
     .map((corner) => corner.split(',').map(Number) as [number, number]);
 }
 
-describe('the three modified lines, which differ in the teeth and in nothing else', () => {
+describe('the three saw-toothed lines, which differ in the teeth and in nothing else', () => {
   test('are three terms and not one term written three ways', () => {
     const line = (blazon: string) => inEnglish.parse(blazon).chargesOrOrdinaries?.[0];
     expect(line('Azure a fess indented or')).toHaveProperty('modifier', Modifier.indented);
@@ -639,9 +639,219 @@ describe('the three modified lines, which differ in the teeth and in nothing els
         arms(Modifier.indented),
         arms(Modifier.dancetty),
         arms(Modifier.vivre),
+        arms(Modifier.engrailed),
       ];
       expect(new Set(drawn).size).toBe(drawn.length);
     }
+  });
+});
+
+/**
+ * The corners of one hollow of the first band an English blazon draws: from the
+ * point of it, round the bite, to the next point.
+ *
+ * The line is walked in steps rather than cut in corners, so a hollow is the run
+ * of them between one point and the next — which is what has to lie on a circle
+ * for the line to be the line it says it is.
+ */
+function hollow(blazon: string): readonly (readonly [number, number])[] {
+  const walked = corners(blazon);
+  return walked.slice(POINT, POINT + 2 * POINT + 1);
+}
+
+/** How many steps of a scalloped line stand between its notch and its point. */
+const POINT = 6;
+
+/**
+ * How far the corners of a hollow stray from the circle through its two ends and
+ * its middle, which is nothing at all if the hollow is round.
+ *
+ * It is the measure the engrailed line turns on: a hollow reckoned square to the
+ * line it is cut in is a circle, and the same hollow reckoned any other way is
+ * that circle leaned over, which is an ellipse and not what either tongue asked
+ * for.
+ */
+function outOfRound(walked: readonly (readonly [number, number])[]): number {
+  const [centre, radius] = circleThrough(
+    walked[0],
+    walked[(walked.length - 1) / 2],
+    walked[walked.length - 1]
+  );
+  return Math.max(
+    ...walked.map((at) => Math.abs(Math.hypot(at[0] - centre[0], at[1] - centre[1]) - radius))
+  );
+}
+
+/** The circle through three corners, as its middle and how far round it reaches. */
+function circleThrough(
+  [aX, aY]: readonly [number, number],
+  [bX, bY]: readonly [number, number],
+  [cX, cY]: readonly [number, number]
+): readonly [readonly [number, number], number] {
+  const twice = 2 * (aX * (bY - cY) + bX * (cY - aY) + cX * (aY - bY));
+  const square = (x: number, y: number) => x * x + y * y;
+  const x =
+    (square(aX, aY) * (bY - cY) + square(bX, bY) * (cY - aY) + square(cX, cY) * (aY - bY)) / twice;
+  const y =
+    (square(aX, aY) * (cX - bX) + square(bX, bY) * (aX - cX) + square(cX, cY) * (bX - aX)) / twice;
+  return [[x, y], Math.hypot(aX - x, aY - y)];
+}
+
+describe('the engrailed line, which is cut round where the three are cut straight', () => {
+  test('is a term of its own, and the fourth line a band may be drawn along', () => {
+    expect(inEnglish.parse('Azure a fess engrailed or')).toEqual({
+      field: { type: FieldType.plain, tincture: Colours.azure },
+      chargesOrOrdinaries: [
+        { type: OrdinaryType.fess, tincture: Metals.or, modifier: Modifier.engrailed },
+      ],
+    });
+    expect(modifiersOn(OrdinaryType.fess)).toContain(Modifier.engrailed);
+  });
+
+  test('is read in either tongue into the one model, and written in either', () => {
+    expect(inFrench.parse("D'azur à la fasce engrêlée d'or")).toEqual(
+      inEnglish.parse('Azure a fess engrailed or')
+    );
+    const arms = inEnglish.parse('Azure a fess engrailed or');
+    expect(writeEnglish.write(arms)).toBe('Azure a fess engrailed or.');
+    expect(writeFrench.write(arms)).toBe("D'azur à la fasce engrêlée d'or.");
+  });
+
+  test('reads the arms the dictionary writes the word of', () => {
+    // Au blason des armoiries gives these for the engrêlé, under Montigny; the
+    // chequy field and the brochant are beyond this vocabulary, so what is read
+    // is the band itself.
+    const arms = inFrench.parse("D'argent à la bande engrêlée de gueules");
+    expect(arms.chargesOrOrdinaries).toEqual([
+      { type: OrdinaryType.bend, tincture: Colours.gules, modifier: Modifier.engrailed },
+    ]);
+    expect(writeEnglish.write(arms)).toBe('Argent a bend engrailed gules.');
+  });
+
+  test('is borne in number, and agrees in French however many there are', () => {
+    expect(inEnglish.parse('Or three bends engrailed sable').chargesOrOrdinaries).toEqual([
+      {
+        type: OrdinaryType.bend,
+        tincture: Colours.sable,
+        count: 3,
+        modifier: Modifier.engrailed,
+      },
+    ]);
+    expect(writeFrench.write(inEnglish.parse('Or three bends engrailed sable'))).toBe(
+      "D'or à trois bandes engrêlées de sable."
+    );
+    expect(inFrench.parse("D'azur à trois bandes engrêlées d'or").chargesOrOrdinaries).toEqual([
+      { type: OrdinaryType.bend, tincture: Metals.or, count: 3, modifier: Modifier.engrailed },
+    ]);
+  });
+
+  test('agrees with the band it stands after, and is refused where it does not', () => {
+    // The fasce is feminine and the chef masculine, as with every participle.
+    expect(inFrench.parse("D'azur au chef engrêlé d'or").chargesOrOrdinaries?.[0]).toHaveProperty(
+      'modifier',
+      Modifier.engrailed
+    );
+    expect(() => inFrench.parse("D'azur au chef engrêlée d'or")).toThrow(
+      'Wrong agreement: expected "engrêlé"'
+    );
+    expect(() => inFrench.parse("D'azur à la fasce engrêlé d'or")).toThrow(
+      'Wrong agreement: expected "engrêlée"'
+    );
+    expect(() => inFrench.parse("D'azur à trois bandes engrêlée d'or")).toThrow(WrongAgreement);
+  });
+
+  test('reads ingrailed, which is the other spelling Parker heads his entry with', () => {
+    expect(inEnglish.parse('Azure a fess ingrailed or')).toEqual(
+      inEnglish.parse('Azure a fess engrailed or')
+    );
+    // Written back under the spelling the vocabulary leads with, as every
+    // alternate spelling is.
+    expect(writeEnglish.write(inEnglish.parse('Azure a fess ingrailed or'))).toBe(
+      'Azure a fess engrailed or.'
+    );
+  });
+
+  test('is refused by a charge, which has no line to cut, and by a band given none', () => {
+    expect(() => inEnglish.parse('Azure a lozenge engrailed or')).toThrow(
+      'Wrong modifier: lozenge is never engrailed'
+    );
+    expect(() => inFrench.parse("D'azur à la losange engrêlée d'or")).toThrow(
+      'Wrong modifier: losange is never engrêlé'
+    );
+    // The cross and the saltire the dictionaries do engrail — "se dit du pal, de
+    // la croix, de la bande, du sautoir" — and this drawing cannot yet cut
+    // either, so the word is refused rather than promised.
+    expect(() => inEnglish.parse('Azure a cross engrailed or')).toThrow(
+      'Wrong modifier: cross is never engrailed'
+    );
+    expect(() => inFrench.parse("D'azur à la jumelle engrêlée d'or")).toThrow(WrongModifier);
+  });
+
+  test('is drawn of every band the three saws are drawn of, and drawn unlike any of them', () => {
+    expect(ORDINARIES.filter((type) => admitsModifier(type, Modifier.engrailed))).toEqual(
+      ORDINARIES.filter((type) => admitsModifier(type, Modifier.indented))
+    );
+    for (const type of ORDINARIES.filter((type) => admitsModifier(type, Modifier.engrailed))) {
+      const arms = (modifier?: Modifier) =>
+        drawer.draw({
+          field: { type: FieldType.plain, tincture: Colours.azure },
+          chargesOrOrdinaries: [{ type, tincture: Metals.or, modifier }],
+        });
+      expect(arms(Modifier.engrailed)).not.toBe(arms());
+      expect(arms(Modifier.engrailed)).not.toBe(arms(Modifier.indented));
+    }
+  });
+
+  test('cuts a hollow that is round, where the saws cut it straight', () => {
+    // A hollow is an arc swung between one point of the line and the next, so
+    // every corner the drawing walks it in stands on the one circle — and a run
+    // of corners that stood on a straight line would have no circle through it
+    // at all, which is what this measure refuses.
+    expect(outOfRound(hollow('Azure a fess engrailed or'))).toBeLessThan(1 / 10);
+    // A saw has nothing between its notch and its point: three corners are the
+    // whole of a tooth, where a hollow is walked round. Roundness costs corners,
+    // and this is where they go.
+    expect(corners('Azure a fess engrailed or').length).toBeGreaterThan(
+      4 * corners('Azure a fess dancetty or').length
+    );
+  });
+
+  test('cuts it round on a band that runs at a slant, which asks it to lean', () => {
+    // The hollow is measured square to the line it is cut in rather than the way
+    // the band's own width is measured, which is what keeps it a circle and what
+    // stands its points out of the band instead of straight down the field. A
+    // chevron is the band that tells: its two limbs run neither flat nor
+    // upright, and a hollow reckoned any other way comes out an ellipse.
+    expect(outOfRound(hollow('Azure a chevron engrailed or'))).toBeLessThan(1 / 10);
+    expect(outOfRound(hollow('Azure a bend engrailed or'))).toBeLessThan(1 / 10);
+    expect(outOfRound(hollow('Azure a bend sinister engrailed or'))).toBeLessThan(1 / 10);
+  });
+
+  test('keeps the chevron its point, both limbs meeting where the band bends', () => {
+    // Each limb is cut square to itself, so the two reach the apex along
+    // different ways and would end in different places; they are brought
+    // together there, and the band bends as it always did.
+    const apex = corners('Azure a chevron engrailed or').filter(([x]) => Math.abs(x - 100) < 1 / 2);
+    expect(apex.length).toBeGreaterThan(0);
+    const plain = corners('Azure a chevron or').filter(([x]) => Math.abs(x - 100) < 1 / 2);
+    // The point is where it was, give or take the half bite every cut stands
+    // about the line by.
+    for (const [, y] of apex) {
+      expect(Math.min(...plain.map(([, was]) => Math.abs(y - was)))).toBeLessThan(10);
+    }
+  });
+
+  test('stands its points about the line the plain band had, as every cut does', () => {
+    // Half the bite into the field and half into the band: a fess engrailed
+    // reaches above where the plain fess ended and bites below it, which is what
+    // leaves the band widest at its points — "the teeth or points of which being
+    // outward enter the field".
+    const [, edge] = /<rect[^>]* y="([-\d.]+)"/.exec(
+      drawer.draw(inEnglish.parse('Azure a fess or'))
+    ) as RegExpExecArray;
+    const cut = corners('Azure a fess engrailed or').map(([, y]) => y);
+    expect(Math.min(...cut)).toBeLessThan(Number(edge));
+    expect(Math.max(...cut.filter((y) => y < Number(edge) + 40))).toBeGreaterThan(Number(edge));
   });
 });
 

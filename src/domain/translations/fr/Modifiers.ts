@@ -26,20 +26,28 @@ import { FrenchWord } from './FrenchWord';
 // filing suggests. It is the word for the other modifier, and the other drawing:
 // see Modifier.pierced.
 //
-// The three modified lines are three words and not one word thrice. Parker
-// glosses indented "(fr. denché)" and glosses the dancetty with it too, which
-// would leave French a word short; the dictionary French writes by keeps them
-// apart by the size of the tooth. Denché is said of the pieces "dont les bords
+// The modified lines are a word apiece and not one word several times over.
+// Parker glosses indented "(fr. denché)" and glosses the dancetty with it too,
+// which would leave French a word short; the dictionary French writes by keeps
+// them apart by the size of the tooth. Denché is said of the pieces "dont les bords
 // sont formés en dents de scie", and "on se sert du mot dentelé quand les dents
 // de la bordure sont de petites dimensions" — so dentelé is the small-toothed
 // line and denché the great-toothed one, which is the pair English spells
 // indented and dancetty. Vivré is the third: the same great teeth brought to a
 // right angle at the point, which Parker files under the French word itself
-// because English has none.
+// because English has none. Engrêlé is the fourth and is no saw at all, the
+// dictionary parting it from the dentelé by the hollow between the teeth.
 //
-// None of the three is a spelling of another. A blazon that writes one and is
+// None of the four is a spelling of another. A blazon that writes one and is
 // answered with another has been told its band is drawn a way it is not, which
 // is the one thing a vocabulary must not do.
+//
+// Engrêlé is written with its circumflex and read with nothing else. The
+// dictionaries' own headings carry it, and the accent-less ENGRELÉ of a
+// capitalised entry — or Parker's "fr. engrélé" — is typography rather than a
+// second spelling. It could not be offered as one in any case: a French modifier
+// is read through its four agreements and not through its spellings, so a
+// spelling declared beside it would be a word the parser never answers to.
 export const FrenchModifiers: Translation<Modifier, FrenchWord> = {
   [Modifier.voided]: [
     new FrenchWord('vidé', {
@@ -88,6 +96,13 @@ export const FrenchModifiers: Translation<Modifier, FrenchWord> = {
       // bandé under bandee: the entry is Vivré and the page is vivree, the bare
       // vivre being the fillet instead.
       sources: [blasonArmoiries('Vivré', 'vivree')],
+    }),
+  ],
+  [Modifier.engrailed]: [
+    new FrenchWord('engrêlé', {
+      value:
+        'The edges of the band cut into small round hollows, the points between them standing out into the field: "se dit du pal, de la croix, de la bande, du sautoir, etc., dont les deux côtés sont bordés de petites dents dont les intervalles sont creux et arrondis". What parts it from the saw-toothed line is the hollow itself — "c’est en cela que l’Engrêlé diffère du dentelé dont les intervalles sont à angles droits, comme des dents de scie" — and the dictionary adds, of the one band with a single free edge, that "le chef ne peut être Engrêlé que dans sa ligne basse". A bande engrêlée is the band English blazons a bend engrailed: "Montigny (de) : Échiqueté d’argent et d’azur, à la bande engrêlée de gueules, brochante sur le tout."',
+      sources: [blasonArmoiries('Engrêlé')],
     }),
   ],
 };

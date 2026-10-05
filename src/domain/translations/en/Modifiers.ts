@@ -14,13 +14,13 @@ import { Word } from '../Word';
 // term is.
 //
 // They do not all qualify the same thing. Voided and pierced are said of a
-// charge and the three lines of a band, because what is done to a charge is done
+// charge and the four lines of a band, because what is done to a charge is done
 // to its middle and what is done to a band is done to the line it is named
 // after. Which is which is the model's to say, not this list's: every one of
 // them stands after what it qualifies, and the words differ in nothing a grammar
 // can see.
 //
-// One of the five is French. English cut the saw-toothed line in two and named
+// One of the six is French. English cut the saw-toothed line in two and named
 // both halves — indented and dancetty — but never named the third, where the
 // point of the tooth is a right angle, so Parker files the French word as an
 // entry of
@@ -76,5 +76,14 @@ export const EnglishModifiers: Translation<Modifier> = {
       sources: [parker('Vivre')],
     },
     { plural: 'vivré' }
+  ),
+  [Modifier.engrailed]: new Word(
+    'engrailed',
+    {
+      value:
+        'The edges of the band cut into small round hollows, the points between them standing out into the field: "the cutting of the edge of a border, bend, or fesse, &c., into small semicircular indents, the teeth or points of which being outward enter the field". It is the one line that is no saw, and the band is widest at the points and narrowest between them, both its edges being hollowed inwards at once — "when a fesse chevron or bend is blazoned engrailed, it implies that the ordinary is to be so on both sides". Parker calls the word an old one, "very frequently applied to the bordure", and gives it the other spelling ingrailed, which is read. Its contrary is the invected, "in which case the points are inwards", and no blazon here says that yet.',
+      sources: [parker('Engrailed')],
+    },
+    { plural: 'engrailed', alternateWording: { ingrailed: { plural: 'ingrailed' } } }
   ),
 };

@@ -79,6 +79,7 @@ describe('what an ordinary may be drawn under', () => {
       Modifier.indented,
       Modifier.dancetty,
       Modifier.vivre,
+      Modifier.engrailed,
     ]);
     expect(OrdinaryDefinitions[OrdinaryType.cross].allowedModifiers).toEqual([]);
   });

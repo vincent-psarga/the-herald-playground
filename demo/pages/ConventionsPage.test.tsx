@@ -109,6 +109,7 @@ describe('what each rule shows', () => {
     expect(shown('Argent a border gules').written).toContain('Argent a bordure gules.');
     expect(shown('Azure a bezant').written).toContain('Azure a besant.');
     expect(shown('Azure a fess dancetté or').written).toContain('Azure a fess dancetty or.');
+    expect(shown('Azure a fess ingrailed or').written).toContain('Azure a fess engrailed or.');
     expect(shown('Pily counter pily of four or and azure').written).toContain(
       'Pily of four or and azure.'
     );

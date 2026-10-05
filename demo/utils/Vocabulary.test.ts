@@ -368,16 +368,23 @@ describe('the words that say more than one drawing can', () => {
   });
 
   test('shows a band under every line it may be drawn along', () => {
-    expect(labelled(word(english, 'fess'), 'Modified')).toEqual(['Indented', 'Dancetty', 'Vivré']);
+    expect(labelled(word(english, 'fess'), 'Modified')).toEqual([
+      'Indented',
+      'Dancetty',
+      'Vivré',
+      'Engrailed',
+    ]);
     expect(blazoned(word(english, 'fess'), 'Modified')).toEqual([
       'Argent a fess indented gules.',
       'Argent a fess dancetty gules.',
       'Argent a fess vivré gules.',
+      'Argent a fess engrailed gules.',
     ]);
     expect(blazoned(word(french, 'fasce'), 'Modified')).toEqual([
       "D'argent à la fasce dentelée de gueules.",
       "D'argent à la fasce denchée de gueules.",
       "D'argent à la fasce vivrée de gueules.",
+      "D'argent à la fasce engrêlée de gueules.",
     ]);
     // A band the model gives no modified line is asked nothing about one.
     expect(asked(word(english, 'cross'))).toEqual([]);

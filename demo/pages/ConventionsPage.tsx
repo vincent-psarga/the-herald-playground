@@ -72,11 +72,13 @@ export const RULES: readonly Rule[] = [
           plain form and a fuller one that says no more, the plain one leads: Parker gives pily,
           paly pily and pily counter pily for the one field, and pily is written. Where the
           dictionaries are indifferent, the form the two tongues share leads — besant is written
-          where bezant is read, French calling the same coin a besant. And a word the armorials
-          write under either article is written under the one the heraldic dictionaries give: la
-          losange, where modern French has gone masculine. Where a tongue has two words for the one
-          thing and neither is a spelling of the other, one of them still leads — though not always
-          the same one, the armorials keeping some words for some charges: that is the rule below.
+          where bezant is read, French calling the same coin a besant, and engrailed where Parker
+          heads his entry “Engrailed, or Ingrailed” and French writes engrêlé. And a word the
+          armorials write under either article is written under the one the heraldic dictionaries
+          give: la losange, where modern French has gone masculine. Where a tongue has two words for
+          the one thing and neither is a spelling of the other, one of them still leads — though not
+          always the same one, the armorials keeping some words for some charges: that is the rule
+          below.
         </p>
         <p className="rule__law">
           The same settling reaches the plumbing around a word. Blazonry says “à trois tourteaux”
@@ -97,6 +99,7 @@ export const RULES: readonly Rule[] = [
       en('Argent a border gules'),
       en('Azure a bezant'),
       en('Azure a fess dancetté or'),
+      en('Azure a fess ingrailed or'),
       en('Pily counter pily of four or and azure'),
       fr("D'argent au losange de gueules"),
       fr("D'or aux trois tourteaux de gueules"),

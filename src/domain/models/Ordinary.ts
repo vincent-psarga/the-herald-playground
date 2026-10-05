@@ -60,7 +60,7 @@ export class OrdinaryDefinition {
    * The modifiers a blazon may draw it under, which is none for most of them.
    *
    * What is done to a band is done to the line it is named after — indented,
-   * embattled — where what is done to a charge is done to its middle, so the two
+   * engrailed — where what is done to a charge is done to its middle, so the two
    * lists never meet: no band is voided and no charge is indented. Which of them
    * a band takes is declared here rather than in either vocabulary, the answer
    * being the same in every tongue: a fasce is no likelier to be dentelée than a
@@ -100,18 +100,22 @@ export const OrdinaryDefinitions: Record<OrdinaryType, OrdinaryDefinition> = {
   // The top of the shield itself rather than a band laid anywhere on it, and a
   // shield has one top. Its one free edge is a line like any other, and cutting
   // teeth in it is what a chief indented is — or a chef vivré, which Parker
-  // writes of the arms of JAUCHE in Brabant.
+  // writes of the arms of JAUCHE in Brabant. Which edge that is, the dictionary
+  // says out loud of the engrêlé: "le chef ne peut être Engrêlé que dans sa
+  // ligne basse".
   [OrdinaryType.chief]: new OrdinaryDefinition(OrdinaryType.chief, {
     allowedModifiers: LINES,
   }),
   // The four Parker names as the bands the indenting is applied to — "most
   // frequently to the fesse, though the bend, the pale, and the chevron are
   // sometimes thus treated" — and the barre, which is the bande turned and is
-  // drawn along the same line the other way. They are the four the other two
+  // drawn along the same line the other way. They are the four the other three
   // lines are written of as well: Duhoux says the denché "du chef, de la fasce,
-  // de la bande, de la croix, du sautoir, du chevron, de la bordure", and the
-  // vivré "du pal, de la fasce, du chevron, de la bande et de quelques autres
-  // pièces".
+  // de la bande, de la croix, du sautoir, du chevron, de la bordure", the vivré
+  // "du pal, de la fasce, du chevron, de la bande et de quelques autres
+  // pièces", and the engrêlé "du chef, du pal, du sautoir, du chevron, de la
+  // fasce, de la croix, de la bande, de la bordure, et autres pièces longues" —
+  // which is this list and the three bands below it.
   [OrdinaryType.pale]: new OrdinaryDefinition(OrdinaryType.pale, {
     canBeBorneInNumbers: true,
     allowedModifiers: LINES,
@@ -148,14 +152,16 @@ export const OrdinaryDefinitions: Record<OrdinaryType, OrdinaryDefinition> = {
   // charge: a cross indented is one outline with teeth all round it, not two
   // toothed bands laid across each other, and the limbs drawn apart would cut
   // into one another where they meet. The armorials ask for both — "D'argent, au
-  // sautoir denché de sable" — so this is a drawing that cannot yet answer and
-  // not a blazon nobody writes.
+  // sautoir denché de sable", and the engrêlé is said "du pal, de la croix, de
+  // la bande, du sautoir" in the same breath — so this is a drawing that cannot
+  // yet answer and not a blazon nobody writes.
   [OrdinaryType.cross]: new OrdinaryDefinition(OrdinaryType.cross),
   [OrdinaryType.saltire]: new OrdinaryDefinition(OrdinaryType.saltire),
   // The edge of the shield, and a shield has one of those too. Cut along any of
   // the lines it is the one band whose teeth are all on the one side: its outer
   // edge is the outline of the shield and no blazon may cut that, so what the
-  // line modifies is where the band ends rather than where it begins.
+  // line modifies is where the band ends rather than where it begins. It is the
+  // band Parker says the engrailing is "very frequently applied to".
   [OrdinaryType.bordure]: new OrdinaryDefinition(OrdinaryType.bordure, {
     allowedModifiers: LINES,
   }),
