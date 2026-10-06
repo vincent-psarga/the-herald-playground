@@ -706,6 +706,52 @@ export const RULES: readonly Rule[] = [
     ],
   },
   {
+    id: 'laid-over-all-is-written',
+    heading: 'What a blazon laid over all is written again, where that tongue puts it',
+    law: (
+      <>
+        <p className="rule__law">
+          A blazon may say that a band or a charge is laid over everything else the field carries:
+          brochant sur le tout, over all a bend gules. The order things are blazoned in says which
+          covers which already, so said of whatever was named last the words only repeat it. What
+          they buy is the other case — what covers named before what it covers — and there they
+          overrule the order, which would otherwise have drawn the thing underneath.
+        </p>
+        <p className="rule__law">
+          They are written back wherever the model holds them, redundant or not. Parker calls them
+          understood over a particoloured field and almost indispensable everywhere else, which is a
+          judgement about particular arms rather than a rule; a writer that dropped them wherever it
+          judged them understood would be making that judgement blazon by blazon, and making it
+          silently. So what was said is said again.
+        </p>
+        <p className="rule__law">
+          Where they go is each tongue’s own. French writes its participle after the band and after
+          the tincture, last of all, and English writes its words in front of the whole phrase.
+          French reads the bare brochant and writes the whole brochant sur le tout, the dictionary
+          filing the short form under the long. Neither tongue reads the other’s place.
+        </p>
+      </>
+    ),
+    authority: (
+      <>
+        Parker has “Over all, surtout, (fr. sur-le-tout): said of a charge placed over several other
+        charges or over a particoloured field”, adds that “French heralds also employ the term
+        brochant sur le tout”, and writes it in front: “Barry of six argent and azure, [over all] a
+        bend gules”. Au blason des armoiries files the participle under the phrase — “Se dit des
+        pièces posées sur le champ et sur d’autres meubles qu’elles couvrent en partie; on les dit
+        alors: Brochant sur le tout” — and writes it after: “à trois grappes de raisins d’or
+        brochant sur le tout”.
+      </>
+    ),
+    sources: [parker('Over all'), blasonArmoiries('Brochant')],
+    cases: [
+      fr("D'argent à trois billettes de sable, à la fasce de gueules brochant"),
+      fr("D'argent à la fasce de gueules brochant sur le tout, à trois billettes de sable"),
+      fr("D'or au chef d'azur, brochant sur le tout"),
+      en('Argent over all a fess gules'),
+    ],
+  },
+  {
     id: 'the-smaller-settlements',
     heading: 'The smaller settlements',
     law: (

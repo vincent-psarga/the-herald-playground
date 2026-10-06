@@ -6,6 +6,7 @@ import { EnglishModifiers } from '../../domain/translations/en/Modifiers';
 import { EnglishStrewings, OF as SOWN_OF, SOWN } from '../../domain/translations/en/Strewings';
 import { EnglishNumbers } from '../../domain/translations/en/Numbers';
 import { EnglishOrdinaryType } from '../../domain/translations/en/Ordinaries';
+import { EnglishOverAll } from '../../domain/translations/en/OverAll';
 import { EnglishTinctures } from '../../domain/translations/en/Tinctures';
 import { EnglishVariationType, OF } from '../../domain/translations/en/Variations';
 import { BlazonWording } from '../writer/BlazonWording';
@@ -45,5 +46,8 @@ export const EnglishBlazonWording: BlazonWording = {
   // could not have said it — which for a field of four parts is wherever they are
   // more than the two tinctures it fills them out from.
   rank: ranked,
+  // "over all a bend gules": English says it in front of what it is said of,
+  // where French says its own word after. Parker writes it exactly so.
+  overAll: (bearing) => `${EnglishOverAll.value} ${bearing}`,
   conjunction: CONJUNCTION,
 };

@@ -95,6 +95,20 @@ export interface BlazonGrammar {
    * blazons say nothing of the sort hands back nothing, and nothing is read.
    */
   readonly borne: Parser<TokenKind, BorneTerm>;
+  /**
+   * What the language writes after a bearing to say it is laid over everything
+   * else the field carries: "à trois bandes de gueules brochant".
+   *
+   * Left off by a language that writes it somewhere else. English writes "over
+   * all" before what it is said of, which is inside the phrase that names the
+   * bearing and comes back on the term itself; French writes its participle
+   * after the tincture, where only this can reach it.
+   *
+   * A blazon may set its own mark before the words — "au chef d'azur, brochant
+   * sur le tout" — so whatever the language lets stand there is read by this
+   * rule, the mark between one bearing and the next belonging to the next.
+   */
+  readonly overAll?: Parser<TokenKind, unknown>;
   /** The conjunction joining the halves of a divided field. */
   readonly and: Parser<TokenKind, unknown>;
   /**
@@ -262,15 +276,21 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
   //
   // The count is left off rather than set to one when a single one is borne, so
   // that a fess reads back as the fess it was before a field could bear two.
+  //
+  // What a tongue writes after a bearing to lay it over everything else, where
+  // it writes it there at all. English writes it before instead, and the words
+  // come back on the term; a tongue that writes it in neither place reads none.
+  const laidOverAll: Parser<TokenKind, unknown> =
+    grammar.overAll === undefined ? nil() : optional(grammar.overAll);
+
   const bearing = within(
     combine(grammar.borne, (borne) =>
       combine(modifying(borne), (early) =>
         combine(carried(grammar.tincture, borne.word), (tincture) =>
           combine(early === undefined ? modifying(borne) : nil(), (late) =>
             combine(painting(late, grammar.tincture), (line) =>
-              apply(
-                attributing(borne, grammar.tincture, grammar.and),
-                (painted): ChargeOrOrdinary => {
+              combine(attributing(borne, grammar.tincture, grammar.and), (painted) =>
+                apply(laidOverAll, (over): ChargeOrOrdinary => {
                   const one =
                     borne.count === undefined
                       ? { type: borne.type, tincture }
@@ -285,8 +305,15 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
                       : line === undefined
                         ? { ...one, modifier }
                         : { ...one, modifier, modifierTincture: line };
-                  return painted.length === 0 ? modified : { ...modified, attributes: painted };
-                }
+                  const said =
+                    painted.length === 0 ? modified : { ...modified, attributes: painted };
+                  // Said before the name or said after the tincture, as the
+                  // tongue writes it; the model keeps that it was said and not
+                  // where.
+                  return borne.overAll === true || over !== undefined
+                    ? { ...said, overAll: true }
+                    : said;
+                })
               )
             )
           )

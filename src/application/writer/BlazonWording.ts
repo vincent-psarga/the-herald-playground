@@ -100,6 +100,15 @@ export interface BlazonWording<W extends Word = Word> {
    * plural.
    */
   readonly strew: (word: W) => string;
+  /**
+   * How the language says that what is borne is laid over everything else:
+   * "à la fasce de gueules brochant sur le tout", "over all a bend gules".
+   *
+   * The whole phrase is handed over rather than the words alone, because where
+   * they stand is exactly what the two tongues disagree about: French writes its
+   * participle after what it is said of, English writes its own words in front.
+   */
+  readonly overAll: (bearing: string) => string;
   /** The conjunction joining the halves of a divided field. */
   readonly conjunction: string;
   /**
@@ -180,6 +189,13 @@ function writeArms<W extends Word>(wording: BlazonWording<W>, blazon: Blazon): s
  * Unless the line carries a tincture of its own, which is the one thing that
  * moves it: there are then two tinctures to write, and the modifier goes between
  * them so that each stands beside what it belongs to.
+ *
+ * That it was laid over everything else is written last of all, and written
+ * whether or not the order has already said it. The model holds that the blazon
+ * said it, and saying it is never wrong — Parker calls the words understood over
+ * a particoloured field and "almost indispensable" everywhere else, and a writer
+ * that dropped them wherever it judged them understood would be deciding which
+ * of those two cases it was in. Where the words go is the language's, not this.
  */
 function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdinary): string {
   const { word, count } = named(wording, one);
@@ -204,7 +220,10 @@ function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdi
   // and only a charge has parts, so the two orders never meet.
   const said =
     line === undefined ? [bearing, modifier, tincture] : [bearing, tincture, modifier, line];
-  return [...said, parts === '' ? undefined : parts].filter((part) => part !== undefined).join(' ');
+  const written = [...said, parts === '' ? undefined : parts]
+    .filter((part) => part !== undefined)
+    .join(' ');
+  return one.overAll === true ? wording.overAll(written) : written;
 }
 
 /**

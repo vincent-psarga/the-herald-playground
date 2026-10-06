@@ -58,6 +58,7 @@ const HEADINGS = [
   'A modifier is said only of what can show it',
   'A word the armorials keep for one charge is written of that charge alone',
   'A painted line puts the band’s tincture first',
+  'What a blazon laid over all is written again, where that tongue puts it',
   'The smaller settlements',
 ];
 
@@ -412,6 +413,30 @@ describe('what each rule shows', () => {
     const refused = shown('Azure a fess voided or');
     expect(refused.refused).toBe('Wrong modifier: fess is never voided');
     expect(refused.arms).toBe(0);
+  });
+
+  test('writes the whole French phrase where the bare participle was read', () => {
+    mount(<ConventionsPage />);
+    expect(
+      shown("D'argent à trois billettes de sable, à la fasce de gueules brochant").written
+    ).toContain("D'argent à trois billettes de sable, à la fasce de gueules brochant sur le tout.");
+  });
+
+  test('writes it after the band in French and in front of it in English', () => {
+    mount(<ConventionsPage />);
+    const said = shown('Argent over all a fess gules').written;
+    expect(said).toContain('Argent over all a fess gules.');
+    expect(said).toContain("D'argent à la fasce de gueules brochant sur le tout.");
+  });
+
+  test('says it again though the order had already said it', () => {
+    // The chief is the only thing borne, so nothing could cover it either way.
+    // The words are written back all the same: the model holds that the blazon
+    // said them.
+    mount(<ConventionsPage />);
+    expect(shown("D'or au chef d'azur, brochant sur le tout").written).toContain(
+      "D'or au chef d'azur brochant sur le tout."
+    );
   });
 
   test('parts one charge from the next, and writes the blazon as a sentence', () => {

@@ -12,13 +12,22 @@ import { WrongOrdinaryArticle } from '../../domain/errors/parsing/WrongOrdinaryA
 import { WrongTinctureArticle } from '../../domain/errors/parsing/WrongTinctureArticle';
 import { FrenchAttributes } from '../../domain/translations/fr/Attributes';
 import { FrenchModifiers } from '../../domain/translations/fr/Modifiers';
+import { FrenchOverAll } from '../../domain/translations/fr/OverAll';
 import { FrenchNumbers } from '../../domain/translations/fr/Numbers';
 import { FrenchRanks } from '../../domain/translations/fr/Ranks';
 import { FrenchTinctures } from '../../domain/translations/fr/Tinctures';
 import { Translation, asSeveral, wordsOf, writtenAs } from '../../domain/translations/Translation';
 import { TokenKind } from '../lexer/Lexer';
 import { BlazonGrammar } from '../parser/BlazonGrammar';
-import { anyKeyword, guard, keyword, optional, spelledTerm, term } from '../parser/Combinators';
+import {
+  anyKeyword,
+  anyPhrase,
+  guard,
+  keyword,
+  optional,
+  spelledTerm,
+  term,
+} from '../parser/Combinators';
 import { asOrdinary, asDivision, asRank, asTincture } from '../parser/Failures';
 import { NOT_IN_NUMBER, alone, bearings, qualifiable, several } from '../parser/Borne';
 import { QualifierForm, qualifying } from '../parser/Qualifiers';
@@ -196,6 +205,16 @@ const SEVERAL_BORNE = qualifiable(
 
 const BORNE = alt(ONE, SEVERAL_BORNE);
 
+// "à trois bandes de gueules brochant", "au chef d'azur, brochant sur le tout":
+// French says it after the tincture and after whatever else was said of the
+// charge, which is the last place in the phrase there is.
+//
+// An armorial parts it from what it is said of with the same mark it parts one
+// bearing from the next, so the mark is read here as well. Read only by the
+// phrase that owns it: a mark with nothing but the participle after it never
+// opened a second bearing, and the one with a bearing after it is untouched.
+const BROCHANT = kright(optional(tok(TokenKind.Separator)), anyPhrase(writtenAs(FrenchOverAll)));
+
 // French counts the pieces of a varied field after naming the tinctures it
 // alternates — "bandé de gueules et d'argent de six pièces" — and an armorial
 // writes "en six pièces" as readily as "de", so both are read. The article is
@@ -264,6 +283,7 @@ export const FrenchBlazonGrammar: BlazonGrammar = {
   pieces: HOW_MANY_PIECES,
   treatment: TREATMENT,
   borne: BORNE,
+  overAll: BROCHANT,
   and: AND,
   rank: RANK,
 };

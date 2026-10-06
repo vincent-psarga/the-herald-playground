@@ -31,8 +31,10 @@ import {
 import { COLOURS, Colours, Metals, Tincture, isFur } from '../../src/domain/models/Tinctures';
 import { counted } from '../../src/domain/translations/Numbers';
 import { EnglishNumbers } from '../../src/domain/translations/en/Numbers';
+import { EnglishOverAll } from '../../src/domain/translations/en/OverAll';
 import { OF, SOWN as EnglishSown } from '../../src/domain/translations/en/Strewings';
 import { FrenchWord } from '../../src/domain/translations/fr/FrenchWord';
+import { FrenchOverAll } from '../../src/domain/translations/fr/OverAll';
 import { FrenchPlain } from '../../src/domain/translations/fr/Plain';
 import { SOWN as FrenchSown } from '../../src/domain/translations/fr/Strewings';
 import { Strewings } from '../../src/domain/translations/Strewings';
@@ -69,6 +71,12 @@ import { readBlazon } from './Reading';
  * is written as its tincture and nothing else — and "plain" and "semé" say what
  * a field carries rather than how it is cut. So the two are named here and
  * nowhere else.
+ *
+ * The word for what is laid over all names no term either, and for a different
+ * reason: there is nothing for it to name. What it says is which of two things
+ * already blazoned is on top, which the model holds as a fact about one of them
+ * rather than as a term of its own. It is a word a reader meets in the armorials
+ * all the same, so it is ranked here and shown with the rest.
  */
 export type Ranked =
   | { readonly rank: 'tincture'; readonly term: Tincture }
@@ -80,6 +88,7 @@ export type Ranked =
   | { readonly rank: 'modifier'; readonly term: Modifier }
   | { readonly rank: 'attribute'; readonly term: Attribute }
   | { readonly rank: 'strewing'; readonly term: ChargeType }
+  | { readonly rank: 'over all'; readonly term: typeof OVER_ALL_TERM }
   | { readonly rank: 'field'; readonly term: typeof PLAIN_TERM | typeof SOWN_TERM };
 
 /**
@@ -190,6 +199,20 @@ const SOWN_FIGURE = ChargeType.annulet;
 
 const PLAIN_TERM = 'Field.plain';
 const SOWN_TERM = 'Field.sown';
+const OVER_ALL_TERM = 'Borne.overAll';
+
+// The one word whose arms have to show three things at once: the field, what is
+// borne on it, and what is laid over that. Two tinctures cannot tell three
+// things apart, so what is covered is given a third — the word being said of
+// the thing doing the covering, which is shown in the colour every other word
+// on these pages is shown in.
+const COVERED = Colours.sable;
+
+// What the covering is shown as, and what it is shown covering. A band over
+// charges, which is how the armorials write it oftenest: a fasce brochant sur
+// le tout, over all a fess.
+const COVERING = OrdinaryType.fess;
+const UNDERNEATH = ChargeType.billet;
 
 const CHARGE_TYPES = Object.values(ChargeType);
 const ORDINARY_TYPES = Object.values(OrdinaryType);
@@ -329,6 +352,8 @@ interface Tongue<W extends Word = Word> {
   readonly sown: readonly W[];
   /** How this tongue sows a figure under a given spelling of that word. */
   readonly sowing: (spelling: string) => (word: W) => string;
+  /** The word for what is laid over everything else the field bears. */
+  readonly overAll: W;
 }
 
 const FRENCH: Tongue<FrenchWord> = {
@@ -337,6 +362,7 @@ const FRENCH: Tongue<FrenchWord> = {
   plain: FrenchPlain,
   sown: [FrenchSown],
   sowing: (spelling) => (word) => `${spelling} ${sownIn(word)}`,
+  overAll: FrenchOverAll,
 };
 
 const ENGLISH: Tongue = {
@@ -344,6 +370,7 @@ const ENGLISH: Tongue = {
   wording: EnglishBlazonWording,
   sown: EnglishSown,
   sowing: (spelling) => (word) => `${spelling} ${OF} ${word.plural}`,
+  overAll: EnglishOverAll,
 };
 
 /** Every word one tongue knows, in the order its vocabulary declares them. */
@@ -359,6 +386,7 @@ function sensesOf<W extends Word>(tongue: Tongue<W>): readonly Sense<W>[] {
     ...spelled('modifier', wording.modifiers),
     ...spelled('attribute', wording.attributes),
     ...strewn(wording.strewings),
+    { rank: 'over all', term: OVER_ALL_TERM, words: [tongue.overAll] } satisfies Sense<W>,
     ...(tongue.plain === undefined
       ? []
       : [{ rank: 'field', term: PLAIN_TERM, words: [tongue.plain] } satisfies Sense<W>]),
@@ -529,6 +557,18 @@ function armsOf<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W): Bl
           semy: { type: sense.term, tincture: borne },
         },
       };
+    // Shown as the armorials write it: the charges first, then the band laid
+    // over them, which is the place the word is oftenest met in. What it buys
+    // over the bare order is the arms under "Laid otherwise" below, where the
+    // band is named first and covers the charges all the same.
+    case 'over all':
+      return {
+        field: { type: FieldType.plain, tincture: against(borne) },
+        chargesOrOrdinaries: [
+          { type: UNDERNEATH, tincture: COVERED, count: 3 },
+          { type: COVERING, tincture: borne, overAll: true },
+        ],
+      };
     case 'field':
       return sense.term === PLAIN_TERM
         ? { field: { type: FieldType.plain, tincture: COLOUR } }
@@ -574,6 +614,10 @@ function insisting<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W):
       return { ...wording, attributes: { ...wording.attributes, ...only } };
     case 'strewing':
       return { ...wording, strewings: { ...wording.strewings, ...only } };
+    // The tongue holds one word for it and the writer has no choice to narrow:
+    // there is no vocabulary keyed on a term here, the word naming none.
+    case 'over all':
+      return wording;
     case 'field':
       return sense.term === SOWN_TERM ? { ...wording, strew: tongue.sowing(word.value) } : wording;
   }
@@ -688,6 +732,21 @@ function writings(word: Word): string {
     : word.value;
 }
 
+/**
+ * Where in the sentence each tongue puts the word, which is the one thing the
+ * two disagree about and the thing a reader of either has to be told.
+ *
+ * French says it after what it is said of and English says it before, so neither
+ * note would serve the other page. What the word means is the same in both and
+ * is said on the word itself; this is only where to write it.
+ */
+const OVER_ALL_NOTE: Record<Languages, string> = {
+  [Languages.fr]:
+    'Said after the band or charge and after its tincture, last of all, and parted from it by a comma as readily as not: au chef d’azur, brochant sur le tout. It agrees with nothing — the locution is invariable, and stands unchanged after one band and after three. The participle alone is read and the whole phrase is written.',
+  [Languages.en]:
+    'Said before the band or charge it is said of, where French says its own word after: over all a bend gules. It agrees with nothing and stands unchanged before one band and before three.',
+};
+
 const FURRED_NOTE =
   'Named where the fur itself is not. A fur is a tincture and carries its pair with it, so naming it is the whole of what a blazon says; a furred field is owed the two tinctures its figures are cut from.';
 
@@ -703,6 +762,8 @@ function noteOn<W extends Word>(sense: Sense<W>, word: W, language: Languages): 
       return MODIFIER_NOTE[language]?.(word);
     case 'attribute':
       return ATTRIBUTE_NOTE[language](word);
+    case 'over all':
+      return OVER_ALL_NOTE[language];
     default:
       return undefined;
   }
@@ -896,6 +957,27 @@ function otherwise<W extends Word>(
             whereabouts(rankOf(type), named)
           );
         }),
+      },
+    ];
+  }
+
+  if (sense.rank === 'over all') {
+    // What the word is for, which the arms above cannot show on their own: the
+    // band named before the charges it covers, and the same band named there
+    // with the word left out. The order alone would put the charges on top; the
+    // word overrules it, and the pair says so without a sentence of prose.
+    const over: ChargeOrOrdinary = { type: COVERING, tincture: borne };
+    const under: ChargeOrOrdinary = { type: UNDERNEATH, tincture: COVERED, count: 3 };
+    return [
+      {
+        heading: 'Laid otherwise',
+        entries: [
+          say(
+            { field, chargesOrOrdinaries: [{ ...over, overAll: true }, under] },
+            'Over what follows it'
+          ),
+          say({ field, chargesOrOrdinaries: [over, under] }, 'Without it'),
+        ],
       },
     ];
   }

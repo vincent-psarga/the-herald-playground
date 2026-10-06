@@ -6,6 +6,7 @@ import { FrenchModifiers } from '../../domain/translations/fr/Modifiers';
 import { FrenchStrewings, SOWN } from '../../domain/translations/fr/Strewings';
 import { FrenchNumbers } from '../../domain/translations/fr/Numbers';
 import { FrenchOrdinaryType } from '../../domain/translations/fr/Ordinaries';
+import { FrenchOverAll } from '../../domain/translations/fr/OverAll';
 import { FrenchTinctures } from '../../domain/translations/fr/Tinctures';
 import { FrenchVariationType } from '../../domain/translations/fr/Variations';
 import { FrenchWord } from '../../domain/translations/fr/FrenchWord';
@@ -45,6 +46,10 @@ export const FrenchBlazonWording: BlazonWording<FrenchWord> = {
   // "semé de billettes", "semé d'annelets": the same "de" a tincture is
   // introduced by, elided on the word's own terms.
   strew: (word) => `${SOWN.value} ${sownIn(word)}`,
+  // "à la fasce de gueules brochant sur le tout": French says it after what it
+  // is said of, last of all, and says it unchanged however many are borne — the
+  // locution is invariable, and there is nothing here to agree with anything.
+  overAll: (bearing) => `${bearing} ${FrenchOverAll.value}`,
   conjunction: CONJUNCTION,
   // "Parti, au premier d'azur à trois fleurs de lys d'or, au second d'hermine":
   // the rank is written where the unranked form could not say what a part bears.

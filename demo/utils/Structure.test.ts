@@ -247,6 +247,24 @@ describe('structureIn', () => {
     ]);
   });
 
+  test('sets the word for laying over all under what it was said of', () => {
+    expect(drawn(of("D'argent à la fasce de gueules brochant", Languages.fr))).toBe(
+      ['argent', 'fasce', '  brochant sur le tout', '  gueules', ''].join('\n')
+    );
+    expect(ranks(of('Argent over all a fess gules', Languages.en))).toEqual([
+      'tincture',
+      'ordinary',
+      'over all',
+      'tincture',
+    ]);
+  });
+
+  test('draws no arms under it, the word saying nothing a single figure can show', () => {
+    const laid = of('Argent over all a fess gules', Languages.en);
+    expect(laid[1].children[0].word).toBe('over all');
+    expect(laid[1].children[0].arms).toBeUndefined();
+  });
+
   test('keeps what a field bears in the order it was laid on', () => {
     // The order says which covers which, so the structure must not sort it.
     expect(drawn(of('Or a bend sable, a bordure gules', Languages.en))).toBe(

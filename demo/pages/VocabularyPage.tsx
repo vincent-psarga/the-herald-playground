@@ -23,6 +23,7 @@ const SEVERAL: Record<Rank, readonly [string, string]> = {
   modifier: ['modifier', 'modifiers'],
   attribute: ['attribute', 'attributes'],
   strewing: ['strewing', 'strewings'],
+  'over all': ['word for what is laid over all', 'words for what is laid over all'],
   field: ['word for the field itself', 'words for the field itself'],
 };
 

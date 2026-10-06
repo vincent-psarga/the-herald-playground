@@ -35,7 +35,8 @@
   tongue is read there yet
 - Read the noun after a rank, which the dictionaries write and the rolls here do
   not: "au 1 quartier", "aux premier et quatrième quartiers"
-- Support for "shortcuts" (eg: "du même", "l'un dans l'autre" [#4](https://github.com/vincent-psarga/the-herald-playground/pull/4), "brochant sur le tout")
+- Support for "shortcuts" (eg: "du même", "l'un dans l'autre" [#4](https://github.com/vincent-psarga/the-herald-playground/pull/4))
+- Let "brochant" name what it covers ("brochant sur le coupé", "brochant sur le burelé"), which needs a blazon able to point at something it has already named
 - Read the postures of a beast (passant, couchant, contourné, issant), the lion
   being rampant and nothing else today
 - Grow the attributes: the words English keeps beside stoned (gemmed, jewelled),

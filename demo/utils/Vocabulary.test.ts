@@ -447,6 +447,40 @@ describe('the words that say more than one drawing can', () => {
     expect(leadingTo(word(french, 'billette'), 'Borne in number')).toEqual([undefined, undefined]);
   });
 
+  test('shows what is laid over all doing the one thing the order cannot', () => {
+    // The arms above show the word where the armorials write it, which is of the
+    // band named last — and there it says what the order says anyway. So the
+    // pair beneath shows the band named first, once with the word and once
+    // without, which is the whole of what the word buys.
+    expect(word(french, 'brochant sur le tout').typed).toBe(
+      "D'argent à trois billettes de sable, à la fasce de gueules brochant sur le tout."
+    );
+    expect(word(english, 'over all').typed).toBe(
+      'Argent three billets sable, over all a fess gules.'
+    );
+    expect(asked(word(french, 'brochant sur le tout'))).toEqual(['Laid otherwise']);
+    expect(labelled(word(english, 'over all'), 'Laid otherwise')).toEqual([
+      'Over what follows it',
+      'Without it',
+    ]);
+    expect(blazoned(word(french, 'brochant sur le tout'), 'Laid otherwise')).toEqual([
+      "D'argent à la fasce de gueules brochant sur le tout, à trois billettes de sable.",
+      "D'argent à la fasce de gueules, à trois billettes de sable.",
+    ]);
+  });
+
+  test('sends the word for laying over all to the other tongue\u2019s own', () => {
+    expect(word(french, 'brochant sur le tout').otherTongue.map(({ word }) => word)).toEqual([
+      'over all',
+    ]);
+    expect(word(english, 'over all').otherTongue.map(({ word }) => word)).toEqual([
+      'brochant sur le tout',
+    ]);
+    // The participle alone is a writing of the phrase and not a word of its own,
+    // so a reader who met it in an armorial is shown the one entry.
+    expect(word(french, 'brochant').word).toBe('brochant sur le tout');
+  });
+
   test('shows a modifier on the charges that take it, having no figure of its own', () => {
     // Every charge it is written of stands under it, so that which charges those
     // are is said where they are shown and nowhere twice.
