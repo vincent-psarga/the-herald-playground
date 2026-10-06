@@ -1,3 +1,4 @@
+import { Attribute } from '../../models/Attributes';
 import { ChargeType } from '../../models/Charge';
 import { Modifier } from '../../models/Modifier';
 import { COLOURS, METALS, Metals, PELTS } from '../../models/Tinctures';
@@ -23,11 +24,32 @@ import { FrenchWord } from './FrenchWord';
 // therefore always be told. Either may be cut from a fur, an armorial being free
 // to blazon "un besant d'hermine".
 export const FrenchChargeType: Translation<ChargeType, FrenchWord> = {
-  [ChargeType.annulet]: new FrenchWord('annelet', {
-    value:
-      'A plain ring. What it encloses is the field showing through, not its own tincture, which is what makes it an annelet rather than a besant.',
-    sources: [blasonArmoiries('Annelet')],
-  }),
+  // The ring is named twice, and the second name is the ring with something in
+  // it: "lorsque ce meuble est représenté avec un chaton, il se nomme anneau".
+  // So an anneau says the stone by being written, as a besant says gold — and
+  // what colour the stone is drawn is still owed after the name, which no besant
+  // ever is.
+  //
+  // Parker files the two together — the annulet is "(fr. Anneau and Anelet)" —
+  // and the French dictionary does not, so the French page keeps them apart.
+  // Bague is left out: the dictionary calls it "rare en armoiries" and glosses it
+  // a gold ring for the finger, which is a figure rather than a third name.
+  [ChargeType.annulet]: [
+    new FrenchWord('annelet', {
+      value:
+        'A plain ring. What it encloses is the field showing through, not its own tincture. Shown with a stone in it, the figure is an anneau.',
+      sources: [blasonArmoiries('Annelet')],
+    }),
+    new FrenchWord(
+      'anneau',
+      {
+        value:
+          'A ring with a chaton — the claw setting a stone sits in — and the stone in it, standing on the hoop in chief. The stone takes the hoop’s tincture where the blazon names it none.',
+        sources: [blasonArmoiries('Annelet')],
+      },
+      { plural: 'anneaux', defaultAttribute: Attribute.stoned }
+    ),
+  ],
   [ChargeType.billet]: new FrenchWord(
     'billette',
     {
@@ -168,6 +190,14 @@ export const FrenchChargeType: Translation<ChargeType, FrenchWord> = {
     },
     { isFeminine: true }
   ),
+  // Le lion, masculine and spelled as English spells it. The dictionary names a
+  // dozen postures beside the rampant one — contourné, naissant, issant — and
+  // none of them is read here, so the word is the beast in its own posture.
+  [ChargeType.lion]: new FrenchWord('lion', {
+    value:
+      'A lion rearing on its hind paws, head in profile, tail turned up over the back with the tuft falling outward — the position the dictionaries call natural, and the one a blazon that names none means. Its griffes and its langue may be painted apart from the rest of it.',
+    sources: [blasonArmoiries('Lion')],
+  }),
   [ChargeType.crescent]: new FrenchWord('croissant', {
     value:
       'A half-moon with the horns uppermost, which is where a croissant’s horns stand unless a blazon says otherwise — and no blazon can say otherwise here, the increscent and the decrescent being turnings this does not read.',

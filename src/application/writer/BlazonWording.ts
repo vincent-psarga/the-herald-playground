@@ -1,3 +1,4 @@
+import { Attribute, Attributed, paintedIn } from '../../domain/models/Attributes';
 import { Blazon, ChargeOrOrdinary, isCharge, isOrdinary } from '../../domain/models/Blazon';
 import { ChargeType, numberBorne } from '../../domain/models/Charge';
 import { Modifier } from '../../domain/models/Modifier';
@@ -42,6 +43,7 @@ export interface BlazonWording<W extends Word = Word> {
   readonly ordinaries: Translation<OrdinaryType, W>;
   readonly charges: Translation<ChargeType, W>;
   readonly modifiers: Translation<Modifier, W>;
+  readonly attributes: Translation<Attribute, W>;
   /** What the language calls a field sown with each charge, where it has a word. */
   readonly strewings: Strewings<W>;
   /** How the language counts what a field bears several of. */
@@ -77,6 +79,17 @@ export interface BlazonWording<W extends Word = Word> {
    * charge was written with is handed over beside it, and how many are borne.
    */
   readonly modify: (word: W, modifier: W, several: boolean) => string;
+  /**
+   * How the language writes the part of a charge that was painted apart:
+   * "stoned", "chatonné".
+   *
+   * What comes back is the word alone and not the tincture after it, that being
+   * written as any other tincture is — bare in English and under an article in
+   * French. Agreement is what differs, exactly as it does for a modifier, so the
+   * word the charge was written with is handed over beside it, and how many are
+   * borne.
+   */
+  readonly paint: (word: W, attribute: W, several: boolean) => string;
   /**
    * How a field says it is sown with a figure the language has no word of its
    * own for: "semé de billettes" in French, "semy of billets" in English. The
@@ -143,7 +156,105 @@ function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdi
   const tincture =
     word.defaultTincture === one.tincture ? undefined : writeTincture(wording, one.tincture);
   const modifier = modifying(wording, one, word)?.(several);
-  return [bearing, modifier, tincture].filter((part) => part !== undefined).join(' ');
+  // The parts follow the tincture with nothing between, which is how both
+  // sources write them — "Gules, three gem-rings argent stoned azure", "au lion
+  // de sinople armé et lampassé de gueules". Two runs of them are parted by the
+  // mark, there being two tinctures in a row otherwise and no telling which
+  // belongs to which.
+  const parts = painting(wording, one, word, several).join(`${SEPARATOR} `);
+  return [bearing, modifier, tincture, parts === '' ? undefined : parts]
+    .filter((part) => part !== undefined)
+    .join(' ');
+}
+
+/**
+ * The parts of the charge painted apart from the rest, each with its own
+ * tincture, written last of all — which is where the armorials of both tongues
+ * put them: "Gules, three gem-rings argent stoned azure", "au lion d'or armé de
+ * gueules".
+ *
+ * Which word says a part is asked for the charge as well as for the term, as a
+ * modifier's word is: a tongue is free to keep a word apiece for the charges a
+ * part is named on.
+ *
+ * A part the name has already said and that carries no tincture of its own is
+ * written nowhere: a gem-ring has a stone by being a gem-ring, and nothing
+ * follows. It is the tincture that parts this from a modifier — a name says
+ * there is a stone and never what colour it is, so a blazon writing the tincture
+ * after such a name is adding to the name rather than repeating it.
+ *
+ * A part with no tincture that no name says is written out with the charge's
+ * own, which says the same thing in as many words. No vocabulary here leaves one
+ * so: a part the tongue named no word for would be written every time it is
+ * borne, and this is what that would look like.
+ */
+function painting<W extends Word>(
+  wording: BlazonWording<W>,
+  one: ChargeOrOrdinary,
+  named: W,
+  several: boolean
+): readonly string[] {
+  if (!isCharge(one) || one.attributes === undefined) {
+    return [];
+  }
+  const painted = one.attributes.flatMap((attributed) => {
+    const { attribute, tincture } = attributed;
+    if (tincture === undefined && named.defaultAttribute === attribute) {
+      return [];
+    }
+    return [
+      {
+        said: wording.paint(named, wordSaidOf(wording.attributes, attribute, one.type), several),
+        tincture: paintedIn(attributed, one.tincture),
+      },
+    ];
+  });
+  return sharing(painted).map(
+    (run) => `${listed(run.said, wording.conjunction)} ${writeTincture(wording, run.tincture)}`
+  );
+}
+
+/**
+ * The words of one run, said as a list is said: the mark between all but the
+ * last two, and the conjunction before the last.
+ *
+ * Which is how both dictionaries write it — "armé, lampassé et couronné d'or",
+ * "armed, langued, and crowned … gules" — and the conjunction alone where there
+ * are only two of them, "armé et lampassé de gueules".
+ */
+function listed(said: readonly string[], conjunction: string): string {
+  return said.length === 1
+    ? said[0]
+    : `${said.slice(0, -1).join(`${SEPARATOR} `)} ${conjunction} ${said[said.length - 1]}`;
+}
+
+/**
+ * The parts gathered into runs that share a tincture, in the order the blazon
+ * named them.
+ *
+ * Heraldry says the colour once where two parts have it: "armé et lampassé de
+ * gueules", and never "armé de gueules et lampassé de gueules". Only the parts
+ * standing next to each other are gathered, the order being the blazon's own and
+ * worth keeping.
+ */
+function sharing(
+  painted: readonly { readonly said: string; readonly tincture: Tincture }[]
+): readonly { readonly said: readonly string[]; readonly tincture: Tincture }[] {
+  const runs: { said: string[]; tincture: Tincture }[] = [];
+  for (const { said, tincture } of painted) {
+    const last = runs[runs.length - 1];
+    if (last !== undefined && last.tincture === tincture) {
+      last.said.push(said);
+    } else {
+      runs.push({ said: [said], tincture });
+    }
+  }
+  return runs;
+}
+
+/** The parts a charge had painted, which is none for anything but a charge. */
+function partsOf(one: ChargeOrOrdinary): readonly Attribute[] {
+  return isCharge(one) ? (one.attributes ?? []).map(({ attribute }: Attributed) => attribute) : [];
 }
 
 /**
@@ -199,7 +310,7 @@ function named<W extends Word>(
   return isOrdinary(one)
     ? { word: wordIn(wording.ordinaries, one.type, one.tincture), count: borne(one) }
     : {
-        word: wordIn(wording.charges, one.type, one.tincture, one.modifier),
+        word: wordIn(wording.charges, one.type, one.tincture, one.modifier, partsOf(one)),
         count: numberBorne(one),
       };
 }

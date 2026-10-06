@@ -7,6 +7,7 @@ import { crossCouped } from './crossCouped';
 import { fleurDeLis } from './fleurDeLis';
 import { goutte } from './goutte';
 import { larme } from './larme';
+import { lion } from './lion';
 import { lozenge } from './lozenge';
 import { mullet } from './mullet';
 import { roundel } from './roundel';
@@ -29,4 +30,5 @@ export const CHARGES: Record<ChargeType, ChargeFigure> = {
   [ChargeType.crossCouped]: crossCouped,
   [ChargeType.crescent]: crescent,
   [ChargeType.larme]: larme,
+  [ChargeType.lion]: lion,
 };

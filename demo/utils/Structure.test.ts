@@ -95,6 +95,37 @@ describe('structureIn', () => {
     );
   });
 
+  test('sets a part painted apart after the tincture, with the part’s own under it', () => {
+    // The blazon says the hoop is red and then that the stone is gold, so the
+    // tree says it in that order — and the stone's tincture hangs off the word
+    // for the part rather than off the charge, which is what an attribute
+    // carries that a modifier does not.
+    expect(drawn(of("D'argent à l'annelet de gueules chatonné d'or", Languages.fr))).toBe(
+      ['argent', 'anneau', '  gueules', '  chatonné', '    or', ''].join('\n')
+    );
+    expect(ranks(of("D'argent à l'annelet de gueules chatonné d'or", Languages.fr))).toEqual([
+      'tincture',
+      'charge',
+      'tincture',
+      'attribute',
+      'tincture',
+    ]);
+  });
+
+  test('names the charge as the writer names it once a part is painted', () => {
+    expect(drawn(of('Argent a ring gules stoned or', Languages.en))).toBe(
+      ['argent', 'gem-ring', '  gules', '  stoned', '    or', ''].join('\n')
+    );
+  });
+
+  test('says nothing of a part the name has already said and no tincture was given', () => {
+    // A gem-ring has a stone by being a gem-ring, and the blazon names no colour
+    // for it — so nothing stands under the charge repeating what the name means.
+    expect(drawn(of('Argent a gem-ring gules', Languages.en))).toBe(
+      ['argent', 'gem-ring', '  gules', ''].join('\n')
+    );
+  });
+
   test('sets what a field was sown with under the field, under the word for the sowing', () => {
     expect(drawn(of('Argent billetty azure', Languages.en))).toBe(
       ['argent', '  billetty', '    azure', ''].join('\n')
@@ -240,5 +271,20 @@ describe('the arms a word is shown by', () => {
       ],
     });
     expect(found(read, 'billet').arms?.chargesOrOrdinaries?.[0]).toMatchObject({ count: 3 });
+  });
+
+  test('shows a part painted on the very charge it was said of', () => {
+    const read = of('Argent three gem-rings gules stoned or', Languages.en);
+    expect(found(read, 'stoned').arms).toEqual({
+      field: { type: FieldType.plain, tincture: Metals.argent },
+      chargesOrOrdinaries: [
+        {
+          type: 'Charge.annulet',
+          tincture: Colours.gules,
+          attributes: [{ attribute: 'Attribute.stoned', tincture: Metals.or }],
+        },
+      ],
+    });
+    expect(found(read, 'gem-ring').arms?.chargesOrOrdinaries?.[0]).toMatchObject({ count: 3 });
   });
 });

@@ -71,6 +71,10 @@ export const FrenchStrewings: Strewings<FrenchWord> = {
   // one is sown in as many words like the rest.
   [ChargeType.crossCouped]: undefined,
   [ChargeType.crescent]: undefined,
+  // Neither tongue names a field sown with lions, the beast being borne rather
+  // than sown: a shield covered in them would be blazoned semy of lions in as
+  // many words, and no armorial here writes even that.
+  [ChargeType.lion]: undefined,
   [ChargeType.fleurDeLis]: undefined,
 };
 

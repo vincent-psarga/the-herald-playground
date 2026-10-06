@@ -40,11 +40,13 @@ const HOLE = 0.7;
 export const mullet: ChargeFigure = charge(
   ({ x, y, size }) => star(x, y, Math.round(size / 2), RAYS),
   {
-    [Modifier.voided]: ({ x, y, size }) =>
-      hollowStar(x, y, Math.round(size / 2), RAYS, Math.round(size * BAND)),
-    [Modifier.pierced]: ({ x, y, size }) => {
-      const radius = Math.round(size / 2);
-      return piercedStar(x, y, radius, RAYS, Math.round(roomInStar(radius, RAYS) * HOLE));
+    modified: {
+      [Modifier.voided]: ({ x, y, size }) =>
+        hollowStar(x, y, Math.round(size / 2), RAYS, Math.round(size * BAND)),
+      [Modifier.pierced]: ({ x, y, size }) => {
+        const radius = Math.round(size / 2);
+        return piercedStar(x, y, radius, RAYS, Math.round(roomInStar(radius, RAYS) * HOLE));
+      },
     },
   }
 );

@@ -10,7 +10,13 @@ import {
 import { BlazonParseError, TextPosition } from '../../domain/errors/parsing/BlazonParseError';
 import { InvalidTincture } from '../../domain/errors/parsing/InvalidTincture';
 import { RepeatedOrdinary } from '../../domain/errors/parsing/RepeatedOrdinary';
-import { ChargeType, allowsModifier, isChargeType } from '../../domain/models/Charge';
+import { Attribute } from '../../domain/models/Attributes';
+import {
+  ChargeType,
+  allowsAttribute,
+  allowsModifier,
+  isChargeType,
+} from '../../domain/models/Charge';
 import { Modifier } from '../../domain/models/Modifier';
 import {
   OrdinaryDefinitions,
@@ -59,6 +65,16 @@ export interface Borne<T extends string, W extends Word = Word> {
    * hands on one that accepts the word as it stands.
    */
   readonly modifier?: Parser<TokenKind, TermWord<Modifier> | undefined>;
+  /**
+   * What the blazon may say has been painted apart from the rest of it, where
+   * the language lets a blazon say anything: "stoned", "chatonné".
+   *
+   * A rule for the same reason the modifier is one, and read the same way: the
+   * word agrees with whatever the phrase called the charge, and only the phrase
+   * knows what it called it. What differs is what follows — a part is owed a
+   * tincture of its own, where a modifier is owed nothing.
+   */
+  readonly attribute?: Parser<TokenKind, TermWord<Attribute> | undefined>;
 }
 
 /**
@@ -177,18 +193,24 @@ export type BorneType = OrdinaryType | ChargeType;
 export type BorneTerm = Borne<BorneType>;
 
 /**
- * Something borne, told what may be said of it after its tincture.
+ * Something borne, told what may be said of it once it has been named: what was
+ * done to the figure, and which of its parts was painted apart.
  *
- * The rule is built from the word, because a tongue that agrees with its words
- * cannot say which writings are right until it knows what they will stand
+ * Both rules are built from the word, because a tongue that agrees with its
+ * words cannot say which writings are right until it knows what they will stand
  * beside — and built once the phrase has been read, because the phrase is the
  * only thing that knows how it introduced the word.
  */
-export function modifiable<T extends string, W extends Word>(
+export function qualifiable<T extends string, W extends Word>(
   borne: Parser<TokenKind, Borne<T, W>>,
-  modifier: (word: W) => Parser<TokenKind, TermWord<Modifier> | undefined>
+  modifier: (word: W) => Parser<TokenKind, TermWord<Modifier> | undefined>,
+  attribute: (word: W) => Parser<TokenKind, TermWord<Attribute> | undefined>
 ): Parser<TokenKind, Borne<T, W>> {
-  return apply(borne, (one): Borne<T, W> => ({ ...one, modifier: modifier(one.word) }));
+  return apply(borne, (one): Borne<T, W> => ({
+    ...one,
+    modifier: modifier(one.word),
+    attribute: attribute(one.word),
+  }));
 }
 
 /**
@@ -201,6 +223,17 @@ export function modifiable<T extends string, W extends Word>(
  */
 export function bornUnder(type: BorneType, modifier: Modifier): boolean {
   return isChargeType(type) && allowsModifier(type, modifier);
+}
+
+/**
+ * Whether what is borne has the part a blazon wants painted.
+ *
+ * Only a charge has parts, and only the ones its own definition declares. A band
+ * has none: a fess is a band of one tincture from edge to edge, and nothing in
+ * it is named apart from the rest.
+ */
+export function bearsPart(type: BorneType, attribute: Attribute): boolean {
+  return isChargeType(type) && allowsAttribute(type, attribute);
 }
 
 /** The two vocabularies a field's bearings are named from, as one. */

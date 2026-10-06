@@ -1,5 +1,6 @@
 import { FrenchDivisionType } from '../../domain/translations/fr/Divisions';
 import { FrenchFurType } from '../../domain/translations/fr/Furs';
+import { FrenchAttributes } from '../../domain/translations/fr/Attributes';
 import { FrenchChargeType } from '../../domain/translations/fr/Charges';
 import { FrenchModifiers } from '../../domain/translations/fr/Modifiers';
 import { FrenchStrewings, SOWN } from '../../domain/translations/fr/Strewings';
@@ -19,6 +20,7 @@ export const FrenchBlazonWording: BlazonWording<FrenchWord> = {
   ordinaries: FrenchOrdinaryType,
   charges: FrenchChargeType,
   modifiers: FrenchModifiers,
+  attributes: FrenchAttributes,
   strewings: FrenchStrewings,
   numbers: FrenchNumbers,
   introduce: withArticle,
@@ -28,6 +30,10 @@ export const FrenchBlazonWording: BlazonWording<FrenchWord> = {
   // participle agrees with the word the charge comes back in, whichever gender
   // the blazon that was read had chosen for it.
   modify: agreeing,
+  // "à l'anneau d'or chatonné d'argent": a participle like the modifier, agreeing
+  // with the word the charge comes back in, and the part's tincture after it
+  // under the same article any tincture takes.
+  paint: agreeing,
   // "semé de billettes", "semé d'annelets": the same "de" a tincture is
   // introduced by, elided on the word's own terms.
   strew: (word) => `${SOWN.value} ${sownIn(word)}`,

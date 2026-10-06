@@ -3,7 +3,14 @@ import { FrenchBlazonWording } from '../../src/application/french/FrenchBlazonWo
 import { sownIn } from '../../src/application/french/FrenchGrammar';
 import { BlazonWording, writeBlazon } from '../../src/application/writer/BlazonWording';
 import { Blazon, ChargeOrOrdinary } from '../../src/domain/models/Blazon';
-import { ChargeType, allowsModifier, modifiersOf } from '../../src/domain/models/Charge';
+import { Attribute, Attributed } from '../../src/domain/models/Attributes';
+import {
+  ChargeType,
+  allowsAttribute,
+  allowsModifier,
+  attributesOf,
+  modifiersOf,
+} from '../../src/domain/models/Charge';
 import { Modifier } from '../../src/domain/models/Modifier';
 import {
   DivisionType,
@@ -24,6 +31,7 @@ import { SOWN as FrenchSown } from '../../src/domain/translations/fr/Strewings';
 import { Strewings } from '../../src/domain/translations/Strewings';
 import {
   Translation,
+  wordIn,
   wordOf,
   wordSaidOf,
   wordsOf,
@@ -63,6 +71,7 @@ export type Ranked =
   | { readonly rank: 'ordinary'; readonly term: OrdinaryType }
   | { readonly rank: 'charge'; readonly term: ChargeType }
   | { readonly rank: 'modifier'; readonly term: Modifier }
+  | { readonly rank: 'attribute'; readonly term: Attribute }
   | { readonly rank: 'strewing'; readonly term: ChargeType }
   | { readonly rank: 'field'; readonly term: typeof PLAIN_TERM | typeof SOWN_TERM };
 
@@ -158,6 +167,12 @@ export interface VocabularyEntry {
 const METAL = Metals.argent;
 const COLOUR = Colours.gules;
 
+// A part of a charge is shown in a third tincture, being neither the charge's
+// own nor the field's: a gem-ring's stone rests on the hoop and stands proud of
+// it, so it lies partly on the charge and partly on the field and must be told
+// apart from both.
+const PART = Colours.azure;
+
 // The number of pieces a varied field is drawn in where its term is understood
 // to have none.
 const PIECES = 8;
@@ -185,6 +200,17 @@ function bearingModifier(modifier: Modifier): readonly ChargeType[] {
 }
 
 /**
+ * The charges an attribute may be painted on, in the order the model declares
+ * them.
+ *
+ * Asked of the model as a modifier's charges are, and for the same reason: a
+ * charge that stops having the part stops being shown under the word for it.
+ */
+function bearingAttribute(attribute: Attribute): readonly ChargeType[] {
+  return CHARGE_TYPES.filter((type) => allowsAttribute(type, attribute));
+}
+
+/**
  * The charges one word of a modifier is shown on: those that take the modifier
  * and that this very word is what the writer says it with.
  *
@@ -206,6 +232,34 @@ function saidBy<W extends Word>(
 ): readonly ChargeType[] {
   const borne = bearingModifier(modifier);
   const won = borne.filter((type) => wordSaidOf(wording.modifiers, modifier, type) === word);
+  return won.length === 0 ? borne : won;
+}
+
+/**
+ * The charge word a blazon that paints a part comes back in.
+ *
+ * Heraldry names some of the figures with a part painted outright — a ring with
+ * a stone in it is a gem-ring — so the arms that show the part say that name and
+ * not the plain one, and a label reading otherwise would be naming a word the
+ * blazon beneath it never writes.
+ */
+function namedWith<W extends Word>(
+  wording: BlazonWording<W>,
+  type: ChargeType,
+  attribute: Attribute
+): W {
+  const plain = wordOf(wording.charges, type);
+  return wordIn(wording.charges, type, borneIn(plain), undefined, [attribute]);
+}
+
+/** The same question asked of a word that names a part rather than a modifier. */
+function paintedBy<W extends Word>(
+  wording: BlazonWording<W>,
+  attribute: Attribute,
+  word: W
+): readonly ChargeType[] {
+  const borne = bearingAttribute(attribute);
+  const won = borne.filter((type) => wordSaidOf(wording.attributes, attribute, type) === word);
   return won.length === 0 ? borne : won;
 }
 
@@ -266,6 +320,7 @@ function sensesOf<W extends Word>(tongue: Tongue<W>): readonly Sense<W>[] {
     ...spelled('ordinary', wording.ordinaries),
     ...spelled('charge', wording.charges),
     ...spelled('modifier', wording.modifiers),
+    ...spelled('attribute', wording.attributes),
     ...strewn(wording.strewings),
     ...(tongue.plain === undefined
       ? []
@@ -335,6 +390,20 @@ function modified(word: Word): { modifier?: Modifier } {
   return word.defaultModifier === undefined ? {} : { modifier: word.defaultModifier };
 }
 
+/**
+ * The part the word says the figure has, where it says one, with no tincture of
+ * its own.
+ *
+ * A gem-ring has a stone by being a gem-ring and says nothing of its colour, so
+ * the arms that show the word show a stone in the hoop's own tincture — which is
+ * the blazon a reader would type, "a gem-ring gules" and nothing after it.
+ */
+function painted(word: Word): { attributes?: readonly Attributed[] } {
+  return word.defaultAttribute === undefined
+    ? {}
+    : { attributes: [{ attribute: word.defaultAttribute }] };
+}
+
 /** The field a tincture is shown against: metal on colour, colour on metal. */
 function against(tincture: Tincture): Tincture {
   return (COLOURS as readonly Tincture[]).includes(tincture) ? METAL : COLOUR;
@@ -381,7 +450,9 @@ function armsOf<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W): Bl
     case 'charge':
       return {
         field: { type: FieldType.plain, tincture: against(borne) },
-        chargesOrOrdinaries: [{ type: sense.term, tincture: borne, ...modified(word) }],
+        chargesOrOrdinaries: [
+          { type: sense.term, tincture: borne, ...modified(word), ...painted(word) },
+        ],
       };
     case 'modifier': {
       // Shown on the first charge that will take it, and in whatever tincture
@@ -394,6 +465,21 @@ function armsOf<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W): Bl
       return {
         field: { type: FieldType.plain, tincture: against(shown) },
         chargesOrOrdinaries: [{ type, tincture: shown, modifier }],
+      };
+    }
+    case 'attribute': {
+      // Shown on the first charge that has the part, painted in a tincture of
+      // its own: a word for a part names no figure and no tincture, so
+      // everything about the arms but the part comes from the charge it is shown
+      // on.
+      const attribute = sense.term;
+      const type = paintedBy(tongue.wording, attribute, word)[0] ?? CHARGE_TYPES[0];
+      const shown = borneIn(namedWith(tongue.wording, type, attribute));
+      return {
+        field: { type: FieldType.plain, tincture: against(shown) },
+        chargesOrOrdinaries: [
+          { type, tincture: shown, attributes: [{ attribute, tincture: PART }] },
+        ],
       };
     }
     case 'strewing':
@@ -445,6 +531,8 @@ function insisting<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W):
       return { ...wording, charges: { ...wording.charges, ...only } };
     case 'modifier':
       return { ...wording, modifiers: { ...wording.modifiers, ...only } };
+    case 'attribute':
+      return { ...wording, attributes: { ...wording.attributes, ...only } };
     case 'strewing':
       return { ...wording, strewings: { ...wording.strewings, ...only } };
     case 'field':
@@ -533,6 +621,21 @@ const MODIFIER_NOTE: Partial<Record<Languages, (word: Word) => string>> = {
 };
 
 /**
+ * What a tongue asks of a word that names a part, beyond what the word says.
+ *
+ * The agreement French asks of a modifier, asked here for the same reason and in
+ * the same words — both are participles standing after the charge. What differs
+ * is the tincture, which every such word is owed in either tongue, so that half
+ * is said to both readers.
+ */
+const ATTRIBUTE_NOTE: Record<Languages, (word: Word) => string> = {
+  [Languages.fr]: (word) =>
+    `Said of a charge after its tincture, and owed a tincture of its own: it names the part rather than the colour. It agrees with the charge in gender and in number — ${writings(word)} — and agrees with what the blazon called the charge. A charge that has no such part refuses it by name.`,
+  [Languages.en]: () =>
+    'Said of a charge after its tincture, and owed a tincture of its own: it names the part rather than the colour. A charge that has no such part refuses it by name.',
+};
+
+/**
  * The ways a word is written to agree with what it qualifies, read off the word
  * rather than written down beside it.
  *
@@ -559,6 +662,8 @@ function noteOn<W extends Word>(sense: Sense<W>, word: W, language: Languages): 
       return FURRED_NOTE;
     case 'modifier':
       return MODIFIER_NOTE[language]?.(word);
+    case 'attribute':
+      return ATTRIBUTE_NOTE[language](word);
     default:
       return undefined;
   }
@@ -626,9 +731,10 @@ function otherwise<W extends Word>(
     // is a blazon the model cannot hold, and a page that wrote it would be
     // drawing plain lozenges under the word for the voided one.
     const said = modified(word).modifier;
+    const has = painted(word).attributes;
     return [
-      inNumber({ type, tincture: borne, ...modified(word) }),
-      ...(said === undefined
+      inNumber({ type, tincture: borne, ...modified(word), ...painted(word) }),
+      ...(said === undefined && has === undefined
         ? [
             {
               heading: 'Sown',
@@ -658,7 +764,59 @@ function otherwise<W extends Word>(
               }),
             },
           ]),
+      // Each part of the figure the blazon may paint on its own, painted: a
+      // reader who has never met the word learns more from the stone standing on
+      // the hoop than from being told there is one.
+      ...(attributesOf(type).length === 0
+        ? []
+        : [
+            {
+              heading: 'Painted apart',
+              entries: attributesOf(type).map((attribute) => {
+                const said = wordSaidOf(tongue.wording.attributes, attribute, type);
+                return say(
+                  {
+                    field,
+                    chargesOrOrdinaries: [
+                      { type, tincture: borne, attributes: [{ attribute, tincture: PART }] },
+                    ],
+                  },
+                  capitalise(tongue.wording.paint(word, said, false)),
+                  whereabouts('attribute', said)
+                );
+              }),
+            },
+          ]),
     ];
+  }
+
+  if (sense.rank === 'attribute') {
+    // Every charge the part is painted on, drawn with it: a word for a part is
+    // not a thing to be drawn on its own, so what it paints is the whole of what
+    // a page can show.
+    const attribute = sense.term;
+    const charges = paintedBy(tongue.wording, attribute, word);
+    return charges.length === 0
+      ? []
+      : [
+          {
+            heading: 'Said of',
+            entries: charges.map((type) => {
+              const named = namedWith(tongue.wording, type, attribute);
+              const shown = borneIn(named);
+              return say(
+                {
+                  field: { type: FieldType.plain, tincture: against(shown) },
+                  chargesOrOrdinaries: [
+                    { type, tincture: shown, attributes: [{ attribute, tincture: PART }] },
+                  ],
+                },
+                capitalise(named.value),
+                whereabouts('charge', named)
+              );
+            }),
+          },
+        ];
   }
 
   if (sense.rank === 'modifier') {
@@ -729,12 +887,21 @@ function otherwise<W extends Word>(
  * macle, and neither is the losange. Where the other tongue named no such figure
  * the plain names answer instead — English has no word for the pierced star, so
  * the molette leads to the mullet, which is as near as English comes.
+ *
+ * A part the name says is settled the same way and at the same time: a gem-ring
+ * is an anneau and an annulet is an annelet, neither reaching the other.
  */
 function covering(word: Word, candidates: readonly Word[]): readonly Word[] {
-  const meaning = candidates.filter((candidate) => candidate.means(word.defaultModifier));
+  const parts = word.defaultAttribute === undefined ? [] : [word.defaultAttribute];
+  const meaning = candidates.filter(
+    (candidate) => candidate.means(word.defaultModifier) && candidate.shows(parts)
+  );
   const saying =
     meaning.length === 0
-      ? candidates.filter((candidate) => candidate.defaultModifier === undefined)
+      ? candidates.filter(
+          (candidate) =>
+            candidate.defaultModifier === undefined && candidate.defaultAttribute === undefined
+        )
       : meaning;
   const chosen = new Set<Word>();
   const led =
