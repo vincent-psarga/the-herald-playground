@@ -41,6 +41,10 @@ export const EnglishStrewings: Strewings = {
   // bloods and pitches that nothing here reads. So a sown goutte is sown in as
   // many words, where "gutty argent" would be a form no armorial writes.
   [ChargeType.goutte]: undefined,
+  // English names no strewing of tears, having no name for the figure itself:
+  // gutty is the drop's word, and names a liquid where this would need a
+  // tincture. Sown in as many words, as the drop is.
+  [ChargeType.larme]: undefined,
   [ChargeType.mullet]: undefined,
   // The arms of France before they were reduced to three, and the one strewing
   // English names after the figure rather than after an adjective made of it.
