@@ -1186,7 +1186,7 @@ export const TableRondeArmorial: Armorial = {
     {
       name: 'Le Valet de Gluie',
       slug: 'le-valet-de-gluie',
-      blazon: "De sable à la bordure engrelée d'or.",
+      blazon: "De sable à la bordure engrêlée d'or.",
       image:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Blason_imaginaire_Varlet_de_Gluyne.svg/120px-Blason_imaginaire_Varlet_de_Gluyne.svg.png?utm_source=fr.wikipedia.org&utm_campaign=parser&utm_content=thumbnail',
     },

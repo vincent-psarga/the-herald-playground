@@ -206,8 +206,12 @@ function borneBranch<W extends Word>(
   one: ChargeOrOrdinary
 ): Branch {
   const band = isOrdinary(one);
+  // Asked for what was done to it as well as for its tincture, exactly as the
+  // writer asks it: the question is the same of a band and of a charge, and the
+  // day a tongue names a modified band in one word that word is what the blazon
+  // carries and so what this line of it should show.
   const word = band
-    ? wordIn(wording.ordinaries, one.type, one.tincture)
+    ? wordIn(wording.ordinaries, one.type, one.tincture, one.modifier)
     : wordIn(wording.charges, one.type, one.tincture, one.modifier, partsOf(one));
   const count = band ? borne(one) : numberBorne(one);
   return {
@@ -218,7 +222,7 @@ function borneBranch<W extends Word>(
     // blazon bears it and under whatever was done to it.
     arms: { field: bare(field), chargesOrOrdinaries: [one] },
     children: [
-      ...(band || one.modifier === undefined || word.means(one.modifier)
+      ...(one.modifier === undefined || word.means(one.modifier)
         ? []
         : [
             {
@@ -227,16 +231,33 @@ function borneBranch<W extends Word>(
               /*
                * The figure under it, borne once. A modifier is not a thing to be
                * drawn on its own — there is no picture of "voided" — so what it
-               * does to the very charge it was said of is the whole of what can
-               * be shown, and the count is left to the charge above.
+               * does to the very charge or band it was said of is the whole of
+               * what can be shown, and the count is left to the figure above.
+               *
+               * Painted as the blazon painted it, where it painted the line: the
+               * tincture is what the modifier was said in, so the arms under it
+               * are the ones that show it being said.
                */
               arms: {
                 field: bare(field),
                 chargesOrOrdinaries: [
-                  { type: one.type, tincture: one.tincture, modifier: one.modifier },
+                  {
+                    type: one.type,
+                    tincture: one.tincture,
+                    modifier: one.modifier,
+                    ...(band && one.modifierTincture !== undefined
+                      ? { modifierTincture: one.modifierTincture }
+                      : {}),
+                  },
                 ],
               },
-              children: [],
+              // The tincture the line was painted in hangs under the modifier
+              // and not under the band, which is what the sentence says: it is
+              // the line that carries it, and the band has one of its own.
+              children:
+                band && one.modifierTincture !== undefined
+                  ? [tinctureBranch(wording, one.modifierTincture)]
+                  : [],
             },
           ]),
       ...tinctureSaid(wording, word, one.tincture),

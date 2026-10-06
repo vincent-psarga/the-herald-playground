@@ -16,7 +16,7 @@ export { FrenchBlazonWriter } from './application/writer/FrenchBlazonWriter';
 
 export { Languages, TONGUES } from './domain/models/Languages';
 export { isCharge, isOrdinary } from './domain/models/Blazon';
-export type { Blazon, ChargeOrOrdinary } from './domain/models/Blazon';
+export type { Blazon, BorneType, ChargeOrOrdinary } from './domain/models/Blazon';
 export type { Armorial, ArmorialEntry } from './domain/models/Armorial';
 export type { Source } from './domain/models/Source';
 export { readArmorial } from './application/armorial/ArmorialReading';
@@ -58,8 +58,10 @@ export {
   OrdinaryDefinitions,
   OrdinaryType,
   SEVERAL,
+  admitsModifier,
   borne,
   isOrdinaryType,
+  modifiersOn,
 } from './domain/models/Ordinary';
 export {
   ChargeDefinition,
@@ -73,7 +75,7 @@ export {
   numberBorne,
 } from './domain/models/Charge';
 export type { Charge } from './domain/models/Charge';
-export { Modifier } from './domain/models/Modifier';
+export { LINES, Modifier, takesTincture } from './domain/models/Modifier';
 export { Attribute, namesPart, paintedIn } from './domain/models/Attributes';
 export type { Attributed } from './domain/models/Attributes';
 
@@ -93,6 +95,7 @@ export { WrongOrdinaryArticle } from './domain/errors/parsing/WrongOrdinaryArtic
 export { WrongModifier } from './domain/errors/parsing/WrongModifier';
 export { WrongAttribute } from './domain/errors/parsing/WrongAttribute';
 export { RepeatedAttribute } from './domain/errors/parsing/RepeatedAttribute';
+export { UntincturedModifier } from './domain/errors/parsing/UntincturedModifier';
 export { WrongAgreement } from './domain/errors/parsing/WrongAgreement';
 export type { Ordinary } from './domain/models/Ordinary';
 export {

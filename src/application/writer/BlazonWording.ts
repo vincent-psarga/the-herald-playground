@@ -69,14 +69,14 @@ export interface BlazonWording<W extends Word = Word> {
    */
   readonly vary: (word: W, tinctures: string, pieces: string, usual: boolean) => string;
   /**
-   * How the language writes what was done to a charge, once the charge and its
-   * tincture have been written: "voided", "évidée".
+   * How the language writes what was done to a band or a charge, once it and its
+   * tincture have been written: "voided", "évidée", "dentelée".
    *
    * What comes back is the modifier alone and not the phrase around it, both
    * tongues writing it last and writing nothing between. What differs is
-   * agreement: French agrees the word with the one the charge comes back in, in
+   * agreement: French agrees the word with the one the figure comes back in, in
    * gender and in number, and English writes it as it stands. So the word the
-   * charge was written with is handed over beside it, and how many are borne.
+   * figure was named with is handed over beside it, and how many are borne.
    */
   readonly modify: (word: W, modifier: W, several: boolean) => string;
   /**
@@ -144,10 +144,16 @@ export function writeBlazon<W extends Word>(wording: BlazonWording<W>, blazon: B
  * be saying the same thing twice. So "d'azur au besant d'or" comes back as
  * "D'azur au besant", which is what the blazon was trying to be.
  *
- * What was done to the charge stands between the name and the tincture, which is
- * where the armorials of both tongues put it: blazon takes its word order from
- * French, where what qualifies a thing follows the thing and the tincture comes
- * last of all.
+ * What was done to it stands between the name and the tincture, which is where
+ * the armorials of both tongues put it: blazon takes its word order from French,
+ * where what qualifies a thing follows the thing and the tincture comes last of
+ * all. A band answers here exactly as a charge does — "a fess indented or", "à
+ * la fasce dentelée d'or" — the two differing in what may be said and never in
+ * where it is written.
+ *
+ * Unless the line carries a tincture of its own, which is the one thing that
+ * moves it: there are then two tinctures to write, and the modifier goes between
+ * them so that each stands beside what it belongs to.
  */
 function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdinary): string {
   const { word, count } = named(wording, one);
@@ -156,15 +162,23 @@ function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdi
   const tincture =
     word.defaultTincture === one.tincture ? undefined : writeTincture(wording, one.tincture);
   const modifier = modifying(wording, one, word)?.(several);
+  const line = painting(wording, one);
   // The parts follow the tincture with nothing between, which is how both
   // sources write them — "Gules, three gem-rings argent stoned azure", "au lion
   // de sinople armé et lampassé de gueules". Two runs of them are parted by the
   // mark, there being two tinctures in a row otherwise and no telling which
   // belongs to which.
-  const parts = painting(wording, one, word, several).join(`${SEPARATOR} `);
-  return [bearing, modifier, tincture, parts === '' ? undefined : parts]
-    .filter((part) => part !== undefined)
-    .join(' ');
+  const parts = attributing(wording, one, word, several).join(`${SEPARATOR} `);
+  // Where the line carries a tincture of its own, the band's own goes first and
+  // the modifier stands between the two. Written the usual way round, the two
+  // tinctures would come one after the other with nothing between them to say
+  // which belonged to which — and a blazon that cannot be read back is not a
+  // blazon. It is the order the armorials use, which is why they can say it at
+  // all: "à la bande de gueules engrêlée de sable". Only a band paints a line
+  // and only a charge has parts, so the two orders never meet.
+  const said =
+    line === undefined ? [bearing, modifier, tincture] : [bearing, tincture, modifier, line];
+  return [...said, parts === '' ? undefined : parts].filter((part) => part !== undefined).join(' ');
 }
 
 /**
@@ -188,7 +202,7 @@ function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdi
  * so: a part the tongue named no word for would be written every time it is
  * borne, and this is what that would look like.
  */
-function painting<W extends Word>(
+function attributing<W extends Word>(
   wording: BlazonWording<W>,
   one: ChargeOrOrdinary,
   named: W,
@@ -258,19 +272,42 @@ function partsOf(one: ChargeOrOrdinary): readonly Attribute[] {
 }
 
 /**
- * What was done to the charge, written as the language writes it — and nothing
- * at all where the blazon said nothing, or where what is borne is a band, which
- * takes none.
+ * The tincture the line is drawn in, where the blazon gave it one of its own,
+ * and nothing at all where it did not.
+ *
+ * Only a band has a line to paint, so only a band is asked. What it comes back
+ * as is a tincture written the way every other tincture is — "de sable",
+ * "sable" — there being nothing about this one that either tongue says
+ * differently.
+ */
+function painting<W extends Word>(
+  wording: BlazonWording<W>,
+  one: ChargeOrOrdinary
+): string | undefined {
+  return isOrdinary(one) && one.modifierTincture !== undefined
+    ? writeTincture(wording, one.modifierTincture)
+    : undefined;
+}
+
+/**
+ * What was done to what is borne, written as the language writes it — and
+ * nothing at all where the blazon said nothing.
  *
  * It is written between the name and the tincture, which is where both tongues
- * put it: "a lozenge voided or", "à la croix vidée de gueules".
+ * put it: "a lozenge voided or", "à la croix vidée de gueules", "à la fasce
+ * dentelée d'or".
  *
- * Which word says it is asked for the charge as well as for the term, a tongue
- * being free to keep a word apiece for the charges it is said of: French voids
- * the star with évidé and everything else with vidé. It is the same question the
- * name itself is chosen by — a gold roundel is a besant — and it is asked here
- * rather than settled by the term, because two words for the one term is a fact
- * about the tongue and not about what was done to the figure.
+ * A band is asked as a charge is. The two take different modifiers — a charge is
+ * voided and a band indented — but that is settled where the term is declared,
+ * and by the time a blazon is being written back the question is only which word
+ * says it.
+ *
+ * Which word that is, is asked for the figure as well as for the term, a tongue
+ * being free to keep a word apiece for what it is said of: French voids the star
+ * with évidé and everything else with vidé. It is the same question the name
+ * itself is chosen by — a gold roundel is a besant — and it is asked here rather
+ * than settled by the term, because two words for the one term is a fact about
+ * the tongue and not about what was done to the figure.
  *
  * Nothing is written at all where the name has already said it. Heraldry gives
  * some of the modified figures a name outright — a lozenge voided is a mascle —
@@ -282,7 +319,7 @@ function modifying<W extends Word>(
   one: ChargeOrOrdinary,
   named: W
 ): ((several: boolean) => string) | undefined {
-  if (!isCharge(one) || one.modifier === undefined || named.means(one.modifier)) {
+  if (one.modifier === undefined || named.means(one.modifier)) {
     return undefined;
   }
   const said = wordSaidOf(wording.modifiers, one.modifier, one.type);
@@ -297,7 +334,11 @@ function modifying<W extends Word>(
  * Which word is asked for the tincture as well as for the term, a vocabulary
  * being free to keep a name apiece for the tinctures a charge is drawn in: the
  * gold roundel is a besant, the red one a torteau, and the one the armorials
- * gave no name to is the roundel it always was.
+ * gave no name to is the roundel it always was. It is asked for what was done as
+ * well, heraldry naming some of the modified figures outright — a lozenge voided
+ * is a mascle. Neither tongue has yet named an indented band in one word, so
+ * both write the two words; the question is put all the same, so the day one is
+ * named the name is written without anything here changing.
  *
  * How many is asked of the model rather than read off the blazon, so that an
  * ordinary borne but once — whatever count it was handed — is written as the one
@@ -308,7 +349,10 @@ function named<W extends Word>(
   one: ChargeOrOrdinary
 ): { readonly word: W; readonly count: number } {
   return isOrdinary(one)
-    ? { word: wordIn(wording.ordinaries, one.type, one.tincture), count: borne(one) }
+    ? {
+        word: wordIn(wording.ordinaries, one.type, one.tincture, one.modifier),
+        count: borne(one),
+      }
     : {
         word: wordIn(wording.charges, one.type, one.tincture, one.modifier, partsOf(one)),
         count: numberBorne(one),
