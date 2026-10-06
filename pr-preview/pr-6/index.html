@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Herald Playground</title>
+    <script>
+      /*
+       * Pages keeps one 404 page for a whole site, and it is the published
+       * demo's. A deep link into a pull request preview is a file Pages has
+       * not got, so it answers with that page: the wrong copy of the app,
+       * under the wrong prefix, which knows none of the addresses it is being
+       * handed. These lines send such an address on to the preview's own copy
+       * and give it back its route once there.
+       *
+       * Nothing else is touched. An address outside a preview is already
+       * answered by the right copy of the app, and says nothing here.
+       */
+      (function () {
+        var location = window.location;
+        var parameters = new URLSearchParams(location.search);
+        var route = parameters.get('p');
+
+        if (route) {
+          parameters.delete('p');
+          var rest = parameters.toString();
+          history.replaceState(
+            null,
+            '',
+            location.pathname + route + (rest ? '?' + rest : '') + location.hash
+          );
+          return;
+        }
+
+        var preview = location.pathname.match(/^\/[^/]+\/pr-preview\/pr-\d+\//);
+        if (preview && location.pathname.length > preview[0].length) {
+          location.replace(
+            preview[0] +
+              '?p=' +
+              encodeURIComponent(location.pathname.slice(preview[0].length)) +
+              location.search.replace('?', '&') +
+              location.hash
+          );
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/the-herald-playground/pr-preview/pr-6/assets/index-BIu5yKsy.js"></script>
+    <link rel="stylesheet" crossorigin href="/the-herald-playground/pr-preview/pr-6/assets/index-CYsYmAKR.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
