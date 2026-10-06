@@ -109,6 +109,17 @@ Supported vocabulary as it stands:
   out of the top of it, where the drop falls straight to the point it ends in — and it is the one
   figure here that English names no word of its own for: Parker files Larmes as nothing but a
   pointer back to his Gouttes, so the French word is read and written in either tongue.
+- **Laid over all (1)** — a band or a charge may be said to lie over everything else the field
+  bears: "brochant sur le tout", "over all a bend gules". The order a blazon names things in
+  already says which covers which, so said of whatever was named last the words repeat it; what
+  they buy is the other case, where what covers is named before what it covers and the order alone
+  would have drawn it underneath. It is no modifier — nothing about the figure changes, only what
+  it is drawn over — and no term, naming nothing, so the model carries it beside what is borne
+  rather than among the vocabularies. The two tongues put it in different places: French writes its
+  participle after the tincture and reads the bare "brochant" as readily as the whole phrase,
+  English writes "over all" in front of the whole bearing. It is written back wherever the blazon
+  said it, redundant or not. What is not read is the phrase that names the one thing covered —
+  "brochant sur le coupé" — which needs a blazon able to point at something already named.
 - **Sown fields** — any charge may be sown over a field of one tincture instead of borne on it:
   "semé de billettes d'or", "semy of billets or". It is the field's own state rather than something
   the field bears, so nothing is counted and a band blazoned after it covers the sowing. Where the
@@ -148,7 +159,7 @@ roadmap toward full blazon. Pages must state what is supported and must not prom
 
 ## Evidence on Hand
 
-- The working library itself: parser, writer and drawer, with 1193 passing tests. Any claim a page makes
+- The working library itself: parser, writer and drawer, with 1859 passing tests. Any claim a page makes
   can be demonstrated live rather than asserted.
 - Tincture shades and hatching marks are taken from Wikipedia's own tables
   (`https://en.wikipedia.org/wiki/Tincture_(heraldry)`, `https://en.wikipedia.org/wiki/Hatching_(heraldry)`),

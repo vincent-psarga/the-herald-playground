@@ -17,7 +17,9 @@ import {
 } from '../../src/domain/models/Field';
 import { borne } from '../../src/domain/models/Ordinary';
 import { Tincture } from '../../src/domain/models/Tinctures';
+import { EnglishOverAll } from '../../src/domain/translations/en/OverAll';
 import { SOWN as EnglishSown } from '../../src/domain/translations/en/Strewings';
+import { FrenchOverAll } from '../../src/domain/translations/fr/OverAll';
 import { SOWN as FrenchSown } from '../../src/domain/translations/fr/Strewings';
 import { strewnIn } from '../../src/domain/translations/Strewings';
 import { wordIn, wordOf, wordSaidOf } from '../../src/domain/translations/Translation';
@@ -80,19 +82,23 @@ function bare(field: Field): Field {
  */
 export function structureIn(language: Languages, blazon: Blazon): readonly Branch[] {
   return language === Languages.fr
-    ? structureOf(FrenchBlazonWording, FrenchSown, blazon)
-    : structureOf(EnglishBlazonWording, EnglishSown[0], blazon);
+    ? structureOf(FrenchBlazonWording, FrenchSown, FrenchOverAll, blazon)
+    : structureOf(EnglishBlazonWording, EnglishSown[0], EnglishOverAll, blazon);
 }
 
 function structureOf<W extends Word>(
   wording: BlazonWording<W>,
   /** The word this tongue sows a figure it has no single word for by. */
   sown: Word,
+  /** The word this tongue lays a thing over everything else by. */
+  overAll: Word,
   blazon: Blazon
 ): readonly Branch[] {
   return [
     fieldBranch(wording, sown, blazon.field),
-    ...(blazon.chargesOrOrdinaries ?? []).map((one) => borneBranch(wording, blazon.field, one)),
+    ...(blazon.chargesOrOrdinaries ?? []).map((one) =>
+      borneBranch(wording, overAll, blazon.field, one)
+    ),
   ];
 }
 
@@ -200,6 +206,8 @@ function semyBranch<W extends Word>(
  */
 function borneBranch<W extends Word>(
   wording: BlazonWording<W>,
+  /** The word this tongue lays a thing over everything else by. */
+  overAll: Word,
   /** The field it is laid on, which is what it is shown laid on. */
   field: Field,
   one: ChargeOrOrdinary
@@ -238,6 +246,21 @@ function borneBranch<W extends Word>(
               children: [],
             },
           ]),
+      ...(one.overAll === true
+        ? [
+            {
+              word: overAll.value,
+              rank: 'over all' as const,
+              /*
+               * No arms under it. What the word says is that this figure covers
+               * the others, and the others are branches of their own: a drawing
+               * of the one thing it was said of would show a figure on a field
+               * and say nothing whatever about what it is over.
+               */
+              children: [],
+            },
+          ]
+        : []),
       ...tinctureSaid(wording, word, one.tincture),
     ],
   };

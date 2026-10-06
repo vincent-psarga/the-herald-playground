@@ -1,4 +1,4 @@
-import { Blazon, ChargeOrOrdinary, isOrdinary } from '../../../domain/models/Blazon';
+import { Blazon, ChargeOrOrdinary, asLaid, isOrdinary } from '../../../domain/models/Blazon';
 import { Charge, numberBorne } from '../../../domain/models/Charge';
 import { Field, Semy, isDivision, isFurred, isVariation } from '../../../domain/models/Field';
 import { borne } from '../../../domain/models/Ordinary';
@@ -29,9 +29,14 @@ import { VARIATIONS } from './vocabulary/coverings/variations';
  * three bends covers where they meet the edge, and blazoned before them is
  * covered by them. A band and a charge answer to the same order: a bend blazoned
  * after a billet is drawn over the billet, and before it is drawn under.
+ *
+ * Save for whatever the blazon laid over all, which goes last whatever place it
+ * was named in. That is the whole of what those words buy: said of the thing
+ * named last they say what the order said already, and said of anything else
+ * they overrule it.
  */
 export function arms(blazon: Blazon): Painter {
-  return over(field(blazon.field), ...(blazon.chargesOrOrdinaries ?? []).map(bearing));
+  return over(field(blazon.field), ...asLaid(blazon.chargesOrOrdinaries ?? []).map(bearing));
 }
 
 /**
