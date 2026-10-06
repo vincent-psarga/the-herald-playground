@@ -9,7 +9,7 @@ import { EnglishOrdinaryType } from '../../domain/translations/en/Ordinaries';
 import { EnglishTinctures } from '../../domain/translations/en/Tinctures';
 import { EnglishVariationType, OF } from '../../domain/translations/en/Variations';
 import { BlazonWording } from '../writer/BlazonWording';
-import { CONJUNCTION, bearing } from './EnglishGrammar';
+import { CONJUNCTION, bearing, ranked } from './EnglishGrammar';
 
 export const EnglishBlazonWording: BlazonWording = {
   tinctures: EnglishTinctures,
@@ -40,5 +40,10 @@ export const EnglishBlazonWording: BlazonWording = {
   // "semy of billets": the English spelling of the participle, though both it
   // and the French one are read.
   strew: (word) => `${SOWN[0].value} ${SOWN_OF} ${word.plural}`,
+  // Parker ranks the quarters of a quartered field and English has no other way
+  // to say what they carry, so the rank is written wherever the unranked form
+  // could not have said it — which for a field of four parts is wherever they are
+  // more than the two tinctures it fills them out from.
+  rank: ranked,
   conjunction: CONJUNCTION,
 };

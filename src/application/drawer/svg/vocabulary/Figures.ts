@@ -21,18 +21,32 @@ import { Spot } from './charges/disposition';
  */
 
 /**
- * A field cut along a line, half of it in each tincture: the half in chief
- * first — the upper one, or the one holding dexter chief where they stand side
- * by side.
+ * One part of a divided field: the whole of what it covers, and the room it
+ * gives whatever it bears.
  *
- * Two shapes, however many pieces the line leaves. A line that crosses itself
- * cuts the field into four, but it still paints in two tinctures and still
- * gives each of them half the field, so what comes back is that half as one
- * shape — the quarters of a tincture gathered by `all` — and the painting never
- * learns that the half was cut apart.
+ * What it covers is a path rather than a shape, being asked for twice over: once
+ * to paint the part's own tincture, and once to cut off whatever the part carries
+ * at the line.
+ */
+export type FieldPart = {
+  readonly covers: string;
+  /** The frame whatever the part bears is drawn against, in the part's own coordinates. */
+  readonly room: Frame;
+  /** Where that room sits in the frame the field was cut from. */
+  readonly at: readonly [x: number, y: number];
+};
+
+/**
+ * A field cut along a line, part by part, the part in chief first — the upper,
+ * or the one at dexter where two stand side by side.
+ *
+ * As many as the line leaves rather than a fixed pair: a line drawn once leaves
+ * two and a line that crosses itself leaves four, and the drawing is the one
+ * place that difference shows. How many there should be is the model's to say,
+ * so what is returned here is checked against it rather than trusted.
  */
 export type DivisionFigure = {
-  readonly halves: (frame: Frame) => readonly [Shape, Shape];
+  readonly parts: (frame: Frame) => readonly FieldPart[];
 };
 
 /**

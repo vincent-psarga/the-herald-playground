@@ -774,7 +774,12 @@ body {
  * under the pointer. Quieter at rest than a line of prose would be — a tree is
  * eight of them at once, and eight bronze rules is a fence.
  */
-.structure__word {
+/*
+ * Only where the word is a way to somewhere. A half of a divided field is named
+ * by the part it is laid in rather than by a term, and leads nowhere: underlined
+ * like the rest it would promise a page that does not exist.
+ */
+.structure__said a .structure__word {
   color: inherit;
   text-decoration: underline;
   text-decoration-color: rgb(var(--gauze) / 0.55);

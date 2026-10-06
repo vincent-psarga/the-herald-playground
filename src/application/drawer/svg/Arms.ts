@@ -2,16 +2,33 @@ import { paintedIn } from '../../../domain/models/Attributes';
 import { Blazon, ChargeOrOrdinary, isOrdinary } from '../../../domain/models/Blazon';
 import { Charge, numberBorne } from '../../../domain/models/Charge';
 import { Modifier } from '../../../domain/models/Modifier';
-import { Field, Semy, isDivision, isFurred, isVariation } from '../../../domain/models/Field';
+import {
+  Division,
+  Field,
+  Semy,
+  isDivision,
+  isFurred,
+  isPlain,
+  isVariation,
+} from '../../../domain/models/Field';
 import { borne } from '../../../domain/models/Ordinary';
-import { Painter } from './Ground';
+import { FIRST } from '../../../domain/translations/Ranks';
+import { Tincture } from '../../../domain/models/Tinctures';
+import { Ink, Painter } from './Ground';
 import { laid } from './painting/laid';
 import { modelled } from './painting/modelled';
 import { over } from './painting/over';
 import { plain } from './painting/plain';
 import { split } from './painting/split';
 import { escapeAttribute } from './escaping';
-import { BorneFigure, ChargeFigure, CutBand, OrdinaryFigure } from './vocabulary/Figures';
+import { filled } from './shapes/path';
+import {
+  BorneFigure,
+  ChargeFigure,
+  CutBand,
+  DivisionFigure,
+  OrdinaryFigure,
+} from './vocabulary/Figures';
 import { CHARGES } from './vocabulary/charges';
 import { DIVISIONS } from './vocabulary/coverings/divisions';
 import { peltOf } from './vocabulary/coverings/furred';
@@ -34,8 +51,20 @@ import { VARIATIONS } from './vocabulary/coverings/variations';
  * after a billet is drawn over the billet, and before it is drawn under.
  */
 export function arms(blazon: Blazon): Painter {
-  return over(field(blazon.field), ...(blazon.chargesOrOrdinaries ?? []).map(bearing));
+  return over(field(blazon.field, PART), ...(blazon.chargesOrOrdinaries ?? []).map(bearing));
 }
+
+/**
+ * What a part of a divided field answers to, so that what is drawn inside it can
+ * be cut off at the line.
+ *
+ * Two SVGs inlined in one document share an id space, as the shield's own clip
+ * knows, and the parts of one field must be told apart from each other besides —
+ * so the rank of the part is written on the end of it. A part cut again would
+ * want its own parts named under it, which is why the name is handed down rather
+ * than spelled out where it is used.
+ */
+const PART = 'blason-part';
 
 /**
  * The field, cut whichever of the four ways it is cut, and sown over where it
@@ -46,7 +75,7 @@ export function arms(blazon: Blazon): Painter {
  * in chief, or against the dexter chief corner. A pelt covers the whole field
  * rather than cutting it, so there is nothing to lay over anything.
  */
-function field(field: Field): Painter {
+function field(field: Field, within: string): Painter {
   if (isVariation(field)) {
     return over(
       plain(INKS[field.firstTincture]),
@@ -60,15 +89,116 @@ function field(field: Field): Painter {
     return plain((ground) => escapeAttribute(peltOf(ground, field).fill));
   }
   if (isDivision(field)) {
-    return split(
-      (frame) => DIVISIONS[field.type].halves(frame),
-      INKS[field.firstTincture],
-      INKS[field.secondTincture]
-    );
+    return divided(field, within);
   }
   return field.semy === undefined
     ? plain(INKS[field.tincture])
     : over(plain(INKS[field.tincture]), sown(field.semy));
+}
+
+/**
+ * A divided field: both parts painted over the whole of what they cover, and
+ * then whatever either of them carries drawn inside it.
+ *
+ * The painting comes first and takes both parts whatever they carry, so that a
+ * part carrying nothing but its tincture is one shape and no more — which is
+ * every divided field in the armorials, and is drawn exactly as it was before a
+ * part could carry anything.
+ */
+function divided(division: Division, within: string): Painter {
+  const figure = DIVISIONS[division.type];
+  const parts = division.parts;
+  return over(
+    laidIn(figure, parts),
+    ...parts.map((part, rank) => carried(figure, rank, part, `${within}-${rank + 1}`))
+  );
+}
+
+/**
+ * Every part painted with the tincture its own field is laid on, each over the
+ * whole of what it covers.
+ *
+ * One ink to a part, in rank order, so that a field of four is painted exactly
+ * as a field of two is and neither has to know how many parts the other has.
+ */
+function laidIn(figure: DivisionFigure, parts: readonly Blazon[]): Painter {
+  return split((frame) => figure.parts(frame).map((part) => filled(part.covers)), parts.map(inkOf));
+}
+
+/**
+ * What one part of a divided field carries, drawn inside the part.
+ *
+ * Nothing at all where the part carries nothing but its tincture: the painting
+ * above has already said the whole of such a part, and a drawing that wrapped it
+ * in a clip to say no more would be paying for what is not there.
+ *
+ * What it bears is drawn in the room the part gives it — the part's own corner,
+ * its own reaches — so that three lilies in the half at dexter stand in that
+ * half, drawn to the size the half has room for. Its sowing is not: a semy is
+ * the field's own state rather than something borne, and it is laid in the
+ * lattice the whole field is sown in and cut off at the line, which is how an
+ * armorial draws a sown half — the figures running on to the line and stopping
+ * there, in step with whatever is sown on the other side of it.
+ *
+ * Both are cut off at the line by the part's own outline, which is what the clip
+ * is for: a band drawn across a part keeps its width and its angle and ends
+ * where the part ends, as everything else here is drawn past its edge and left
+ * to a clip.
+ */
+function carried(figure: DivisionFigure, rank: number, part: Blazon, clip: string): Painter {
+  const field = part.field;
+  const semy = isPlain(field) ? field.semy : undefined;
+  const borne = part.chargesOrOrdinaries ?? [];
+  const cut = isVariation(field) ? field : undefined;
+  if (cut === undefined && semy === undefined && borne.length === 0) {
+    return () => '';
+  }
+  const laidOn = over(...borne.map(bearing));
+  // The pieces of a part cut into them, laid over the part's own paint exactly
+  // as a whole field's are: the painting above has already covered the part in
+  // the first tincture, so what is left to draw is every other piece.
+  const cutUp =
+    cut === undefined
+      ? undefined
+      : laid((frame) => VARIATIONS[cut.type].pieces(frame, cut.pieces), INKS[cut.secondTincture]);
+  return (ground) => {
+    const { covers, room, at } = figure.parts(ground.frame)[rank];
+    // Measured against the part rather than the field, so a bandé of six in a
+    // quarter is six pieces across the quarter, and put where the part is.
+    const inside = (painter: Painter) =>
+      `<g transform="translate(${at[0]} ${at[1]})">${painter({ ...ground, frame: room })}</g>`;
+    const pieces = cutUp === undefined ? '' : inside(cutUp);
+    const sowing = semy === undefined ? '' : sown(semy)(ground);
+    const bearings = borne.length === 0 ? '' : inside(laidOn);
+    return [
+      `<clipPath id="${clip}"><path d="${covers}"/></clipPath>`,
+      `<g clip-path="url(#${clip})">${pieces}${sowing}${bearings}</g>`,
+    ].join('');
+  };
+}
+
+/**
+ * What one part of a divided field is painted with.
+ *
+ * A part is arms, and what paints it is the tincture its field is laid on: the
+ * part's own where its field is plain, and the first its field names where the
+ * part is itself cut. A part cut again is the one thing here that is not drawn —
+ * its second tincture is nowhere, and neither is the line between them — and it
+ * is a field neither tongue reads yet.
+ */
+function inkOf(part: Blazon): Ink {
+  return INKS[groundOf(part.field)];
+}
+
+/**
+ * The tincture a field is laid on: its own where it is plain, and the first it
+ * names where it is cut — which is the piece in chief, or the one at dexter.
+ */
+function groundOf(field: Field): Tincture {
+  if (isDivision(field)) {
+    return groundOf(field.parts[FIRST - 1].field);
+  }
+  return isPlain(field) ? field.tincture : field.firstTincture;
 }
 
 /**

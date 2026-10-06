@@ -57,16 +57,38 @@ Supported vocabulary as it stands:
 
 - **Tinctures (8)** in three ranks — metals (or, argent), colours (azure, gules, sable, vert),
   furs (ermine, vair).
-- **Divisions (6)** — per pale, per fess, per bend, per bend sinister, and the two that cut the
-  field by a line crossing itself: quarterly (French écartelé), the pale and the fess together, its
-  quarters standing square; and per saltire (French écartelé en sautoir), the bend and the bend
-  sinister together, its quarters standing on their points. Either way the field is cut into four
-  and painted in two, the first tincture taking the pair in chief and in base — which for quarterly
-  is the quarters numbered 1 and 4. Only that simplest quartering is read. A shield whose quarters
-  each carry a coat of their own is a different blazon and needs a field able to hold a coat.
-  English names one of the pair after the quarters and the other after its line; French calls both
-  écartelé and says which by adding words, so the longer name has to win over the shorter one it
-  begins with.
+- **Divisions (6)** — per pale, per fess, per bend, per bend sinister, and the two whose line crosses
+  itself and cuts the field into four rather than two: quarterly (French écartelé), the pale and the
+  fess together, its quarters standing square; and per saltire (French écartelé en sautoir), the bend
+  and the bend sinister together, its quarters standing on their points. How many parts a line leaves
+  is declared with the term, so nothing counts for itself. Every part is arms of its own: a field with
+  whatever a tongue says of a field — that it is plain, what it is sown with, or that it is cut into
+  pieces of its own, heraldry quartering a bandé as readily as a plain coat ("écartelé : aux 1 et 4
+  bandé d'or et d'azur à la bordure de gueules ; aux 2 et 3 d'azur semé de fleurs de lys d'or") — and
+  whatever a shield may bear. Two fields a part may not yet be: one covered with a pelt, and one cut
+  again. Two forms say it. The unranked form is what the armorials write and what the parts are
+  written back out in wherever it can say them: "Parti d'azur à six macles d'argent, et d'hermine
+  plain", and two tinctures for a quartered field, which fills out the parts ranked 1 and 4 from the
+  first and the two between them from the second — "Écartelé d'argent et d'azur". A mark set before the
+  conjunction says no more than the conjunction does and is read and dropped; what a part bears stands
+  between its tincture and the conjunction; what follows the last part belongs to the shield, a bordure
+  blazoned after a division surrounding the whole of it. The ranked form says what that one cannot: any
+  part may bear, and one phrase may speak for several parts carrying the same coat — "Écartelé : aux 1
+  et 4 d'azur au chevron d'or ; aux 2 et 3, d'azur à trois colombes d'argent". A rank is written in
+  words, in figures or, in French, in Roman numerals ("au premier", "au 1", "au I"; "first", "1"), and
+  the parts are named in the order the partition takes them or the blazon is refused — a rank the field
+  has no part for, a part ranked twice, a phrase running backwards and a part never named are each
+  refused by name. Both tongues rank: French ranks with an article, English with a bare ordinal as
+  Parker ranks quarters. The rank is written back only where the unranked form could not have said it.
+  A part is drawn as well as read: what it bears is drawn in the room the part gives it — the part's
+  own corner and its own reaches, so three lilies in the half at dexter stand in that half and are
+  drawn small enough for it — and cut off at the line. Its sowing is laid in the lattice the whole
+  field is sown in and cut off there too, which keeps it in step with whatever is sown beyond the line.
+  A part cut into pieces is drawn as well as read, its pieces measured against the part: a bandé of six
+  in a quarter is six pieces across the quarter. What is not drawn: a part cut again, a band that
+  follows an outline rather than measuring itself, and a band scaled to the part it stands in — a
+  bordure borne on a part follows the part's box rather than the field's edge, and a cross borne in a
+  quarter is still the width of one drawn on the whole shield.
 - **Varied fields (5)** — barry, paly, bendy, pily, chevronny, cut into a counted number of pieces.
 - **Furred fields (1)** — vairy: the bells of vair cut from two tinctures the blazon names, rather
   than from the argent and azure vair itself is always drawn in. Nothing about it is counted.
@@ -213,8 +235,10 @@ Supported vocabulary as it stands:
   the field bears, so nothing is counted and a band blazoned after it covers the sowing. Where the
   language names the strewing it is written by that name — billeté, billetty, besanté, bezanty —
   and the name carries its tincture exactly as a charge's does. One figure only: a field sown with
-  two alternately is a second list and is not read. A plain field only: which half of a divided one
-  was sown is said in words this does not read.
+  two alternately is a second list and is not read. A plain field only — which is no bar to sowing
+  half of a divided field, a half being arms with a plain field of its own: both tongues say which
+  half is sown and both are read. A sowing laid over a divided field entire is what no tongue says
+  here, and nothing holds one.
 - **Plain** — French may call a bare field plain, and the parser holds it to it: a field called
   plain that then bears something is refused. The word adds nothing to the model and is never
   written back. English is given no equivalent — Parker's "plain" is a band with a straight line —
@@ -229,9 +253,10 @@ Supported vocabulary as it stands:
 
 Constraints and facts future work must preserve:
 
-- A blazon is a field, plain or divided between two tinctures or sown with a charge, with whatever
-  bands are laid on it and whatever charges it bears. Nothing may be charged upon a charge, no line
-  but the straight one is drawn, and no disposition is read.
+- A blazon is a field — plain, sown with a charge, or cut between two of them — with whatever bands
+  are laid on it and whatever charges it bears. A half of a divided field is a blazon by the same
+  reckoning, and is held in the same type: it has a field and it may bear things. Nothing may be
+  charged upon a charge, no line but the straight one is drawn, and no disposition is read.
 - The rule of tincture (metal may not lie on metal, nor colour on colour) is why the tinctures carry
   three ranks. The furs answer to neither rank.
 - Heraldry fixes no shade. Colours are supplied to the drawer, never assumed by it. A fur's figure is

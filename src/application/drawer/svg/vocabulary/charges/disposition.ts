@@ -1,18 +1,23 @@
 import { Frame } from '../../Ground';
 
 /**
- * The room the charges share: a box well inside the shield, clear of the edges
- * on every side and of the point at the base.
+ * How far the room the charges share is inset from what the field reaches: clear
+ * of the edges on every side, and clearer still of the point at the base.
  *
  * A charge is not measured against a line the way a band is, so nothing decides
- * its place but the room left for it. The box is the same whatever is borne, and
+ * its place but the room left for it. The room is the same whatever is borne, and
  * the charges are fitted into it: what a count changes is how small they are
  * drawn, exactly as it changes how narrow a band is drawn.
+ *
+ * It is reckoned off the frame rather than written down, because the frame is
+ * not always the shield: a part of a divided field is a frame of its own, and
+ * three lilies in the half at dexter are fitted into that half — drawn small
+ * enough for it and standing where it is — rather than laid out for a field
+ * twice the size and cut in two by the line.
  */
-const FROM_X = 26;
-const TO_X = 174;
-const FROM_Y = 24;
-const TO_Y = 196;
+const INSET = 20;
+const INSET_TOP = 18;
+const INSET_BASE = 38;
 
 /** How many charges stand side by side, at most. */
 const ABREAST = 2;
@@ -60,14 +65,17 @@ function ranks(count: number): readonly number[] {
  */
 export function spots(frame: Frame, count: number): readonly Spot[] {
   const rows = ranks(count);
-  const cell = (TO_X - FROM_X) / Math.min(count, ABREAST);
-  const rank = (TO_Y - FROM_Y) / rows.length;
+  const fromX = frame.dexter + INSET;
+  const toX = frame.sinister - INSET;
+  const fromY = frame.top + INSET_TOP;
+  const cell = (toX - fromX) / Math.min(count, ABREAST);
+  const rank = (frame.base - INSET_BASE - fromY) / rows.length;
   const size = Math.round(Math.min(ALONE, cell * OF_ITS_ROOM, rank * OF_ITS_ROOM));
 
   return rows.flatMap((abreast, row) => {
-    const y = Math.round(FROM_Y + (row + 0.5) * rank);
+    const y = Math.round(fromY + (row + 0.5) * rank);
     return Array.from({ length: abreast }, (_, along) => ({
-      x: Math.round(frame.width / 2 + (along - (abreast - 1) / 2) * cell),
+      x: Math.round((fromX + toX) / 2 + (along - (abreast - 1) / 2) * cell),
       y,
       size,
     }));

@@ -6,8 +6,9 @@ import { WikipediaColours } from '../../../infra/colours/WikipediaColours';
 import { SvgBlazonDrawer } from './SvgBlazonDrawer';
 import { placed } from './shapes/path';
 import { CHARGES } from './vocabulary/charges';
+import { DIVISIONS as DIVISIONS_DRAWN } from './vocabulary/coverings/divisions';
 import { SHIELD_FRAME } from './shapes/shield';
-import { FieldType } from '../../../domain/models/Field';
+import { DIVISIONS, FieldType, dividedInto } from '../../../domain/models/Field';
 import { Blazon } from '../../../domain/models/Blazon';
 
 const drawer = new SvgBlazonDrawer(WikipediaColours);
@@ -87,4 +88,14 @@ describe('the figures each new charge is drawn as', () => {
       expect(figure.at(spot)({ fill: '#fff' })).toBe(figure.at(spot)({ fill: '#fff' }));
     }
   );
+});
+
+describe('what a partition hands the drawing', () => {
+  // The model says how many parts a line leaves and the drawing has to leave
+  // that many: a figure with fewer would leave a part unpainted and one with
+  // more would paint ground no part of the blazon claims. Neither shows itself
+  // in a drawing that is merely looked at, so it is asked here.
+  test.each(DIVISIONS)('%s is cut into as many parts as the model declares', (type) => {
+    expect(dividedInto(type, DIVISIONS_DRAWN[type].parts(SHIELD_FRAME).length)).toBe(true);
+  });
 });

@@ -13,7 +13,7 @@ import { EnglishBlazonWriter } from '../writer/EnglishBlazonWriter';
 import { FrenchBlazonWriter } from '../writer/FrenchBlazonWriter';
 import { EnglishBlazonParser } from './EnglishBlazonParser';
 import { FrenchBlazonParser } from './FrenchBlazonParser';
-import { FieldType } from '../../domain/models/Field';
+import { DivisionType, FieldType, painted } from '../../domain/models/Field';
 import { Blazon } from '../../domain/models/Blazon';
 
 const inFrench = new FrenchBlazonParser();
@@ -368,12 +368,12 @@ describe('a band drawn along a modified line', () => {
   // The line a band is drawn along is the band's own, so however the field
   // beneath it was cut makes no difference — a quartered field least of all,
   // its line crossing itself where the band's does not.
-  test.each<[string, FieldType]>([
+  test.each<[string, DivisionType]>([
     ['Quarterly', FieldType.cross],
     ['Per saltire', FieldType.saltire],
   ])('is borne on a field %s as readily as on a plain one', (named, type) => {
     expect(inEnglish.parse(`${named} argent and azure a fess indented gules`)).toEqual({
-      field: { type, firstTincture: Metals.argent, secondTincture: Colours.azure },
+      field: { type, parts: painted(type, Metals.argent, Colours.azure) },
       chargesOrOrdinaries: [
         { type: OrdinaryType.fess, tincture: Colours.gules, modifier: Modifier.indented },
       ],
