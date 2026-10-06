@@ -24,8 +24,16 @@ export const inked =
   (ground) =>
     outlining(shapes, ground) + all(shapes)({ fill: ink(ground) });
 
-/** The outline under such a set of shapes, and nothing where the colouring draws none. */
-function outlining(shapes: readonly Shape[], { colours }: Ground): string {
+/**
+ * The outline under such a set of shapes, and nothing where the colouring draws
+ * none.
+ *
+ * Laid apart from the fills as well as under them, for the paintings that do not
+ * fill the shapes with one ink: a figure painted out of the ground it is laid on
+ * is outlined exactly as this outlines one, and then filled with something this
+ * knows nothing about.
+ */
+export function outlining(shapes: readonly Shape[], { colours }: Ground): string {
   return colours.ink === undefined
     ? ''
     : all(shapes)({ fill: escapeAttribute(colours.ink), swollen: true });

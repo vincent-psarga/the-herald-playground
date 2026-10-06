@@ -4,6 +4,7 @@ import { EnglishFurType } from '../../domain/translations/en/Furs';
 import { EnglishVariationType, OF } from '../../domain/translations/en/Variations';
 import { EnglishAttributes } from '../../domain/translations/en/Attributes';
 import { EnglishChargeType } from '../../domain/translations/en/Charges';
+import { EnglishCounterchanged } from '../../domain/translations/en/Counterchanged';
 import { EnglishModifiers } from '../../domain/translations/en/Modifiers';
 import { EnglishOverAll } from '../../domain/translations/en/OverAll';
 import { EnglishStrewings, OF as SOWN_OF, SOWN } from '../../domain/translations/en/Strewings';
@@ -83,6 +84,13 @@ const RANK = list_sc(number(EnglishRanks, asRank), AND);
 // and in front of the count alike, it is read once for either shape of phrase.
 const OVER_ALL = anyPhrase(writtenAs(EnglishOverAll));
 
+// "a bordure counterchanged": said where the tincture would be said, and saying
+// that there is none of its own. One word where French has a phrase it spells
+// two ways, and read by the same rule for that reason — the writings the
+// vocabulary page shows a reader are the writings the parser answers to, however
+// many of them a tongue turns out to have.
+const COUNTERCHANGED = anyPhrase(writtenAs(EnglishCounterchanged));
+
 export const EnglishBlazonGrammar: BlazonGrammar = {
   tincture: term(EnglishTinctures, asTincture),
   division: term(EnglishDivisionType, asDivision),
@@ -111,6 +119,7 @@ export const EnglishBlazonGrammar: BlazonGrammar = {
       )
     )
   ),
+  counterchanged: COUNTERCHANGED,
   and: AND,
   rank: RANK,
 };

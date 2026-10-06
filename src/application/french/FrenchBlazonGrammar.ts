@@ -3,6 +3,7 @@ import { FrenchDivisionType } from '../../domain/translations/fr/Divisions';
 import { FrenchFurType } from '../../domain/translations/fr/Furs';
 import { FrenchVariationType, PIECES } from '../../domain/translations/fr/Variations';
 import { FrenchChargeType } from '../../domain/translations/fr/Charges';
+import { FrenchCounterchanged } from '../../domain/translations/fr/Counterchanged';
 import { FrenchStrewings, SOWN } from '../../domain/translations/fr/Strewings';
 import { strewnTerms } from '../../domain/translations/Strewings';
 import { FrenchOrdinaryType } from '../../domain/translations/fr/Ordinaries';
@@ -215,6 +216,14 @@ const BORNE = alt(ONE, SEVERAL_BORNE);
 // opened a second bearing, and the one with a bearing after it is untouched.
 const BROCHANT = kright(optional(tok(TokenKind.Separator)), anyPhrase(writtenAs(FrenchOverAll)));
 
+// "à la bordure de l'un à l'autre": said where the tincture would be said, and
+// saying that there is none of its own. Every spelling the word answers to is
+// read — French writes "de l'un en l'autre" as readily — and all of them are
+// read off the word rather than written out again, half of each being articles
+// the lexer reads as articles: the phrases the vocabulary page shows a reader
+// are the phrases the parser answers to.
+const COUNTERCHANGED = anyPhrase(writtenAs(FrenchCounterchanged));
+
 // French counts the pieces of a varied field after naming the tinctures it
 // alternates — "bandé de gueules et d'argent de six pièces" — and an armorial
 // writes "en six pièces" as readily as "de", so both are read. The article is
@@ -284,6 +293,7 @@ export const FrenchBlazonGrammar: BlazonGrammar = {
   treatment: TREATMENT,
   borne: BORNE,
   overAll: BROCHANT,
+  counterchanged: COUNTERCHANGED,
   and: AND,
   rank: RANK,
 };

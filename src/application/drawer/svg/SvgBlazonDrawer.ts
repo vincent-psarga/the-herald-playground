@@ -1,5 +1,6 @@
 import { paintedIn } from '../../../domain/models/Attributes';
 import { Blazon, isCharge } from '../../../domain/models/Blazon';
+import { isCounterchanged } from '../../../domain/models/Counterchanged';
 import { isDivision, isFurred, isVariation } from '../../../domain/models/Field';
 import { Tincture } from '../../../domain/models/Tinctures';
 import { ColorModel, DrawOptions, IBlazonDrawer } from '../../../domain/services/IBlazonDrawer';
@@ -47,6 +48,9 @@ export class SvgBlazonDrawer implements IBlazonDrawer {
  * A divided field is asked of its parts rather than of itself, each part being
  * arms with a field and bearings of its own: the tinctures of a part are the
  * part's, however many parts there are and however deep they go.
+ *
+ * A figure painted out of the field names none of its own and adds none here:
+ * what it is painted with is the field's two, which are already among these.
  */
 function tincturesOf(blazon: Blazon): readonly Tincture[] {
   const painted = blazon.field;
@@ -57,12 +61,18 @@ function tincturesOf(blazon: Blazon): readonly Tincture[] {
       : [painted.tincture, ...(painted.semy === undefined ? [] : [painted.semy.tincture])];
   return [
     ...field,
-    ...(blazon.chargesOrOrdinaries ?? []).flatMap((one) => [
-      one.tincture,
-      ...(isCharge(one)
-        ? (one.attributes ?? []).map((painted) => paintedIn(painted, one.tincture))
-        : []),
-    ]),
+    ...(blazon.chargesOrOrdinaries ?? []).flatMap((one) =>
+      isCounterchanged(one.tincture)
+        ? []
+        : [
+            one.tincture,
+            ...(isCharge(one)
+              ? (one.attributes ?? [])
+                  .map((painted) => paintedIn(painted, one.tincture))
+                  .filter((tincture) => tincture !== undefined)
+              : []),
+          ]
+    ),
   ];
 }
 

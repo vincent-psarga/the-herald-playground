@@ -18,13 +18,16 @@ import {
 } from 'typescript-parsec';
 import { BlazonParseError } from '../../domain/errors/parsing/BlazonParseError';
 import { ChargedPlainField } from '../../domain/errors/parsing/ChargedPlainField';
+import { InvalidTincture } from '../../domain/errors/parsing/InvalidTincture';
 import { MissingPieces } from '../../domain/errors/parsing/MissingPieces';
 import { RepeatedAttribute } from '../../domain/errors/parsing/RepeatedAttribute';
+import { UndividedField } from '../../domain/errors/parsing/UndividedField';
 import { UntincturedModifier } from '../../domain/errors/parsing/UntincturedModifier';
 import { WrongAttribute } from '../../domain/errors/parsing/WrongAttribute';
 import { WrongModifier } from '../../domain/errors/parsing/WrongModifier';
 import { Attribute, Attributed, namesPart } from '../../domain/models/Attributes';
 import { Blazon, ChargeOrOrdinary } from '../../domain/models/Blazon';
+import { COUNTERCHANGED, Tinctured, isCounterchanged } from '../../domain/models/Counterchanged';
 import {
   Division,
   DivisionType,
@@ -36,6 +39,7 @@ import {
   Variation,
   cutInPieces,
   fillingOut,
+  isCounterchangeable,
   partsOf,
   usualPieces,
 } from '../../domain/models/Field';
@@ -109,6 +113,20 @@ export interface BlazonGrammar {
    * rule, the mark between one bearing and the next belonging to the next.
    */
   readonly overAll?: Parser<TokenKind, unknown>;
+  /**
+   * What the tongue says in place of a tincture where what is borne takes the
+   * field's own two, reversed: "de l'un à l'autre", "counterchanged".
+   *
+   * It is read where a tincture is read because it is said where a tincture is
+   * said and answers the same question — what the figure is painted with — and a
+   * tongue that has no phrase for it leaves this off, and nothing is read.
+   *
+   * What comes back is the phrase as the tongue writes it rather than the thing
+   * it means, which every tongue means alike: a name that will not be painted
+   * this way has to be refused by a complaint quoting what was written, and a
+   * tongue spelling the phrase several ways is owed the one it writes back.
+   */
+  readonly counterchanged?: Parser<TokenKind, string>;
   /** The conjunction joining the halves of a divided field. */
   readonly and: Parser<TokenKind, unknown>;
   /**
@@ -211,6 +229,18 @@ const SEPARATOR = tok(TokenKind.Separator);
  */
 type ReadField = { readonly field: Field; readonly bare: boolean };
 
+/**
+ * What stands where a tincture stands, and how the blazon wrote it.
+ *
+ * The writing travels beside the reading only as far as the rule that judges it.
+ * A tincture read in full is quoted back by the rule that read it, so it carries
+ * nothing here; the phrase that says a figure takes the field cannot be, the
+ * tongue spelling it several ways and the complaint wanting the one the blazon
+ * would come back in. So the tongue hands over what it read, and it is dropped
+ * the moment the name has accepted it.
+ */
+type Painting = { readonly painted: Tinctured; readonly written: string };
+
 export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
   // A plain field is its tincture, and whatever the language lets a blazon say
   // about it: that it is bare, or what it has been sown with.
@@ -277,6 +307,43 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
   // The count is left off rather than set to one when a single one is borne, so
   // that a fess reads back as the fess it was before a field could bear two.
   //
+  // The tincture may be no tincture at all: a tongue may say instead that what is
+  // borne takes the field's own two, reversed, and that is said exactly where a
+  // tincture would be said.
+  //
+  // Whether the name will take it is the word's own affair, as the tinctures it
+  // will take are: a name chosen for a tincture has already said what the figure
+  // is painted with, and a figure painted out of a divided field is painted two
+  // things at once and neither of them the word's. So "au besant de l'un à
+  // l'autre" is refused by the very rule that refuses "au besant d'azur", and
+  // French, having no name for a disc of no particular tincture, cannot
+  // counterchange one at all.
+  //
+  // The count is left off rather than set to one when a single one is borne, so
+  // that a fess reads back as the fess it was before a field could bear two.
+  const paintedWith = (borne: BorneTerm): Parser<TokenKind, Tinctured> => {
+    const tincture = carried(grammar.tincture, borne.word);
+    const phrase = grammar.counterchanged;
+    if (phrase === undefined) {
+      return tincture;
+    }
+    // The tincture is offered first, so that a phrase which is neither is
+    // reported as a tincture gone wrong: that is what almost every such phrase
+    // is, and the two readings fail at the same word often enough for the order
+    // to be what settles it.
+    return apply(
+      guard(
+        alt<TokenKind, Painting, Painting>(
+          apply(tincture, (tincture): Painting => ({ painted: tincture, written: '' })),
+          apply(phrase, (written): Painting => ({ painted: COUNTERCHANGED, written }))
+        ),
+        ({ painted }) => borne.word.accepts(painted),
+        ({ written }, position) => new InvalidTincture(borne.word.value, written, position)
+      ),
+      ({ painted }) => painted
+    );
+  };
+
   // What a tongue writes after a bearing to lay it over everything else, where
   // it writes it there at all. English writes it before instead, and the words
   // come back on the term; a tongue that writes it in neither place reads none.
@@ -286,7 +353,7 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
   const bearing = within(
     combine(grammar.borne, (borne) =>
       combine(modifying(borne), (early) =>
-        combine(carried(grammar.tincture, borne.word), (tincture) =>
+        combine(paintedWith(borne), (tincture) =>
           combine(early === undefined ? modifying(borne) : nil(), (late) =>
             combine(painting(late, grammar.tincture), (line) =>
               combine(attributing(borne, grammar.tincture, grammar.and), (painted) =>
@@ -374,16 +441,7 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
     laid: Parser<TokenKind, readonly ChargeOrOrdinary[]> = borne
   ): Parser<TokenKind, Blazon> =>
     combine(reading, ({ field, bare }) =>
-      apply(
-        bare
-          ? guard(
-              laid,
-              (borne) => borne.length === 0,
-              (borne, position) => new ChargedPlainField(borne.length, position)
-            )
-          : laid,
-        (borne): Blazon => borneOn(field, borne)
-      )
+      apply(held(laid, field, bare), (borne): Blazon => borneOn(field, borne))
     );
 
   // The second of the two tinctures a varied or furred field is cut between, the
@@ -692,6 +750,37 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
   // blazon copied out of an armorial can end on the mark that set it apart from
   // the next one, which means no more than the stop does.
   return kleft(arms, optional(alt(tok(TokenKind.Period), SEPARATOR)));
+}
+
+/**
+ * What the field bears, held to what the field will carry.
+ *
+ * Two promises are kept here, and both are about the field rather than about any
+ * one thing laid on it. A field the blazon called plain bears nothing at all —
+ * that is the whole of what the word is for — and a figure painted out of the
+ * field needs a field with two tinctures to be painted out of, which a field of
+ * one tincture is not. Either way both halves of the blazon are known and
+ * neither is wrong on its own.
+ */
+function held(
+  borne: Parser<TokenKind, readonly ChargeOrOrdinary[]>,
+  field: Field,
+  bare: boolean
+): Parser<TokenKind, readonly ChargeOrOrdinary[]> {
+  const laid = bare
+    ? guard(
+        borne,
+        (laid) => laid.length === 0,
+        (laid, position) => new ChargedPlainField(laid.length, position)
+      )
+    : borne;
+  return isCounterchangeable(field)
+    ? laid
+    : guard(
+        laid,
+        (laid) => !laid.some(({ tincture }) => isCounterchanged(tincture)),
+        (_, position) => new UndividedField(position)
+      );
 }
 
 /**

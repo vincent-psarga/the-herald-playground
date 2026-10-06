@@ -17,7 +17,7 @@ import {
   bySpelling,
 } from '../../domain/translations/Translation';
 import { Word } from '../../domain/translations/Word';
-import { TokenKind } from '../lexer/Lexer';
+import { TokenKind, tokenise } from '../lexer/Lexer';
 import { Vocabulary, complaining, owed, positionOf } from './Failures';
 
 /**
@@ -90,66 +90,86 @@ export function anyKeyword(expected: readonly string[]): Parser<TokenKind, Token
 }
 
 /**
- * Matches any one of several spellings of the same keyword, each of which may
- * run to more than one word: "brochant sur le tout" is four words and one
- * spelling, and "brochant" is another spelling of the same thing.
+ * Matches any one spelling of a phrase of several words, however it was spaced
+ * and capitalised: "de l'un à l'autre", and "de l'un en l'autre" beside it.
  *
- * The longest spelling wins. Read the other way round, a blazon writing the
- * whole phrase would be understood as the short one with three words left over,
- * and those three would then be owed a reading nothing can give them.
+ * Every spelling is given rather than the canonical one alone, by the same
+ * reckoning anyKeyword reads every spelling of a keyword: a word may answer to
+ * more than one writing of itself without being more than one word, and a
+ * grammar that read only the first would refuse what the vocabulary says it
+ * holds.
  *
- * Which spelling was written is not kept, there being nothing to keep: a keyword
- * names no term, so all it can say is that it was there.
+ * The spellings are handed over as the words themselves and read with the very
+ * lexer the blazon is read with, so a vocabulary that holds a phrase as one word
+ * and a grammar that reads it cannot come to disagree about where its words
+ * divide. That matters here more than it would for a keyword: the phrase is half
+ * articles, and an article is not a word to the lexer.
+ *
+ * Nothing is kept but the fact that one of them was there. The phrase names no
+ * term of the vocabulary in either tongue — it says what a figure is painted
+ * with by pointing at the field rather than by naming anything — so what it
+ * means is the caller's to supply, and which spelling said it is no more kept
+ * than which spelling of a charge was written.
+ *
+ * A phrase that breaks off partway complains where it began rather than where it
+ * broke off, because breaking off is how it says it was never there: these are
+ * fixed words and they commit to nothing. Complaining further along would let a
+ * phrase that merely shares its first word with what was written — "de", which
+ * opens a French tincture as readily — outrank the complaint of whatever was
+ * actually being said.
  */
-export function anyPhrase(expected: readonly string[]): Parser<TokenKind, Token<TokenKind>> {
-  const phrases = expected
-    .map((spelling) => spelling.toLowerCase().split(' '))
-    .sort((one, another) => another.length - one.length);
+export function anyPhrase(expected: readonly string[]): Parser<TokenKind, string> {
+  // Longest first. Read the other way round, a blazon writing the whole phrase
+  // would be understood as the short one with the rest left over, and those
+  // words would then be owed a reading nothing can give them.
+  const spellings = expected.map(spelling).sort((one, other) => other.length - one.length);
 
   return {
-    parse(token: Token<TokenKind> | undefined): ParserOutput<TokenKind, Token<TokenKind>> {
-      for (const phrase of phrases) {
-        const after = spelt(token, phrase);
+    parse(token: Token<TokenKind> | undefined): ParserOutput<TokenKind, string> {
+      for (const words of spellings) {
+        const after = following(words, token);
         if (after !== false) {
           return {
             successful: true,
-            candidates: [
-              { firstToken: token, nextToken: after, result: token as Token<TokenKind> },
-            ],
+            candidates: [{ firstToken: token, nextToken: after, result: expected[0] }],
             error: undefined,
           };
         }
       }
       return {
         successful: false,
-        error: complaining(
-          token?.pos,
-          new BlazonParseError(
-            `Expected "${expected[0]}", found "${token?.text ?? ''}"`,
-            positionOf(token?.pos)
-          )
-        ),
+        error: { kind: 'Error', pos: token?.pos, message: `Expected "${expected[0]}"` },
       };
     },
   };
 }
 
 /**
- * Where a phrase ends, having been written here — and false where it was not,
- * which is not the same as a phrase ending on nothing at all.
+ * What stands after these words, where they stand here at all, and false where
+ * they do not — which is not the same as nothing: a phrase may run to the very
+ * end of the blazon, and then there is nothing after it and it was still there.
  */
-function spelt(
-  token: Token<TokenKind> | undefined,
-  phrase: readonly string[]
+function following(
+  words: readonly string[],
+  token: Token<TokenKind> | undefined
 ): Token<TokenKind> | undefined | false {
   let current = token;
-  for (const word of phrase) {
-    if (current?.kind !== TokenKind.Word || current.text.toLowerCase() !== word) {
+  for (const word of words) {
+    if (current === undefined || plainly(current.text) !== word) {
       return false;
     }
     current = current.next;
   }
   return current;
+}
+
+/** The words a phrase is made of, as the lexer divides them. */
+function spelling(expected: string): readonly string[] {
+  const words: string[] = [];
+  for (let token = tokenise(expected); token !== undefined; token = token.next) {
+    words.push(plainly(token.text));
+  }
+  return words;
 }
 
 /**
@@ -364,4 +384,13 @@ export function present<TKind, TResult>(
     // compiler can see says so.
     (value) => value as TResult
   );
+}
+
+/**
+ * A word as it is compared: folded to lower case, and the curly apostrophe
+ * folded to the straight one. The lexer reads either, so a blazon typed with one
+ * must match a phrase written with the other.
+ */
+function plainly(text: string): string {
+  return text.toLowerCase().replace(/’/g, "'");
 }

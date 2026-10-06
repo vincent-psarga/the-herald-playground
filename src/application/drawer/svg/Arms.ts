@@ -1,11 +1,13 @@
 import { paintedIn } from '../../../domain/models/Attributes';
 import { Blazon, ChargeOrOrdinary, asLaid, isOrdinary } from '../../../domain/models/Blazon';
 import { Charge, numberBorne } from '../../../domain/models/Charge';
+import { isCounterchanged } from '../../../domain/models/Counterchanged';
 import { Modifier } from '../../../domain/models/Modifier';
 import {
   Division,
   Field,
   Semy,
+  isCounterchangeable,
   isDivision,
   isFurred,
   isPlain,
@@ -14,7 +16,8 @@ import {
 import { borne } from '../../../domain/models/Ordinary';
 import { FIRST } from '../../../domain/translations/Ranks';
 import { Tincture } from '../../../domain/models/Tinctures';
-import { Ink, Painter } from './Ground';
+import { Frame, Ink, Painter } from './Ground';
+import { countered } from './painting/countered';
 import { laid } from './painting/laid';
 import { modelled } from './painting/modelled';
 import { over } from './painting/over';
@@ -22,6 +25,7 @@ import { plain } from './painting/plain';
 import { split } from './painting/split';
 import { escapeAttribute } from './escaping';
 import { filled } from './shapes/path';
+import { Shape, all } from './shapes/Shape';
 import {
   BorneFigure,
   ChargeFigure,
@@ -56,7 +60,13 @@ import { VARIATIONS } from './vocabulary/coverings/variations';
  * they overrule it.
  */
 export function arms(blazon: Blazon): Painter {
-  return over(field(blazon.field, PART), ...asLaid(blazon.chargesOrOrdinaries ?? []).map(bearing));
+  return over(
+    field(blazon.field, PART),
+    // Handed the field as well as itself: a figure may be painted out of the
+    // field it is laid on rather than out of a tincture of its own, and then
+    // what it comes out as is the field's to answer.
+    ...asLaid(blazon.chargesOrOrdinaries ?? []).map((one) => bearing(one, blazon.field))
+  );
 }
 
 /**
@@ -158,7 +168,7 @@ function carried(figure: DivisionFigure, rank: number, part: Blazon, clip: strin
   if (cut === undefined && semy === undefined && borne.length === 0) {
     return () => '';
   }
-  const laidOn = over(...borne.map(bearing));
+  const laidOn = over(...borne.map((one) => bearing(one, field)));
   // The pieces of a part cut into them, laid over the part's own paint exactly
   // as a whole field's are: the painting above has already covered the part in
   // the first tincture, so what is left to draw is every other piece.
@@ -233,26 +243,101 @@ function sown(semy: Semy): Painter {
  * else, pinching away to nothing where a notch comes back to the band. The band
  * keeps its place and its width either way: what a blazon paints there is the
  * line, not a second band laid underneath.
+ *
+ * Or no tincture at all: a band and a charge alike may take the field's own two,
+ * reversed, and then the figure is painted out of the field rather than out of
+ * an ink. The shapes are the same shapes either way, and what fills them is the
+ * only thing that differs — so a counterchanged figure is laid by the same cut
+ * band and the same modified charge as a figure that named a colour.
  */
-function bearing(one: ChargeOrOrdinary): Painter {
+function bearing(one: ChargeOrOrdinary, field: Field): Painter {
   if (isOrdinary(one)) {
     const count = borne(one);
     const cut = drawn(ORDINARIES[one.type], one.modifier);
+    const shapes = (frame: Frame) => cut.shapes(frame, count);
+    if (isCounterchanged(one.tincture)) {
+      return countering(shapes, field);
+    }
     if (one.modifierTincture === undefined || !isCutBand(cut)) {
-      return laid((frame) => cut.shapes(frame, count), INKS[one.tincture]);
+      return laid(shapes, INKS[one.tincture]);
     }
     return over(
-      laid((frame) => cut.shapes(frame, count), INKS[one.modifierTincture]),
+      laid(shapes, INKS[one.modifierTincture]),
       laid((frame) => cut.within(frame, count), INKS[one.tincture])
     );
   }
   const figure = drawn(CHARGES[one.type], one.modifier);
   const count = numberBorne(one);
+  const shapes = (frame: Frame) => figure.shapes(frame, count);
+  // A part painted apart carries a tincture of its own, so it is drawn over a
+  // counterchanged charge exactly as over any other; a part the blazon left to
+  // the charge's own tincture has none to fall back on here and is not drawn.
   return over(
-    laid((frame) => figure.shapes(frame, count), INKS[one.tincture]),
+    isCounterchanged(one.tincture) ? countering(shapes, field) : laid(shapes, INKS[one.tincture]),
     ...painting(one, figure, count),
     ...modelling(figure, count)
   );
+}
+
+/**
+ * A figure painted out of the field it is laid on, the field's two tinctures
+ * swapped under it.
+ *
+ * Nothing is drawn where there is nothing to counterchange between. It cannot
+ * arrive — the parser refuses a blazon that counterchanges over an undivided
+ * field — so this says what to do about a drawing that has fallen behind the
+ * model, and there is nothing honest to do: the figure names no ink, and the
+ * field it would have borrowed one from has none to lend.
+ */
+function countering(shapes: (frame: Frame) => readonly Shape[], field: Field): Painter {
+  if (!isCounterchangeable(field)) {
+    return over();
+  }
+  const cut = cutBetween(field);
+  if (cut === undefined) {
+    return over();
+  }
+  const [first, second] = cut;
+  const figure = DIVISIONS[field.type];
+  return countered(
+    shapes,
+    (frame) => {
+      const parts = figure.parts(frame);
+      // The parts of one tincture handed over as one shape, which is what the
+      // painting wants: shapes painted alike are outlined together, so no line
+      // is drawn through the point where two quarters of a colour touch.
+      const gathered = (tincture: Tincture): Shape =>
+        all(
+          parts
+            .filter((_, rank) => groundOf(field.parts[rank].field) === tincture)
+            .map((part) => filled(part.covers))
+        );
+      return [gathered(first), gathered(second)];
+    },
+    INKS[first],
+    INKS[second]
+  );
+}
+
+/**
+ * The two tinctures a divided field is painted in, where it is painted in two.
+ *
+ * A figure counterchanged is painted out of the field, so there have to be two
+ * of something to reverse. A partition cut once always has them; a quartering
+ * has them wherever its quarters are the usual pair taken twice over, which is
+ * every quartering the armorials counterchange over.
+ *
+ * Nothing where the parts run to more than two tinctures: a quartering that
+ * marshals four coats has no one pair to swap, and a figure laid over it would
+ * have to say which two it meant.
+ */
+function cutBetween(division: Division): readonly [Tincture, Tincture] | undefined {
+  const grounds = division.parts.map((part) => groundOf(part.field));
+  const [first] = grounds;
+  const second = grounds.find((ground) => ground !== first);
+  return second === undefined || grounds.some((ground) => ground !== first && ground !== second)
+    ? undefined
+    : [first, second];
 }
 
 /**
@@ -286,9 +371,10 @@ function modelling(figure: ChargeFigure, count: number): readonly Painter[] {
 function painting(one: Charge, figure: ChargeFigure, count: number): readonly Painter[] {
   return (one.attributes ?? []).flatMap((painted) => {
     const part = figure.parts[painted.attribute];
-    return part === undefined
+    const ink = paintedIn(painted, one.tincture);
+    return part === undefined || ink === undefined
       ? []
-      : [laid((frame) => part.shapes(frame, count), INKS[paintedIn(painted, one.tincture)])];
+      : [laid((frame) => part.shapes(frame, count), INKS[ink])];
   });
 }
 

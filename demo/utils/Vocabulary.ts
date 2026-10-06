@@ -11,6 +11,7 @@ import {
   attributesOf,
   modifiersOf,
 } from '../../src/domain/models/Charge';
+import { COUNTERCHANGED, Counterchanged } from '../../src/domain/models/Counterchanged';
 import { Modifier } from '../../src/domain/models/Modifier';
 import {
   DivisionType,
@@ -77,6 +78,11 @@ import { readBlazon } from './Reading';
  * already blazoned is on top, which the model holds as a fact about one of them
  * rather than as a term of its own. It is a word a reader meets in the armorials
  * all the same, so it is ranked here and shown with the rest.
+ *
+ * Counterchanging is a rank of its own for all that it holds one term, because
+ * it is none of the others: it stands where a tincture stands and is no
+ * tincture, and it is said of a band without being one. A rank with one term in
+ * it is what a page shows when a tongue has one word for a thing.
  */
 export type Ranked =
   | { readonly rank: 'tincture'; readonly term: Tincture }
@@ -89,6 +95,7 @@ export type Ranked =
   | { readonly rank: 'attribute'; readonly term: Attribute }
   | { readonly rank: 'strewing'; readonly term: ChargeType }
   | { readonly rank: 'over all'; readonly term: typeof OVER_ALL_TERM }
+  | { readonly rank: 'counterchange'; readonly term: Counterchanged }
   | { readonly rank: 'field'; readonly term: typeof PLAIN_TERM | typeof SOWN_TERM };
 
 /**
@@ -213,6 +220,17 @@ const COVERED = Colours.sable;
 // le tout, over all a fess.
 const COVERING = OrdinaryType.fess;
 const UNDERNEATH = ChargeType.billet;
+
+// The arms that show counterchanging: a band laid across the line it is
+// counterchanged across, so that the drawing shows the figure cut by the
+// partition rather than merely standing on one side of it.
+const COUNTERCHANGED_ON = FieldType.pale;
+const COUNTERCHANGED_BAND = OrdinaryType.fess;
+
+// And the charge it is shown on beside the band: two of them, standing one in
+// each half of a field parted per pale, which is the other half of what the
+// phrase does — each takes the tincture of the half it did not fall on.
+const COUNTERCHANGED_CHARGE = ChargeType.lozenge;
 
 const CHARGE_TYPES = Object.values(ChargeType);
 const ORDINARY_TYPES = Object.values(OrdinaryType);
@@ -387,6 +405,11 @@ function sensesOf<W extends Word>(tongue: Tongue<W>): readonly Sense<W>[] {
     ...spelled('attribute', wording.attributes),
     ...strewn(wording.strewings),
     { rank: 'over all', term: OVER_ALL_TERM, words: [tongue.overAll] } satisfies Sense<W>,
+    {
+      rank: 'counterchange',
+      term: COUNTERCHANGED,
+      words: [wording.counterchanged],
+    } satisfies Sense<W>,
     ...(tongue.plain === undefined
       ? []
       : [{ rank: 'field', term: PLAIN_TERM, words: [tongue.plain] } satisfies Sense<W>]),
@@ -569,6 +592,16 @@ function armsOf<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W): Bl
           { type: COVERING, tincture: borne, overAll: true },
         ],
       };
+    // Shown on a band crossing the line it is counterchanged across, which is
+    // the case the word is hardest to picture in: a fess on a field parted per
+    // pale comes out one tincture to dexter and the other to sinister, and a
+    // reader can see in one drawing both what it does and that it does it to
+    // the parts of a figure rather than to the whole of one.
+    case 'counterchange':
+      return {
+        field: { type: COUNTERCHANGED_ON, parts: painted(COUNTERCHANGED_ON, METAL, COLOUR) },
+        chargesOrOrdinaries: [{ type: COUNTERCHANGED_BAND, tincture: sense.term }],
+      };
     case 'field':
       return sense.term === PLAIN_TERM
         ? { field: { type: FieldType.plain, tincture: COLOUR } }
@@ -615,8 +648,10 @@ function insisting<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W):
     case 'strewing':
       return { ...wording, strewings: { ...wording.strewings, ...only } };
     // The tongue holds one word for it and the writer has no choice to narrow:
-    // there is no vocabulary keyed on a term here, the word naming none.
+    // there is no vocabulary keyed on a term here, the word naming none. One
+    // word to a tongue for the counterchange as well, and nothing to narrow.
     case 'over all':
+    case 'counterchange':
       return wording;
     case 'field':
       return sense.term === SOWN_TERM ? { ...wording, strew: tongue.sowing(word.value) } : wording;
@@ -747,6 +782,9 @@ const OVER_ALL_NOTE: Record<Languages, string> = {
     'Said before the band or charge it is said of, where French says its own word after: over all a bend gules. It agrees with nothing and stands unchanged before one band and before three.',
 };
 
+const COUNTERCHANGE_NOTE =
+  'Said of a band or a charge, and of several at once, over a field divided between two tinctures — a quartering among them, its two pairs of quarters standing for the two halves. A varied field is cut from two tinctures as well and is refused all the same, being cut into a row rather than by a line. Nothing follows the phrase: it stands where the tincture would stand and is the whole of what the figure is painted with — so a name that already means a tincture refuses it, a besant being gold and a counterchanged one being nothing.';
+
 const FURRED_NOTE =
   'Named where the fur itself is not. A fur is a tincture and carries its pair with it, so naming it is the whole of what a blazon says; a furred field is owed the two tinctures its figures are cut from.';
 
@@ -764,6 +802,8 @@ function noteOn<W extends Word>(sense: Sense<W>, word: W, language: Languages): 
       return ATTRIBUTE_NOTE[language](word);
     case 'over all':
       return OVER_ALL_NOTE[language];
+    case 'counterchange':
+      return COUNTERCHANGE_NOTE;
     default:
       return undefined;
   }
@@ -977,6 +1017,36 @@ function otherwise<W extends Word>(
             'Over what follows it'
           ),
           say({ field, chargesOrOrdinaries: [over, under] }, 'Without it'),
+        ],
+      },
+    ];
+  }
+
+  if (sense.rank === 'counterchange') {
+    // A band and a charge under the one phrase, because the phrase is said of
+    // both and the two drawings answer different halves of the question: a band
+    // crossing the line shows the figure cut by it, and charges standing either
+    // side of it show each taking the half it did not fall on.
+    return [
+      {
+        heading: 'Said of',
+        entries: [
+          say(
+            {
+              field: { type: COUNTERCHANGED_ON, parts: painted(COUNTERCHANGED_ON, METAL, COLOUR) },
+              chargesOrOrdinaries: [{ type: COUNTERCHANGED_BAND, tincture: COUNTERCHANGED }],
+            },
+            'A band'
+          ),
+          say(
+            {
+              field: { type: COUNTERCHANGED_ON, parts: painted(COUNTERCHANGED_ON, METAL, COLOUR) },
+              chargesOrOrdinaries: [
+                { type: COUNTERCHANGED_CHARGE, tincture: COUNTERCHANGED, count: 2 },
+              ],
+            },
+            'Two charges'
+          ),
         ],
       },
     ];

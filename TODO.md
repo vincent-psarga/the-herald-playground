@@ -11,7 +11,9 @@
   the quarterings among them: Parker writes "Quarterly, per fesse indented azure and argent" and
   "Quarterly, embattled argent and sable", which are a quartering's own line cut rather than
   anything laid on it
-- Handle the disposition of charges (en chef, en orle, mal ordonnées)
+- Handle the disposition of charges (en chef, en orle, mal ordonnées). Counterchanging
+  shows what it costs: "coupé d'or et de sable à deux losanges de l'un à l'autre"
+  wants one lozenge in each half, and the two are drawn side by side across the line
 - Let voided take a tincture, which paints the opening rather than letting the
   field through: "au cheif de sable deux molletts d'or, voydes vert". Parker
   allows it of voided and forbids it of pierced — "if a different tincture be
@@ -44,6 +46,12 @@
 - Refuse a field sown with a name that already says a modifier or a part — "semé
   de macles", "semé d'anneaux" are read today as semys of the plain figure, the
   model having no room for either on a sowing
+- Counterchange a varied field by a partition line ("barry of six, sable and or,
+  per pale counterchanged"), which is what Parker, Fox-Davies and Wikipedia all
+  document under counterchanging a variation — a complex partition rather than a
+  figure laid on the field. A band or a charge counterchanged over a varied field
+  is a different thing, drawn easily enough and asked for by no source found so
+  far, so it waits for an armorial that writes one
 
 # Display
 
