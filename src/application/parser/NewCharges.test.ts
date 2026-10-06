@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { ChargeType } from '../../domain/models/Charge';
 import { OrdinaryType } from '../../domain/models/Ordinary';
+import { WrongModifier } from '../../domain/errors/parsing/WrongModifier';
 import { SvgBlazonDrawer } from '../drawer/svg/SvgBlazonDrawer';
+import { CHARGES } from '../drawer/svg/vocabulary/charges';
 import { crescent } from '../drawer/svg/shapes/crescent';
 import { WikipediaColours } from '../../infra/colours/WikipediaColours';
 import { Colours, Metals } from '../../domain/models/Tinctures';
@@ -35,6 +37,64 @@ describe('the goutte', () => {
     const sown = inFrench.parse("D'azur semé de gouttes d'argent");
     expect(writeFrench.write(sown)).toBe("D'azur semé de gouttes d'argent.");
     expect(writeEnglish.write(sown)).toBe('Azure semy of gouttes argent.');
+  });
+});
+
+describe('the larme, which is not the goutte however near it stands to one', () => {
+  test('is borne alone, and in number', () => {
+    expect(inFrench.parse("D'azur à la larme d'argent").chargesOrOrdinaries).toEqual([
+      { type: ChargeType.larme, tincture: Metals.argent },
+    ]);
+    expect(inFrench.parse("De sinople à trois larmes d'argent").chargesOrOrdinaries).toEqual([
+      { type: ChargeType.larme, tincture: Metals.argent, count: 3 },
+    ]);
+  });
+
+  test('is feminine in French, and takes the article that agrees', () => {
+    expect(writeFrench.write(inEnglish.parse('Azure a larme argent'))).toBe(
+      "D'azur à la larme d'argent."
+    );
+  });
+
+  /*
+   * English files "Larmes, or Larmettes" as nothing but a pointer back to its
+   * Gouttes, so the figure French names has no English name of its own and the
+   * word is read and written in both tongues alike.
+   */
+  test('is the one term under both tongues, English having taken the word whole', () => {
+    expect(inFrench.parse("D'azur à trois larmes d'argent")).toEqual(
+      inEnglish.parse('Azure three larmes argent')
+    );
+  });
+
+  test('is a term of its own, and not the goutte read under a second name', () => {
+    expect(inFrench.parse("D'azur à la goutte d'argent").chargesOrOrdinaries).toEqual([
+      { type: ChargeType.goutte, tincture: Metals.argent },
+    ]);
+    expect(inFrench.parse("D'azur à la larme d'argent")).not.toEqual(
+      inFrench.parse("D'azur à la goutte d'argent")
+    );
+  });
+
+  test('is drawn as a figure of its own, the drop being another shape again', () => {
+    const spot = { x: 100, y: 100, size: 20 };
+    const paint = { fill: '#fff' };
+    expect(CHARGES[ChargeType.larme].at(spot)(paint)).not.toBe(
+      CHARGES[ChargeType.goutte].at(spot)(paint)
+    );
+  });
+
+  test('is sown in as many words, neither tongue naming a strewing of tears', () => {
+    const sown = inFrench.parse("D'azur semé de larmes d'argent");
+    expect(writeFrench.write(sown)).toBe("D'azur semé de larmes d'argent.");
+    expect(writeEnglish.write(sown)).toBe('Azure semy of larmes argent.');
+  });
+
+  test('takes no modifier, nothing being said of a tear that the armorials write', () => {
+    expect(() => inFrench.parse("D'azur à la larme vidée d'argent")).toThrow(WrongModifier);
+    expect(() => inEnglish.parse('Azure a larme voided argent')).toThrow(
+      'Wrong modifier: larme is never voided'
+    );
   });
 });
 
@@ -190,6 +250,8 @@ describe('what the armorials can now be read as', () => {
     ["D'azur à trois étoiles d'or.", 'Azure three mullets or.'],
     ['D’azur semé de gouttes d’argent.', 'Azure semy of gouttes argent.'],
     ["D'azur semé de fleurs-de-lis d'or", 'Azure semy-de-lis or.'],
+    ["De sinople à trois larmes d'argent.", 'Vert three larmes argent.'],
+    ["De gueules à trois larmes d'argent.", 'Gules three larmes argent.'],
   ])('reads %s, copied from an armorial as it stands', (blazon, english) => {
     expect(writeEnglish.write(inFrench.parse(blazon))).toBe(english);
   });
