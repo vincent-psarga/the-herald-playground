@@ -92,8 +92,8 @@ Supported vocabulary as it stands:
   written, exactly as a besant says gold, so nothing follows it — and a blazon that says the
   modifier anyway is understood where it agrees and refused where it does not. English names no
   pierced star, molette being French, and blazons it in the ordinary way.
-- **Charges (9)** — annulet, billet, lozenge, roundel, goutte, mullet, fleur-de-lis, cross couped,
-  crescent. Some are plain shapes and some are pictures of something; all are borne once or in
+- **Charges (10)** — annulet, billet, lozenge, roundel, goutte, mullet, fleur-de-lis, cross couped,
+  crescent, larme. Some are plain shapes and some are pictures of something; all are borne once or in
   number, and any of them may be sown over a plain field instead. They
   share the ordinaries' list and their order, so what is blazoned last is drawn over the rest. Where
   they stand on the field — the disposition — is not read. The roundel is the one whose name carries
@@ -104,7 +104,11 @@ Supported vocabulary as it stands:
   them wavy. The fleur-de-lis is spelled four ways by the armorials, hyphenated or not and ending
   in either letter, and all four are read. The cross couped is the French croisette — the ordinary's
   own figure made small — and is not the crosslet, whose arms are themselves crossed; it shares its
-  first word with the ordinary, and which was meant is settled by what follows.
+  first word with the ordinary, and which was meant is settled by what follows. The larme is the
+  tear, which French keeps apart from the goutte on purpose — a round foot with a waving tail drawn
+  out of the top of it, where the drop falls straight to the point it ends in — and it is the one
+  figure here that English names no word of its own for: Parker files Larmes as nothing but a
+  pointer back to his Gouttes, so the French word is read and written in either tongue.
 - **Sown fields** — any charge may be sown over a field of one tincture instead of borne on it:
   "semé de billettes d'or", "semy of billets or". It is the field's own state rather than something
   the field bears, so nothing is counted and a band blazoned after it covers the sowing. Where the

@@ -78,7 +78,7 @@ describe('the figures each new charge is drawn as', () => {
     expect(svg.match(/<path/g) ?? []).toHaveLength(2);
   });
 
-  test.each([ChargeType.goutte, ChargeType.mullet, ChargeType.fleurDeLis])(
+  test.each([ChargeType.goutte, ChargeType.larme, ChargeType.mullet, ChargeType.fleurDeLis])(
     'sows %s with the same figure it is borne as',
     (type) => {
       const figure = CHARGES[type];
