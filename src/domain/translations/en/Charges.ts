@@ -236,4 +236,18 @@ export const EnglishChargeType: Translation<ChargeType> = {
       'A half-moon with the horns uppermost, which is where a crescent’s horns stand unless a blazon says otherwise — and no blazon can say otherwise here, the increscent and the decrescent being turnings this does not read.',
     sources: [parker('Crescent')],
   }),
+  // The one figure here English has no name of its own for. Parker files
+  // "Larmes, or Larmettes" as nothing but a pointer back to his Gouttes, so
+  // where French tells the tear from the drop English tells neither from the
+  // other, and the word is taken from French whole — which is how goutte came
+  // the other way, and the only honest thing a tongue with no word can do.
+  //
+  // Larmette is left out. Parker names it in the same breath, but it is the
+  // little larme, and a word for a smaller figure would promise a drawing this
+  // does not draw.
+  [ChargeType.larme]: new Word('larme', {
+    value:
+      'A tear: a round foot with a point drawn out of the top of it and bent over, so that the tail waves where a goutte falls straight to the point it ends in. English names no such figure of its own — Parker files Larmes as nothing but a pointer to his Gouttes — so the word is taken from French whole, as the goutte was taken the other way.',
+    sources: [parker('Larmes')],
+  }),
 };

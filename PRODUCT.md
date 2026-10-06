@@ -117,9 +117,9 @@ Supported vocabulary as it stands:
   whatever a blazon says of them, so a lion no blazon armed is drawn with claws in its own tincture
   and armed paints over them, where a ring has no stone until something says there is one. English names stoned three ways — Parker gives stoned, gemmed and jewelled — and one of the
   three is read.
-- **Charges (10)** — annulet, billet, lozenge, roundel, goutte, mullet, fleur-de-lis, cross couped,
-  crescent, lion. Some are plain shapes and some are pictures of something; all are borne once or in
-  number, and any of them may be sown over a plain field instead. They
+- **Charges (11)** — annulet, billet, lozenge, roundel, goutte, mullet, fleur-de-lis, cross couped,
+  crescent, larme, lion. Some are plain shapes and some are pictures of something; all are borne
+  once or in number, and any of them may be sown over a plain field instead. They
   share the ordinaries' list and their order, so what is blazoned last is drawn over the rest. Where
   they stand on the field — the disposition — is not read. The roundel is the one whose name carries
   its tincture: English calls the gold one a besant and the red one a torteau, French tells the
@@ -129,21 +129,25 @@ Supported vocabulary as it stands:
   them wavy. The fleur-de-lis is spelled four ways by the armorials, hyphenated or not and ending
   in either letter, and all four are read. The cross couped is the French croisette — the ordinary's
   own figure made small — and is not the crosslet, whose arms are themselves crossed; it shares its
-  first word with the ordinary, and which was meant is settled by what follows. The annulet is the
-  one whose name carries a part of the figure: English reads the ring and the gem-ring beside it,
-  French the annelet and the anneau, and the second of each pair is the ring with a stone set in
-  it. The lion is the first of the beasts, and is rampant: reared on its hind paws, head in
-  profile, tail turned up over the back and tufted. That is the posture a blazon naming none means
-  — "le Lion dans sa position naturelle est rampant" — and it is the only one, passant and couchant
-  and the rest being a vocabulary of postures this does not read. Its claws and its tongue may be
-  painted apart from the rest of it. It is drawn three fifths bigger than the spot a charge is
-  given, a beast spending most of its box on the air between its legs where a disc fills its own,
-  and it is the one figure that is modelled: the folio it is traced from paints it in two greens
-  rather than one, and without the second a lion is a blot of one colour with its limbs lost in it.
-  The marks of the second are washed over it in middle grey, which tells on a light tincture and a
-  dark one alike where a black wash would vanish on sable. They say nothing — heraldry knows a flat
-  paint and no shades — so the hatching draws none of them, every mark on a hatched shield being a
-  tincture named.
+  first word with the ordinary, and which was meant is settled by what follows. The larme is the
+  tear, which French keeps apart from the goutte on purpose — a round foot with a waving tail drawn
+  out of the top of it, where the drop falls straight to the point it ends in — and it is the one
+  figure here that English names no word of its own for: Parker files Larmes as nothing but a
+  pointer back to his Gouttes, so the French word is read and written in either tongue. The annulet
+  is the one whose name carries a part of the figure: English reads the ring and the gem-ring beside
+  it, French the annelet and the anneau, and the second of each pair is the ring with a stone set in
+  it. The lion is the first of the beasts, and is rampant: reared on its hind paws, head in profile,
+  tail turned up over the back and tufted. That is the posture a blazon naming none means — "le Lion
+  dans sa position naturelle est rampant" — and it is the only one, passant and couchant and the
+  rest being a vocabulary of postures this does not read. Its claws and its tongue may be painted
+  apart from the rest of it. It is drawn three fifths bigger than the spot a charge is given, a
+  beast spending most of its box on the air between its legs where a disc fills its own, and it is
+  the one figure that is modelled: the folio it is traced from paints it in two greens rather than
+  one, and without the second a lion is a blot of one colour with its limbs lost in it. The marks of
+  the second are washed over it in middle grey, which tells on a light tincture and a dark one alike
+  where a black wash would vanish on sable. They say nothing — heraldry knows a flat paint and no
+  shades — so the hatching draws none of them, every mark on a hatched shield being a tincture
+  named.
 - **Sown fields** — any charge may be sown over a field of one tincture instead of borne on it:
   "semé de billettes d'or", "semy of billets or". It is the field's own state rather than something
   the field bears, so nothing is counted and a band blazoned after it covers the sowing. Where the

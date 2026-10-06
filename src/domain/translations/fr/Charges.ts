@@ -203,4 +203,16 @@ export const FrenchChargeType: Translation<ChargeType, FrenchWord> = {
       'A half-moon with the horns uppermost, which is where a croissant’s horns stand unless a blazon says otherwise — and no blazon can say otherwise here, the increscent and the decrescent being turnings this does not read.',
     sources: [blasonArmoiries('Croissant')],
   }),
+  // The tear, which the dictionary files apart from the drop and warns against
+  // confusing with it. Feminine, and beginning on a consonant, so it takes the
+  // article whole: à la larme, à trois larmes.
+  [ChargeType.larme]: new FrenchWord(
+    'larme',
+    {
+      value:
+        'A tear: a round foot with a point drawn out of the top of it and bent over, so that the tail waves where a goutte falls straight to the point it ends in. It is not the goutte, however near it stands to one — the dictionary files the two apart and warns against confusing them. Heraldry keeps it for grief, and the armorials set larmes on the hangings of a funeral, on the catafalque and on the tomb.',
+      sources: [blasonArmoiries('Larme')],
+    },
+    { isFeminine: true }
+  ),
 };

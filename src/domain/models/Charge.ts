@@ -10,11 +10,11 @@ import { Tincture } from './Tinctures';
  * after the thing it is a picture of, and owes the field nothing: it is set on
  * the field wherever the blazon says, as many times as the blazon says.
  *
- * Ten so far. Some are plain geometry and some are pictures of something: a
- * drop, a star, the lily heraldry drew as a smith would forge it, the moon with
- * its horns up, and the first of the beasts. They are kept apart from the
- * ordinaries rather than listed among them because what will grow here is the
- * beasts and the objects, and what an ordinary can be told is quite another
+ * Eleven so far. Some are plain geometry and some are pictures of something: a
+ * drop, a tear, a star, the lily heraldry drew as a smith would forge it, the
+ * moon with its horns up, and the first of the beasts. They are kept apart from
+ * the ordinaries rather than listed among them because what will grow here is
+ * the beasts and the objects, and what an ordinary can be told is quite another
  * list.
  *
  * The roundel is one term and not a dozen, though heraldry gives it a dozen
@@ -53,6 +53,23 @@ export enum ChargeType {
   crossCouped = 'Charge.crossCouped',
   /** "A half-moon with the horns uppermost", which is the only way it is drawn here. */
   crescent = 'Charge.crescent',
+  /**
+   * The tear, which is not the drop however near it stands to one.
+   *
+   * French holds the two apart on purpose and says where the difference lies: a
+   * goutte is a "petit meuble rond, ou hémisphérique, c'est en cela qu'il
+   * diffère de la larme, avec laquelle il ne faut pas le confondre", where of
+   * the larme "la partie supérieure en pointe, devient ondoyante, s'élargit et
+   * se termine en rond". So the wave is in the tail and not in the flanks: a
+   * round foot with a point drawn out of the top of it and bent over, where the
+   * goutte falls straight to the point it ends in.
+   *
+   * English tells no such pair apart. Parker files "Larmes, or Larmettes" as
+   * nothing but a pointer back to his Gouttes, so the figure that has a name
+   * here has none there, and the word is taken from French whole exactly as
+   * goutte was taken the other way.
+   */
+  larme = 'Charge.larme',
   /**
    * The lion, which Parker calls "perhaps the most frequent of all bearings".
    *
@@ -137,6 +154,7 @@ export const ChargeDefinitions: Record<ChargeType, ChargeDefinition> = {
   [ChargeType.crossCouped]: new ChargeDefinition(ChargeType.crossCouped),
   [ChargeType.fleurDeLis]: new ChargeDefinition(ChargeType.fleurDeLis),
   [ChargeType.goutte]: new ChargeDefinition(ChargeType.goutte),
+  [ChargeType.larme]: new ChargeDefinition(ChargeType.larme),
   // Both, and heraldry gave each of the two a name of its own: a lozenge voided
   // is the mascle and a lozenge pierced is the rustre, which is the plainest
   // proof the two are not one thing said twice.

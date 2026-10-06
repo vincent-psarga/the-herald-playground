@@ -57,6 +57,11 @@ export const FrenchStrewings: Strewings<FrenchWord> = {
   // which is a vocabulary of waters and bloods this does not read. A sown goutte
   // is therefore sown in as many words.
   [ChargeType.goutte]: undefined,
+  // The larme has no participle of its own, and the armorials ask for none: a
+  // field sown with tears is written "semé de larmes", which is the long way
+  // round already. Goutté will not stand in for it — that word is the drop's,
+  // and names the liquid rather than the figure.
+  [ChargeType.larme]: undefined,
   [ChargeType.mullet]: undefined,
   // "Fleurdelisé" is not this. It says a figure ends in fleurs-de-lis — the
   // escarboucle fleurdelisée, whose arms finish in them — and borrowing it for a
