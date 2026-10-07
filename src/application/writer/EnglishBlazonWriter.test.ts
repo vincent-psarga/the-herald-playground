@@ -440,6 +440,7 @@ describe('a field bearing charges, in English', () => {
     expect(roundel(Colours.gules)).toBe('Sable a torteau.');
     expect(roundel(Colours.azure)).toBe('Sable a hurt.');
     expect(roundel(Colours.vert)).toBe('Sable a pomme.');
+    expect(roundel(Colours.purpure)).toBe('Sable a golpe.');
   });
 
   test('falls back on the plain roundel where English named no such disc', () => {

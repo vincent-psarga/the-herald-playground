@@ -80,7 +80,7 @@ describe('furred fields', () => {
   });
 
   test('refuses a word that names no tincture after the fur', () => {
-    expect(() => parser.parse("Vairé d'or et de pourpre")).toThrow(UnknownTincture);
+    expect(() => parser.parse("Vairé d'or et de fuchsia")).toThrow(UnknownTincture);
   });
 
   test('refuses the pieces a varied field would have been counted in', () => {

@@ -677,6 +677,7 @@ describe('the roundel, which English names after its tincture', () => {
     ['a hurt', Colours.azure],
     ['a pellet', Colours.sable],
     ['a pomme', Colours.vert],
+    ['a golpe', Colours.purpure],
   ];
 
   test.each(ROUNDELS)(
