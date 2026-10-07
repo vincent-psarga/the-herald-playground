@@ -55,8 +55,8 @@ language's grammar, so a second language means a second parser.
 
 Supported vocabulary as it stands:
 
-- **Tinctures (8)** in three ranks — metals (or, argent), colours (azure, gules, sable, vert),
-  furs (ermine, vair).
+- **Tinctures (9)** in three ranks — metals (or, argent), colours (azure, gules, sable, vert,
+  purpure), furs (ermine, vair).
 - **Divisions (6)** — per pale, per fess, per bend, per bend sinister, and the two that cut the
   field by a line crossing itself: quarterly (French écartelé), the pale and the fess together, its
   quarters standing square; and per saltire (French écartelé en sautoir), the bend and the bend
@@ -122,9 +122,9 @@ Supported vocabulary as it stands:
   once or in number, and any of them may be sown over a plain field instead. They
   share the ordinaries' list and their order, so what is blazoned last is drawn over the rest. Where
   they stand on the field — the disposition — is not read. The roundel is the one whose name carries
-  its tincture: English calls the gold one a besant and the red one a torteau, French tells the
-  metal disc from the coloured one, and a name that means a tincture is written without it and
-  refuses any other. The mullet is the French étoile — a star of five straight rays, which both
+  its tincture: English calls the gold one a besant, the red one a torteau and the purple one a
+  golpe, French tells the metal disc from the coloured one, and a name that means a tincture is
+  written without it and refuses any other. The mullet is the French étoile — a star of five straight rays, which both
   tongues understand where the blazon counts none — and not the estoile, which has six and draws
   them wavy. The fleur-de-lis is spelled four ways by the armorials, hyphenated or not and ending
   in either letter, and all four are read. The cross couped is the French croisette — the ordinary's
