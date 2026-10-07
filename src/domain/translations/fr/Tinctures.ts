@@ -31,6 +31,12 @@ export const FrenchColours: Translation<Colours, FrenchWord> = {
     value: 'Green.',
     sources: [blasonArmoiries('Sinople')],
   }),
+  // "Une des couleurs du blason ; c'est le violet, composé d'azur et de
+  // gueules", and a masculine noun, so "de pourpre" and "au lion de pourpre".
+  [Colours.purpure]: new FrenchWord('pourpre', {
+    value: 'Purple: the violet heraldry mixes from azure and gules. A colour, never a metal.',
+    sources: [blasonArmoiries('Pourpre')],
+  }),
 };
 
 export const FrenchFurs: Translation<Furs, FrenchWord> = {
