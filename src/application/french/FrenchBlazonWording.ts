@@ -12,15 +12,8 @@ import { FrenchTinctures } from '../../domain/translations/fr/Tinctures';
 import { FrenchVariationType } from '../../domain/translations/fr/Variations';
 import { FrenchWord } from '../../domain/translations/fr/FrenchWord';
 import { BlazonWording } from '../writer/BlazonWording';
-import {
-  CONJUNCTION,
-  agreeing,
-  bearing,
-  cutIn,
-  ranked,
-  sownIn,
-  withArticle,
-} from './FrenchGrammar';
+import { CONJUNCTION, agreeing, bearing, cutIn, ranked, sownIn } from './FrenchGrammar';
+import { withArticle } from '../Articles';
 
 export const FrenchBlazonWording: BlazonWording<FrenchWord> = {
   tinctures: FrenchTinctures,

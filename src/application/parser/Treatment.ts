@@ -39,12 +39,18 @@ export function isBare(treatment: Treatment): treatment is Bare {
  * something borne: a besanté is gold by being a besanté, and a bezanty is never
  * argent. So the name is read first and the tincture after it, and the word that
  * was written decides what it will take and what it means when nothing follows.
+ *
+ * The tincture is asked for by the figure sown, a tongue being free to name a
+ * tincture otherwise for some figures than for others: a field sown with drops
+ * may be gutté de sang, where one sown with billets is billetty gules.
  */
 export function strewing<W extends Word>(
   named: Parser<TokenKind, TermWord<ChargeType, W>>,
-  tincture: Parser<TokenKind, Tincture>
+  tincture: (type: ChargeType) => Parser<TokenKind, Tincture>
 ): Parser<TokenKind, Treatment> {
   return combine(named, ({ term, word }) =>
-    apply(carried(tincture, word), (tincture): Treatment => ({ semy: { type: term, tincture } }))
+    apply(carried(tincture(term), word), (tincture): Treatment => ({
+      semy: { type: term, tincture },
+    }))
   );
 }

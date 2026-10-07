@@ -24,8 +24,16 @@ const ENGLISH = vocabularyIn(Languages.en);
  * gem-ring — so a word may stand twice over, once in the list and once in the
  * reading of the word beside it.
  */
-const ghost = (word: string) =>
+const ghost = (word: string | RegExp) =>
   within(document.querySelector('.stack') as HTMLElement).getByRole('link', { name: word });
+/**
+ * A word as the stack names it: the spelling, and the rank after it where
+ * another word shares the spelling — "or" the tincture and "or" the liquid.
+ */
+const named = (entry: VocabularyEntry): [string, string | RegExp] =>
+  entry.qualified
+    ? [`${entry.word} (${entry.rank})`, new RegExp(`^${entry.word}\\s*${entry.rank}$`)]
+    : [entry.word, entry.word];
 const showing = () => document.querySelector('.showing') as HTMLElement;
 /** What scrolls inside the reading, where the reading is a pane of its own. */
 const leaf = () => document.querySelector('.showing__leaf') as HTMLElement;
@@ -99,14 +107,14 @@ describe('the vocabulary of one tongue', () => {
     expect(sift(`${FRENCH.length} words`)).toBeInTheDocument();
   });
 
-  test.each(FRENCH.map((entry) => entry.word))('keeps %s present in the stack', (word) => {
+  test.each(FRENCH.map(named))('keeps %s present in the stack', (_, name) => {
     mount(<VocabularyPage language={Languages.fr} />);
-    expect(ghost(word)).toBeInTheDocument();
+    expect(ghost(name)).toBeInTheDocument();
   });
 
-  test.each(ENGLISH.map((entry) => entry.word))('keeps %s present in English too', (word) => {
+  test.each(ENGLISH.map(named))('keeps %s present in English too', (_, name) => {
     mount(<VocabularyPage language={Languages.en} />);
-    expect(ghost(word)).toBeInTheDocument();
+    expect(ghost(name)).toBeInTheDocument();
   });
 
   test('holds the French words to the French page and the English to the English', () => {

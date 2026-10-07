@@ -52,15 +52,22 @@ export const FrenchStrewings: Strewings<FrenchWord> = {
       { allowedTinctures: [...COLOURS, ...PELTS] }
     ),
   ],
-  // Goutté exists and does not take a tincture: French names the liquid, as
-  // English does — goutté d'eau for the argent drops, de sang for the gules —
-  // which is a vocabulary of waters and bloods this does not read. A sown goutte
-  // is therefore sown in as many words.
-  [ChargeType.goutte]: undefined,
+  // "Lorsqu'un écu en est semé on le dit Goutté en blasonnant" — Duhoux
+  // d'Argicourt, quoted by Au blason des armoiries, which quotes another author
+  // too who would rather say semé de gouttes. The named word is written, as it
+  // is wherever French has one.
+  //
+  // It takes its tincture as any strewing does: goutté de gueules. Some authors
+  // pour the drops instead — goutté de sang — and that is read, with the
+  // liquids, and written back as the tincture.
+  [ChargeType.goutte]: new FrenchWord('goutté', {
+    value: 'A field sown with gouttes, owed its tincture as any strewing is: goutté de gueules.',
+    sources: [blasonArmoiries('Goutte, goutté', 'goutte')],
+  }),
   // The larme has no participle of its own, and the armorials ask for none: a
   // field sown with tears is written "semé de larmes", which is the long way
   // round already. Goutté will not stand in for it — that word is the drop's,
-  // and names the liquid rather than the figure.
+  // and the dictionary keeps the two figures apart.
   [ChargeType.larme]: undefined,
   [ChargeType.mullet]: undefined,
   // "Fleurdelisé" is not this. It says a figure ends in fleurs-de-lis — the

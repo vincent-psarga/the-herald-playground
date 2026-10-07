@@ -13,15 +13,6 @@ import { anyKeyword, keyword } from '../parser/Combinators';
 // and the elision its article has to agree with, so nothing here keeps a list of
 // which words are which.
 
-export function expectedArticle(word: FrenchWord): TokenKind.Elision | TokenKind.Article {
-  return word.needsElision ? TokenKind.Elision : TokenKind.Article;
-}
-
-/** Renders a term as it is spoken in a blazon: "d'or", "de gueules". */
-export function withArticle(word: FrenchWord): string {
-  return word.needsElision ? `d'${word.value}` : `de ${word.value}`;
-}
-
 /**
  * Every way a blazon may say the field bears a word, the one it is written back
  * out in first.

@@ -1,7 +1,7 @@
 import { Attribute, Attributed, paintedIn } from '../../domain/models/Attributes';
 import { Blazon, ChargeOrOrdinary, isCharge, isOrdinary } from '../../domain/models/Blazon';
 import { ChargeType, numberBorne } from '../../domain/models/Charge';
-import { Tinctured, isCounterchanged } from '../../domain/models/Counterchanged';
+import { isCounterchanged } from '../../domain/models/Counterchanged';
 import { Modifier } from '../../domain/models/Modifier';
 import {
   Division,
@@ -63,6 +63,13 @@ export interface BlazonWording<W extends Word = Word> {
   readonly numbers: NumberWords<W>;
   /** How a tincture is introduced: "d'or" in French, plain "or" in English. */
   readonly introduce: (word: W) => string;
+  /**
+   * The liquid a figure in this tincture is written as, where the tongue writes
+   * one: "de sang" for a drop gules in English. Nothing where the tongue writes
+   * the tincture instead — French reads the liquids and writes the tincture, and
+   * leaves this off.
+   */
+  readonly pour?: (type: ChargeType, tincture: Tincture) => string | undefined;
   /**
    * How something borne is introduced: "à la fasce" in French, "a fess" in English,
    * and, where several are borne, how many — "à trois chevrons", "three
@@ -212,7 +219,7 @@ function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdi
   const several = count >= SEVERAL;
   const bearing = wording.bear(word, several ? counted(wording.numbers, count) : undefined);
   const modifier = modifying(wording, one, word)?.(several);
-  const tincture = paintedWith(wording, one.tincture, word);
+  const tincture = paintedWith(wording, one, word);
   const line = painting(wording, one);
   // The parts follow the tincture with nothing between, which is how both
   // sources write them — "Gules, three gem-rings argent stoned azure", "au lion
@@ -243,17 +250,26 @@ function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdi
  * tincture to write. A name chosen for the tincture it means has said it by
  * being written — a besant is a gold coin entire — so nothing follows it, and an
  * armorial that wrote the tincture after such a name would be saying the one
- * thing twice. Everything else is written with its tincture.
+ * thing twice. Everything else is written with its tincture — or, where the
+ * tongue names the figure's tincture by a liquid, with the liquid: "three gouttes
+ * de sang".
  */
 function paintedWith<W extends Word>(
   wording: BlazonWording<W>,
-  tincture: Tinctured,
+  one: ChargeOrOrdinary,
   named: W
 ): string | undefined {
+  const { tincture } = one;
   if (isCounterchanged(tincture)) {
     return wording.counterchanged.value;
   }
-  return named.defaultTincture === tincture ? undefined : writeTincture(wording, tincture);
+  if (named.defaultTincture === tincture) {
+    return undefined;
+  }
+  return (
+    (isCharge(one) ? wording.pour?.(one.type, tincture) : undefined) ??
+    writeTincture(wording, tincture)
+  );
 }
 
 /**
@@ -467,7 +483,8 @@ function writePlain<W extends Word>(wording: BlazonWording<W>, field: Plain): st
  *
  * The tincture is written only where the word has not already said it, by the
  * same rule that governs anything borne: a besanté is gold entire, and the gold
- * written after it would be saying the one thing twice.
+ * written after it would be saying the one thing twice. Where it is written, it
+ * is poured where the tongue pours the figure: gutté de sang.
  */
 function writeSemy<W extends Word>(wording: BlazonWording<W>, semy: Semy): string {
   const named = strewnIn(wording.strewings, semy.type, semy.tincture);
@@ -475,7 +492,10 @@ function writeSemy<W extends Word>(wording: BlazonWording<W>, semy: Semy): strin
   const sowing = named === undefined ? wording.strew(word) : word.value;
   return word.defaultTincture === semy.tincture
     ? sowing
-    : [sowing, writeTincture(wording, semy.tincture)].join(' ');
+    : [
+        sowing,
+        wording.pour?.(semy.type, semy.tincture) ?? writeTincture(wording, semy.tincture),
+      ].join(' ');
 }
 
 /**

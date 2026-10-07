@@ -386,9 +386,9 @@ export const RULES: readonly Rule[] = [
         </p>
         <p className="rule__law">
           Which strewings have a word is declared language by language and never worked out. French
-          names the billeté, the besanté and the tourtelé; English the billetty and the bezanty.
-          Losangé and lozengy are fields cut into lozenges rather than sown with them, and are not
-          borrowed for this however convenient they look.
+          names the billeté, the besanté, the tourtelé and the goutté; English the billetty, the
+          bezanty and the gutté. Losangé and lozengy are fields cut into lozenges rather than sown
+          with them, and are not borrowed for this however convenient they look.
         </p>
       </>
     ),
@@ -404,6 +404,46 @@ export const RULES: readonly Rule[] = [
       en('Azure semy of roundels or'),
       en('Azure semy of roundels argent'),
       fr("D'azur semé d'annelets d'or"),
+    ],
+  },
+  {
+    id: 'a-drop-is-poured',
+    heading: 'English names a drop by its liquid, French by its tincture',
+    law: (
+      <>
+        <p className="rule__law">
+          English gives drops a liquid for six tinctures: d’eau for argent, d’or, de larmes for
+          azure, de poix for sable, de sang for gules, d’huile for vert. Where a liquid exists it is
+          written, after a field sown with drops and after drops borne alike. Purpure and the furs
+          have none, and are written as tinctures.
+        </p>
+        <p className="rule__law">
+          French reads de sang, de poix and d’eau, and writes the tincture: goutté de gueules. The
+          liquids English adds are not read in French, which keeps the larme as a figure of its own.
+        </p>
+        <p className="rule__law">
+          English reads gutté, gutty, goutty and gouté, and writes gutté. It is the spelling of
+          Parker’s table of liquids, and the liquids are French. Of the two oils, d’huile is
+          written. The choice is made here and rests on no authority.
+        </p>
+      </>
+    ),
+    authority: (
+      <>
+        Drops “may be of various tinctures, and in English heraldry a distinct term is used for
+        each, though this was probably of late introduction” — Parker. “On doit exprimer l’émail des
+        Gouttes ; quelques auteurs veulent que les Gouttes rouges soient appelées Gouttes de sang ;
+        les noires, gouttes de poix ; les blanches, Gouttes d’eau” — Au blason des armoiries.
+      </>
+    ),
+    sources: [parker('Gouttes'), blasonArmoiries('Goutte, goutté', 'goutte')],
+    cases: [
+      en('Azure gutty argent'),
+      en('Or three gouttes gules'),
+      en("Argent gutté d'olive"),
+      en('Or gutty purpure'),
+      fr("D'or goutté de sang"),
+      fr("D'azur à trois gouttes d'eau"),
     ],
   },
   {

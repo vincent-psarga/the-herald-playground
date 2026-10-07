@@ -49,7 +49,7 @@ import { Tincture } from '../../domain/models/Tinctures';
 import { TermWord } from '../../domain/translations/Translation';
 import { Word } from '../../domain/translations/Word';
 import { TokenKind } from '../lexer/Lexer';
-import { BorneTerm, bearsPart, bornUnder, carried } from './Borne';
+import { BorneTerm, BorneType, bearsPart, bornUnder, carried } from './Borne';
 import { guard, optional, optionalUnlessBegun, present, unless } from './Combinators';
 import { asRank, asTincture, complaining, owedAtEnd, positionOf, within } from './Failures';
 import { Treatment, isBare } from './Treatment';
@@ -63,6 +63,13 @@ import { VariedField } from './Variations';
 export interface BlazonGrammar {
   /** A tincture, with whatever article the language puts in front of it. */
   readonly tincture: Parser<TokenKind, Tincture>;
+  /**
+   * The tincture something borne is named in, where a tongue names it otherwise
+   * for some figures than for the rest: a drop may be poured — "gouttes de
+   * sang" — where a band is only ever gules. A tongue that names every figure's
+   * tincture alike leaves this off, and the tincture is read for all of them.
+   */
+  readonly tinctureOf?: (type: BorneType) => Parser<TokenKind, Tincture>;
   /** The name of a partition. */
   readonly division: Parser<TokenKind, DivisionType>;
   /**
@@ -321,8 +328,9 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
   //
   // The count is left off rather than set to one when a single one is borne, so
   // that a fess reads back as the fess it was before a field could bear two.
+  const tinctureOf = grammar.tinctureOf ?? (() => grammar.tincture);
   const paintedWith = (borne: BorneTerm): Parser<TokenKind, Tinctured> => {
-    const tincture = carried(grammar.tincture, borne.word);
+    const tincture = carried(tinctureOf(borne.type), borne.word);
     const phrase = grammar.counterchanged;
     if (phrase === undefined) {
       return tincture;

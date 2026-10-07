@@ -21,6 +21,8 @@ import { NOT_IN_NUMBER, alone, bearings, laidOver, qualifiable, several } from '
 import { anyWriting, qualifying } from '../parser/Qualifiers';
 import { number } from '../parser/Numbers';
 import { strewing } from '../parser/Treatment';
+import { namedIn } from '../parser/Liquids';
+import { EnglishLiquids } from '../../domain/translations/en/Liquids';
 import { VariedField, varied } from '../parser/Variations';
 import { ARTICLE, AND } from './EnglishGrammar';
 
@@ -35,6 +37,12 @@ const VARIATION = apply(
   ),
   ([named, counted]): VariedField => (counted === undefined ? named : { ...named, pieces: counted })
 );
+
+const TINCTURE = term(EnglishTinctures, asTincture);
+
+// "Gutté de sang", "three gouttes d'eau": a drop is named by the liquid it is a
+// drop of wherever English has one, and by its tincture otherwise.
+const TINCTURE_OF = namedIn(TINCTURE, EnglishLiquids);
 
 // A band and a charge are borne by the same phrase and are read from one
 // vocabulary: "a fess" and "a billet" differ in nothing a grammar can see.
@@ -55,7 +63,7 @@ const SOWN_CHARGE = kright(
 // where French writes "plain". Parker's "plain" is a band drawn with a straight
 // line rather than a field with nothing on it, and borrowing it here would be
 // inventing heraldry rather than reading it.
-const TREATMENT = strewing(alt(NAMED_STREWING, SOWN_CHARGE), term(EnglishTinctures, asTincture));
+const TREATMENT = strewing(alt(NAMED_STREWING, SOWN_CHARGE), (type) => TINCTURE_OF(type));
 
 // What a blazon may say of a charge after its tincture. English agrees with
 // nothing: "voided" stands after one lozenge and after three of them unchanged,
@@ -92,7 +100,8 @@ const OVER_ALL = anyPhrase(writtenAs(EnglishOverAll));
 const COUNTERCHANGED = anyPhrase(writtenAs(EnglishCounterchanged));
 
 export const EnglishBlazonGrammar: BlazonGrammar = {
-  tincture: term(EnglishTinctures, asTincture),
+  tincture: TINCTURE,
+  tinctureOf: TINCTURE_OF,
   division: term(EnglishDivisionType, asDivision),
   // Nothing stands between a furred field and its tinctures, and nothing is
   // counted: "Vairy or and gules" is the whole of the phrase.

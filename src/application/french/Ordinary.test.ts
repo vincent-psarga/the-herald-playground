@@ -9,7 +9,8 @@ import { wordOf } from '../../domain/translations/Translation';
 import { FrenchOrdinaryType } from '../../domain/translations/fr/Ordinaries';
 import { FrenchTinctures } from '../../domain/translations/fr/Tinctures';
 import { FrenchBlazonParser } from '../parser/FrenchBlazonParser';
-import { bearing, withArticle } from './FrenchGrammar';
+import { bearing } from './FrenchGrammar';
+import { withArticle } from '../Articles';
 import { FieldType } from '../../domain/models/Field';
 
 const parser = new FrenchBlazonParser();
