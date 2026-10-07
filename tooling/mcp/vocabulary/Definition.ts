@@ -34,8 +34,14 @@ export interface Definition {
   readonly spellings: readonly { readonly singular: string; readonly plural: string }[];
   readonly description: string;
   readonly sources: readonly Source[];
-  /** The other words of the same tongue for the same term. */
+  /** The other words of the same tongue that say exactly what this one says, as vairy says vairé. */
   readonly synonyms: readonly string[];
+  /**
+   * The other words of the same tongue for the same term that say something
+   * more or other than this one, as rustre says a losange pierced, or bezant a
+   * roundel or.
+   */
+  readonly variations: readonly string[];
   /** What the other tongue says it with, where it says it at all. */
   readonly translations: readonly Related[];
   /** For a modifier, the charges it is said of. */
@@ -136,8 +142,31 @@ function tincturesOf(word: Word, language: Languages): Definition['tinctures'] {
   };
 }
 
+/**
+ * Whether two words of one term say the same thing: the same modifier already
+ * said, and the same tinctures understood and allowed. A mascle is a lozenge
+ * and a bezant a roundel, but neither says only that.
+ */
+function saysTheSame(one: Word, other: Word): boolean {
+  return (
+    one.defaultModifier === other.defaultModifier &&
+    one.defaultTincture === other.defaultTincture &&
+    one.allowedTinctures.length === other.allowedTinctures.length &&
+    one.allowedTinctures.every((tincture) => other.accepts(tincture))
+  );
+}
+
 function define(entry: VocabularyEntry, language: Languages): Definition {
   const word = wordBehind(entry, language);
+  const siblings = entry.alsoHere.map((sighting) => sighting.word);
+  // A rank that keeps no words of its own leaves nothing to tell its words
+  // apart by, and they are taken for synonyms.
+  const isSynonym = (sibling: string) => {
+    const other = RANKED[language]
+      .get(entry.rank)
+      ?.find((candidate) => candidate.value === sibling);
+    return word === undefined || other === undefined || saysTheSame(word, other);
+  };
   const tinctures = word === undefined ? undefined : tincturesOf(word, language);
   const implies =
     word?.defaultModifier === undefined
@@ -153,7 +182,8 @@ function define(entry: VocabularyEntry, language: Languages): Definition {
         : word.spellings.map(({ value, plural }) => ({ singular: value, plural })),
     description: entry.description,
     sources: entry.sources,
-    synonyms: entry.alsoHere.map((sighting) => sighting.word),
+    synonyms: siblings.filter(isSynonym),
+    variations: siblings.filter((sibling) => !isSynonym(sibling)),
     translations: entry.otherTongue.map(({ word, language }) => ({ word, language })),
     appliesTo: sighted(entry, 'Said of'),
     takes: sighted(entry, 'Modified'),

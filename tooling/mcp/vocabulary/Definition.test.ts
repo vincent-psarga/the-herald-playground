@@ -39,10 +39,24 @@ describe('definitionsOf', () => {
     });
   });
 
-  test('names the other words of the same term, and the words of the other tongue', () => {
-    const besant = only('besant', Languages.en);
-    expect(besant.synonyms).toContain('roundel');
-    expect(besant.translations).toContainEqual({ word: 'besant', language: Languages.fr });
+  test('names the words of the other tongue', () => {
+    expect(only('besant', Languages.en).translations).toContainEqual({
+      word: 'besant',
+      language: Languages.fr,
+    });
+  });
+
+  test('names as synonyms the other words that say exactly the same', () => {
+    expect(only('vidé', Languages.fr).synonyms).toEqual(['évidé']);
+    expect(only('vidé', Languages.fr).variations).toEqual([]);
+  });
+
+  test('names as variations the other words of the term that say more', () => {
+    const losange = only('losange', Languages.fr);
+    expect(losange.variations).toEqual(expect.arrayContaining(['macle', 'rustre']));
+    expect(losange.synonyms).not.toContain('macle');
+    expect(losange.synonyms).not.toContain('rustre');
+    expect(only('besant', Languages.en).variations).toContain('roundel');
   });
 
   test('says which tinctures a word is held to, in its own tongue', () => {

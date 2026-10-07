@@ -40,7 +40,7 @@ const serverOf = () => {
       title: 'Define a word of blazon',
       description:
         'Defines a word of heraldic blazon the library reads, in English or French: what kind of term it is, ' +
-        'what it means and who says so, its other spellings and synonyms, its counterpart in the other tongue, ' +
+        'what it means and who says so, its other spellings, its synonyms and the variations on it (rustre, a losange pierced), its counterpart in the other tongue, ' +
         'the charges it applies to or the modifiers it takes, the tinctures it is held to, and an example blazon. ' +
         'A spelling that is a word of both tongues (besant) returns one definition for each.',
       inputSchema: {
