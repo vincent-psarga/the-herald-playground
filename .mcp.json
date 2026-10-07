@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "vocabulary": {
+      "command": "node",
+      "args": ["tooling/mcp/vocabulary/server.mjs"]
+    }
+  }
+}

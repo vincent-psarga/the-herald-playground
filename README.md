@@ -49,18 +49,30 @@ npm install
 
 ## Scripts
 
-| Script                  | Description                                                 |
-| ----------------------- | ----------------------------------------------------------- |
-| `npm run build`         | Compile `src/` to `lib/` (declarations + source maps)       |
-| `npm run dev`           | Serve the demo page at http://localhost:5173                |
-| `npm test`              | Run the Vitest suite once                                   |
-| `npm run test:watch`    | Run Vitest in watch mode                                    |
-| `npm run test:coverage` | Run the suite and report how much of `src/` it reaches      |
-| `npm run coverage`      | Run the suite, then measure what it and the armorials cover |
-| `npm run typecheck`     | Type-check everything, tests included, without emitting     |
-| `npm run format`        | Format the tree with Prettier                               |
-| `npm run format:check`  | Report anything Prettier would reformat                     |
-| `npm run clean`         | Remove `lib/`                                               |
+| Script                   | Description                                                 |
+| ------------------------ | ----------------------------------------------------------- |
+| `npm run build`          | Compile `src/` to `lib/` (declarations + source maps)       |
+| `npm run dev`            | Serve the demo page at http://localhost:5173                |
+| `npm test`               | Run the Vitest suite once                                   |
+| `npm run test:watch`     | Run Vitest in watch mode                                    |
+| `npm run test:coverage`  | Run the suite and report how much of `src/` it reaches      |
+| `npm run coverage`       | Run the suite, then measure what it and the armorials cover |
+| `npm run typecheck`      | Type-check everything, tests included, without emitting     |
+| `npm run format`         | Format the tree with Prettier                               |
+| `npm run format:check`   | Report anything Prettier would reformat                     |
+| `npm run clean`          | Remove `lib/`                                               |
+| `npm run mcp:vocabulary` | Start the vocabulary MCP server on stdio                    |
+
+### Vocabulary MCP server
+
+`tooling/mcp/vocabulary` is an MCP server with a single tool, `define`. Given a
+word (and, optionally, `en` or `fr`), it answers with everything the library
+knows about it: its rank, description and sources, its other spellings, the
+other words of the same term, its counterpart in the other tongue, the charges
+it applies to or the modifiers it takes, the tinctures it is held to, and an
+example blazon. It is built on the same entries as the demo's vocabulary page.
+
+`.mcp.json` registers it for Claude Code under the name `vocabulary`.
 
 ### Docker
 

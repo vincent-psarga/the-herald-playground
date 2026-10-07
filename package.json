@@ -15,7 +15,8 @@
     "prepare": "husky",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "dev": "vite demo"
+    "dev": "vite demo",
+    "mcp:vocabulary": "node tooling/mcp/vocabulary/server.mjs"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +27,7 @@
     "typescript-parsec": "^0.3.4"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
@@ -46,7 +48,8 @@
     "remark-gfm": "^4.0.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.0",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.0",
+    "zod": "^4.6.5"
   },
   "exports": {
     ".": {
