@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { FrenchBlazonParser } from '../parser/FrenchBlazonParser';
 import { UnknownTincture } from '../../domain/errors/parsing/UnknownTincture';
-import { withArticle } from './FrenchGrammar';
+import { withArticle } from '../Articles';
 import { Colours, Metals, TINCTURES } from '../../domain/models/Tinctures';
 import { wordOf } from '../../domain/translations/Translation';
 import { FrenchTinctures } from '../../domain/translations/fr/Tinctures';

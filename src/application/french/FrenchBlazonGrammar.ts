@@ -37,10 +37,9 @@ import {
   agreementsOf,
   bearing,
   everyBearing,
-  expectedArticle,
   sownIn,
-  withArticle,
 } from './FrenchGrammar';
+import { expectedArticle, withArticle } from '../Articles';
 
 // A tincture may be named bare ("or") or introduced by an article ("d'or"), so
 // the article is part of the grammar rather than part of the vocabulary.

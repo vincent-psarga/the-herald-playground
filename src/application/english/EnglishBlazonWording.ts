@@ -10,7 +10,7 @@ import { EnglishVariationType, OF } from '../../domain/translations/en/Variation
 import { BlazonWording } from '../writer/BlazonWording';
 import { EnglishLiquids } from '../../domain/translations/en/Liquids';
 import { pouredIn } from '../../domain/translations/Liquids';
-import { withArticle } from '../french/FrenchGrammar';
+import { withArticle } from '../Articles';
 import { CONJUNCTION, bearing } from './EnglishGrammar';
 
 export const EnglishBlazonWording: BlazonWording = {

@@ -4,7 +4,7 @@ import { wordOf } from '../../domain/translations/Translation';
 import { FrenchTinctures } from '../../domain/translations/fr/Tinctures';
 import { parseWith } from '../parser/Parser';
 import { FrenchBlazonGrammar } from './FrenchBlazonGrammar';
-import { withArticle } from './FrenchGrammar';
+import { withArticle } from '../Articles';
 
 const parseTincture = (text: string) => parseWith(FrenchBlazonGrammar.tincture, text);
 

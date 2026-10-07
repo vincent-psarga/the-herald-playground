@@ -14,8 +14,8 @@ import { WrongTinctureArticle } from '../../domain/errors/parsing/WrongTinctureA
 import { ChargeType, isChargeType } from '../../domain/models/Charge';
 import { Tincture } from '../../domain/models/Tinctures';
 import { Liquids, pouredAs } from '../../domain/translations/Liquids';
-import { FrenchWord } from '../../domain/translations/fr/FrenchWord';
-import { expectedArticle, withArticle } from '../french/FrenchGrammar';
+import { Word } from '../../domain/translations/Word';
+import { expectedArticle, withArticle } from '../Articles';
 import { TokenKind } from '../lexer/Lexer';
 import { BorneType } from './Borne';
 import { guard, spelledTerm } from './Combinators';
@@ -32,7 +32,7 @@ const ARTICLE = alt(tok(TokenKind.Elision), tok(TokenKind.Article));
  * article agrees with the word as a French tincture's does, so "de eau" is
  * refused by name.
  */
-function liquid(words: Liquids<FrenchWord>, type: ChargeType): Parser<TokenKind, Tincture> {
+function liquid(words: Liquids<Word>, type: ChargeType): Parser<TokenKind, Tincture> {
   const named = spelledTerm(pouredAs(words, type), asTincture);
   // The complaint is laid on the liquid rather than on its article, which is
   // where a tincture misread there would complain too: level with it, the
@@ -96,7 +96,7 @@ function eitherNamed(
  */
 export function namedIn(
   tincture: Parser<TokenKind, Tincture>,
-  liquids: Liquids<FrenchWord>
+  liquids: Liquids<Word>
 ): (type: BorneType) => Parser<TokenKind, Tincture> {
   const built = new Map<BorneType, Parser<TokenKind, Tincture>>();
   return (type) => {

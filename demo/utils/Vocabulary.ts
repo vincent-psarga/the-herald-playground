@@ -1,6 +1,7 @@
 import { EnglishBlazonWording } from '../../src/application/english/EnglishBlazonWording';
 import { FrenchBlazonWording } from '../../src/application/french/FrenchBlazonWording';
-import { sownIn, withArticle } from '../../src/application/french/FrenchGrammar';
+import { sownIn } from '../../src/application/french/FrenchGrammar';
+import { withArticle } from '../../src/application/Articles';
 import { BlazonWording, writeBlazon } from '../../src/application/writer/BlazonWording';
 import { Blazon, ChargeOrOrdinary } from '../../src/domain/models/Blazon';
 import { ChargeType, allowsModifier, modifiersOf } from '../../src/domain/models/Charge';
@@ -247,7 +248,7 @@ interface Tongue<W extends Word = Word> {
    * rather than read off it, because a tongue may read them and never write
    * them — French does — and the page lists what is read.
    */
-  readonly liquids: Liquids<W & FrenchWord>;
+  readonly liquids: Liquids<W>;
 }
 
 const FRENCH: Tongue<FrenchWord> = {
@@ -494,9 +495,7 @@ function insisting<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W):
       return {
         ...wording,
         pour: (type, of) =>
-          of === tincture && word.claims(type) && word instanceof FrenchWord
-            ? withArticle(word)
-            : wording.pour?.(type, of),
+          of === tincture && word.claims(type) ? withArticle(word) : wording.pour?.(type, of),
       };
     }
     case 'field':

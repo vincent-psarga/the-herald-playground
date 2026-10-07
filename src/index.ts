@@ -171,8 +171,8 @@ export {
   cutIn,
   everyBearing,
   sownIn,
-  withArticle,
 } from './application/french/FrenchGrammar';
+export { expectedArticle, withArticle } from './application/Articles';
 export type { Agreement } from './application/french/FrenchGrammar';
 export { bearing as englishBearing, indefiniteArticle } from './application/english/EnglishGrammar';
 

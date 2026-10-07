@@ -2,7 +2,7 @@ import { ChargeType } from '../../models/Charge';
 import { Colours, Furs, Metals } from '../../models/Tinctures';
 import { Liquids } from '../Liquids';
 import { parker } from '../Sources';
-import { FrenchWord } from '../fr/FrenchWord';
+import { Word } from '../Word';
 
 // Only the drop is poured. The liquids are what the drop is a drop of, and a
 // band or a lozenge is a drop of nothing.
@@ -20,7 +20,8 @@ const DROPS = [ChargeType.goutte];
  *   When vert, gutté d'huile, or d'olive: representing drops of oil.
  *
  * The words are French and keep their French article, eliding it before a vowel
- * and before the mute h of huile, so each is a French word even here. The same
+ * and before the mute h of huile — which every Word answers for, elision not
+ * being French words' business alone. The same
  * words stand after drops borne rather than sown — "gouttes de sang", "gouttes
  * d'or" — which is why they are said of the drop and not of the strewing.
  *
@@ -28,8 +29,8 @@ const DROPS = [ChargeType.goutte];
  * phrase, and no armorial here writes it. Purpure is poured with nothing, Parker
  * naming no liquid for it, and the furs are not liquids at all.
  */
-export const EnglishLiquids: Liquids<FrenchWord> = {
-  [Metals.or]: new FrenchWord(
+export const EnglishLiquids: Liquids = {
+  [Metals.or]: new Word(
     'or',
     {
       value: 'Gold, as what a drop is a drop of: gutté d’or, gouttes d’or.',
@@ -37,7 +38,7 @@ export const EnglishLiquids: Liquids<FrenchWord> = {
     },
     { saidOf: DROPS }
   ),
-  [Metals.argent]: new FrenchWord(
+  [Metals.argent]: new Word(
     'eau',
     {
       value: 'Water: drops argent. Gutté d’eau.',
@@ -45,7 +46,7 @@ export const EnglishLiquids: Liquids<FrenchWord> = {
     },
     { saidOf: DROPS }
   ),
-  [Colours.azure]: new FrenchWord(
+  [Colours.azure]: new Word(
     'larmes',
     {
       value:
@@ -54,7 +55,7 @@ export const EnglishLiquids: Liquids<FrenchWord> = {
     },
     { saidOf: DROPS }
   ),
-  [Colours.gules]: new FrenchWord(
+  [Colours.gules]: new Word(
     'sang',
     {
       value: 'Blood: drops gules. Gutté de sang, gouttes de sang.',
@@ -62,7 +63,7 @@ export const EnglishLiquids: Liquids<FrenchWord> = {
     },
     { saidOf: DROPS }
   ),
-  [Colours.sable]: new FrenchWord(
+  [Colours.sable]: new Word(
     'poix',
     {
       value: 'Pitch: drops sable. Gutté de poix.',
@@ -73,7 +74,7 @@ export const EnglishLiquids: Liquids<FrenchWord> = {
   // Two liquids for the one tincture: Parker writes "d'huile, or d'olive", and
   // the oil comes first and is the one written back.
   [Colours.vert]: [
-    new FrenchWord(
+    new Word(
       'huile',
       {
         value: 'Oil: drops vert. Gutté d’huile: the h is mute, so the article elides.',
@@ -81,7 +82,7 @@ export const EnglishLiquids: Liquids<FrenchWord> = {
       },
       { saidOf: DROPS, needsElision: true }
     ),
-    new FrenchWord(
+    new Word(
       'olive',
       {
         value: 'Olive oil: drops vert. Gutté d’olive.',
