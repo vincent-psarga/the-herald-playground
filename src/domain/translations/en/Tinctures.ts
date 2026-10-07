@@ -32,6 +32,14 @@ export const EnglishColours: Translation<Colours> = {
     value: 'Green.',
     sources: [parker('Vert')],
   }),
+  // Parker: "this colour, as it is considered by some, but tincture as it is
+  // allowed to be by others, is found but rarely in early rolls of arms ... The
+  // terms plumby and porprin occur." Both are left out: they are other words and
+  // not spellings of this one, and no armorial here writes either.
+  [Colours.purpure]: new Word('purpure', {
+    value: 'Purple. Rare in the early rolls, and a colour rather than a metal.',
+    sources: [parker('Purpure')],
+  }),
 };
 
 export const EnglishFurs: Translation<Furs> = {

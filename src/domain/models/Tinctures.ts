@@ -8,6 +8,7 @@ export enum Colours {
   gules = 'Colours.gules',
   sable = 'Colours.sable',
   vert = 'Colours.vert',
+  purpure = 'Colours.purpure',
 }
 
 /**

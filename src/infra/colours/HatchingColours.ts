@@ -6,7 +6,8 @@ import { ColorModel, Paint, Pattern } from '../../domain/services/IBlazonDrawer'
  * be had — engravings, seals, coins. The marks follow the table at
  * https://en.wikipedia.org/wiki/Hatching_(heraldry), where argent is simply left
  * blank, or is dotted, azure is ruled horizontally, gules vertically, sable both
- * ways at once, and vert diagonally from dexter chief to sinister base.
+ * ways at once, vert diagonally from dexter chief to sinister base, and purpure
+ * the other way, from sinister chief to dexter base.
  */
 const PAPER = '#ffffff';
 const INK = '#111111';
@@ -46,6 +47,9 @@ const TINCTURES: Record<Shade, Paint> = {
   [Colours.sable]: hatch('sable', HORIZONTAL + VERTICAL),
   // Ruled lines turned onto the diagonal a bend runs along.
   [Colours.vert]: hatch('vert', HORIZONTAL, ' patternTransform="rotate(45)"'),
+  // The same ruling turned onto the bend sinister instead: "des lignes
+  // diagonales allant de l'angle senestre du chef à l'angle dextre de la pointe".
+  [Colours.purpure]: hatch('purpure', HORIZONTAL, ' patternTransform="rotate(-45)"'),
 };
 
 /**
