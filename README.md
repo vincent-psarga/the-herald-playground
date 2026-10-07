@@ -67,8 +67,10 @@ npm install
 
 `tooling/mcp/vocabulary` is an MCP server with a single tool, `define`. Given a
 word (and, optionally, `en` or `fr`), it answers with everything the library
-knows about it: its rank, description and sources, its other spellings, the
-other words of the same term, its counterpart in the other tongue, the charges
+knows about it: its rank, description and sources, its other spellings, its
+synonyms (the words that say exactly the same, as _évidé_ says _vidé_), its
+variations (the words of the same term that say more, as _rustre_ is a
+_losange_ pierced), its counterpart in the other tongue, the charges
 it applies to or the modifiers it takes, the tinctures it is held to, and an
 example blazon. It is built on the same entries as the demo's vocabulary page.
 
