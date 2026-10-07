@@ -160,6 +160,17 @@ export const EnglishChargeType: Translation<ChargeType> = {
       },
       { defaultTincture: Colours.vert }
     ),
+    // "An heraldic term used for the roundle, when it is of the tincture of
+    // purpure ... It is scarcely over used."
+    new Word(
+      'golpe',
+      {
+        value:
+          'A plain disc borne purpure, named, Parker supposes, for an old Spanish word for a wound. The name says the tincture, so the blazon does not.',
+        sources: [parker('Golpe')],
+      },
+      { defaultTincture: Colours.purpure }
+    ),
   ],
   // A drop, and a word English took from French whole. Parker spells the charge
   // goutte and the field it is sown over gutté or gutty.

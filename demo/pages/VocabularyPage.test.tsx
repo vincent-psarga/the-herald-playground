@@ -223,7 +223,7 @@ describe('the kinds of word the vocabulary holds', () => {
     // leave a reader unable to see what else there was to ask for.
     mount(<VocabularyPage language={Languages.fr} />, '/doc/vocabulary/fr?of=charge');
     expect(sift(`${FRENCH.length} words`)).toBeInTheDocument();
-    expect(sift('8 tinctures')).toBeInTheDocument();
+    expect(sift('9 tinctures')).toBeInTheDocument();
   });
 
   test('shows the whole of it where the address asks for a kind there is none of', () => {
@@ -363,6 +363,7 @@ describe('a word read at full size', () => {
       'torteau',
       'pellet',
       'pomme',
+      'golpe',
     ]);
     expect(seen.querySelector('a')).toHaveAttribute('href', '/doc/vocabulary/en#roundel');
   });
