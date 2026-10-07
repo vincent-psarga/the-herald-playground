@@ -190,6 +190,7 @@ describe('the roundel, which every tincture has a word of its own for', () => {
       'hurt',
       'pellet',
       'pomme',
+      'golpe',
     ]);
   });
 

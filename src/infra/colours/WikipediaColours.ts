@@ -21,6 +21,7 @@ const TINCTURES: Record<Shade, Paint> = {
   [Colours.gules]: '#ff0000', // red
   [Colours.sable]: '#000000', // black
   [Colours.vert]: '#008000', // green
+  [Colours.purpure]: '#800080', // purple
 };
 
 /**
