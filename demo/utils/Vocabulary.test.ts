@@ -320,6 +320,7 @@ describe('the same word elsewhere', () => {
       'torteau',
       'pellet',
       'pomme',
+      'golpe',
     ]);
   });
 

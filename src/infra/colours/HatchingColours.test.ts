@@ -69,6 +69,10 @@ describe('HatchingColours', () => {
       expect(patternOf(Colours.vert).definition).toContain('rotate(45)');
     });
 
+    test('turns purpure onto the diagonal a bend sinister runs along', () => {
+      expect(patternOf(Colours.purpure).definition).toContain('rotate(-45)');
+    });
+
     test('dots or', () => {
       expect(patternOf(Metals.or).definition).toContain('<circle');
     });
