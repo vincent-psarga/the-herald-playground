@@ -6,6 +6,7 @@ import { azure } from './colors/azure';
 import { gules } from './colors/gules';
 import { sable } from './colors/sable';
 import { vert } from './colors/vert';
+import { purpure } from './colors/purpure';
 import { tincture } from './paint';
 
 /**
@@ -19,6 +20,7 @@ export const INKS: Record<Tincture, Ink> = {
   [Colours.gules]: gules,
   [Colours.sable]: sable,
   [Colours.vert]: vert,
+  [Colours.purpure]: purpure,
   // A fur is drawn rather than painted, so its ink is the pelt the drawer cuts
   // from the pair it is understood to have — see furs/ermine.ts and furs/vair.ts
   // — rather than a shade the colouring was asked for.
