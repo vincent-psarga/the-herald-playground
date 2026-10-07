@@ -149,7 +149,7 @@ export const EnglishChargeType: Translation<ChargeType> = {
   // goutte and the field it is sown over gutté or gutty.
   [ChargeType.goutte]: new Word('goutte', {
     value:
-      'A drop, point upwards: a pear-shape drawn out to a point, with the sides curving in before they swell. Heraldry names the liquid where it can — gutté d’eau for the silver drops, de sang for the red — which is a vocabulary of waters and bloods this does not read, so a field sown with them is sown in as many words.',
+      'A drop, point upwards: a pear-shape drawn out to a point, with the sides curving in before they swell. Its tincture is often named by its liquid: gouttes de sang are gules.',
     sources: [parker('Gouttes')],
   }),
   // The five-pointed star of the spur rowel. "It usually has five points, and

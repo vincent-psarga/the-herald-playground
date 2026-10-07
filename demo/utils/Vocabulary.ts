@@ -1,6 +1,6 @@
 import { EnglishBlazonWording } from '../../src/application/english/EnglishBlazonWording';
 import { FrenchBlazonWording } from '../../src/application/french/FrenchBlazonWording';
-import { sownIn } from '../../src/application/french/FrenchGrammar';
+import { sownIn, withArticle } from '../../src/application/french/FrenchGrammar';
 import { BlazonWording, writeBlazon } from '../../src/application/writer/BlazonWording';
 import { Blazon, ChargeOrOrdinary } from '../../src/domain/models/Blazon';
 import { ChargeType, allowsModifier, modifiersOf } from '../../src/domain/models/Charge';
@@ -22,6 +22,9 @@ import { FrenchWord } from '../../src/domain/translations/fr/FrenchWord';
 import { FrenchPlain } from '../../src/domain/translations/fr/Plain';
 import { SOWN as FrenchSown } from '../../src/domain/translations/fr/Strewings';
 import { Strewings } from '../../src/domain/translations/Strewings';
+import { Liquids } from '../../src/domain/translations/Liquids';
+import { EnglishLiquids } from '../../src/domain/translations/en/Liquids';
+import { FrenchLiquids } from '../../src/domain/translations/fr/Liquids';
 import {
   Translation,
   wordOf,
@@ -64,6 +67,7 @@ export type Ranked =
   | { readonly rank: 'charge'; readonly term: ChargeType }
   | { readonly rank: 'modifier'; readonly term: Modifier }
   | { readonly rank: 'strewing'; readonly term: ChargeType }
+  | { readonly rank: 'liquid'; readonly term: Tincture }
   | { readonly rank: 'field'; readonly term: typeof PLAIN_TERM | typeof SOWN_TERM };
 
 /**
@@ -238,6 +242,12 @@ interface Tongue<W extends Word = Word> {
   readonly sown: readonly W[];
   /** How this tongue sows a figure under a given spelling of that word. */
   readonly sowing: (spelling: string) => (word: W) => string;
+  /**
+   * The liquids the tongue names a drop's tincture by. Kept beside the wording
+   * rather than read off it, because a tongue may read them and never write
+   * them — French does — and the page lists what is read.
+   */
+  readonly liquids: Liquids<W & FrenchWord>;
 }
 
 const FRENCH: Tongue<FrenchWord> = {
@@ -246,6 +256,7 @@ const FRENCH: Tongue<FrenchWord> = {
   plain: FrenchPlain,
   sown: [FrenchSown],
   sowing: (spelling) => (word) => `${spelling} ${sownIn(word)}`,
+  liquids: FrenchLiquids,
 };
 
 const ENGLISH: Tongue = {
@@ -253,6 +264,7 @@ const ENGLISH: Tongue = {
   wording: EnglishBlazonWording,
   sown: EnglishSown,
   sowing: (spelling) => (word) => `${spelling} ${OF} ${word.plural}`,
+  liquids: EnglishLiquids,
 };
 
 /** Every word one tongue knows, in the order its vocabulary declares them. */
@@ -267,6 +279,7 @@ function sensesOf<W extends Word>(tongue: Tongue<W>): readonly Sense<W>[] {
     ...spelled('charge', wording.charges),
     ...spelled('modifier', wording.modifiers),
     ...strewn(wording.strewings),
+    ...poured(tongue.liquids),
     ...(tongue.plain === undefined
       ? []
       : [{ rank: 'field', term: PLAIN_TERM, words: [tongue.plain] } satisfies Sense<W>]),
@@ -303,6 +316,22 @@ function strewn<W extends Word>(strewings: Strewings<W>): readonly Sense<W>[] {
       return { rank: 'strewing' as const, term, words };
     })
     .filter((sense) => sense.words.length !== 0);
+}
+
+/** The liquids a tongue names, which is never every tincture. */
+function poured<W extends Word>(liquids: Liquids<W>): readonly Sense<W>[] {
+  return (Object.keys(liquids) as Tincture[])
+    .map((term) => {
+      const named = liquids[term];
+      const words = named === undefined ? [] : Array.isArray(named) ? named : [named];
+      return { rank: 'liquid' as const, term, words };
+    })
+    .filter((sense) => sense.words.length !== 0);
+}
+
+/** The figure a liquid is shown poured as: the first it is said of. */
+function pouredAsFigure(word: Word): ChargeType {
+  return word.saidOf?.[0] ?? ChargeType.goutte;
 }
 
 /**
@@ -404,6 +433,16 @@ function armsOf<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W): Bl
           semy: { type: sense.term, tincture: borne },
         },
       };
+    // A liquid is a tincture, and shown as one: the field sown with the drop it
+    // is poured as, in the tincture it names.
+    case 'liquid':
+      return {
+        field: {
+          type: FieldType.plain,
+          tincture: against(sense.term),
+          semy: { type: pouredAsFigure(word), tincture: sense.term },
+        },
+      };
     case 'field':
       return sense.term === PLAIN_TERM
         ? { field: { type: FieldType.plain, tincture: COLOUR } }
@@ -447,6 +486,19 @@ function insisting<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W):
       return { ...wording, modifiers: { ...wording.modifiers, ...only } };
     case 'strewing':
       return { ...wording, strewings: { ...wording.strewings, ...only } };
+    // Poured with this word whatever the tongue writes, French included: its
+    // writer pours nothing, and a page showing the tincture under the liquid's
+    // heading would be showing a blazon that never says it.
+    case 'liquid': {
+      const tincture = sense.term;
+      return {
+        ...wording,
+        pour: (type, of) =>
+          of === tincture && word.claims(type) && word instanceof FrenchWord
+            ? withArticle(word)
+            : wording.pour?.(type, of),
+      };
+    }
     case 'field':
       return sense.term === SOWN_TERM ? { ...wording, strew: tongue.sowing(word.value) } : wording;
   }
@@ -686,6 +738,27 @@ function otherwise<W extends Word>(
             whereabouts('charge', named)
           );
         }),
+      },
+    ];
+  }
+
+  if (sense.rank === 'liquid') {
+    // The same liquid stands after the drop borne as after the field sown with
+    // it: "gouttes de sang" as well as "gutté de sang".
+    const type = pouredAsFigure(word);
+    const tincture = sense.term;
+    return [
+      {
+        heading: 'Borne in number',
+        entries: COUNTS.map(([label, count]) =>
+          say(
+            {
+              field: { type: FieldType.plain, tincture: against(tincture) },
+              chargesOrOrdinaries: [{ type, tincture, count }],
+            },
+            label
+          )
+        ),
       },
     ];
   }

@@ -49,6 +49,7 @@ const HEADINGS = [
   'A tincture that has a name of its own is written by it',
   'A name that means what was done to the charge is written without saying it',
   'A strewing is named where heraldry names it',
+  'English names a drop by its liquid, French by its tincture',
   'A word that says nothing is read and never written',
   'A modifier stands after the charge and before its tincture',
   'A French modifier agrees with the charge the blazon named',
@@ -176,6 +177,21 @@ describe('what each rule shows', () => {
     mount(<ConventionsPage />);
     expect(shown('Azure semy of roundels argent').written).toContain('Azure semy of plates.');
     expect(shown("D'azur semé d'annelets d'or").written).toContain("D'azur semé d'annelets d'or.");
+  });
+
+  test('pours a drop in English, and writes its tincture in French', () => {
+    mount(<ConventionsPage />);
+    expect(shown('Azure gutty argent').written).toEqual([
+      "D'azur goutté d'argent.",
+      "Azure gutté d'eau.",
+    ]);
+    expect(shown('Or three gouttes gules').written).toContain('Or three gouttes de sang.');
+    expect(shown("Argent gutté d'olive").written).toContain("Argent gutté d'huile.");
+    expect(shown('Or gutty purpure').written).toContain('Or gutté purpure.');
+    expect(shown("D'or goutté de sang").written).toContain("D'or goutté de gueules.");
+    expect(shown("D'azur à trois gouttes d'eau").written).toContain(
+      "D'azur à trois gouttes d'argent."
+    );
   });
 
   test('never writes "plain" back, the blazon saying it by stopping', () => {
@@ -371,6 +387,8 @@ describe('the authorities the decisions rest on', () => {
     ['https://blason-armoiries.org/heraldique/e/evide.htm'],
     ['https://blason-armoiries.org/heraldique/v/vide.htm'],
     ['https://en.wikipedia.org/wiki/Blazon'],
+    ['https://www.heraldsnet.org/saitou/parker/Jpglossg.htm#Gouttes'],
+    ['https://blason-armoiries.org/heraldique/g/goutte.htm'],
   ])('cites %s', (href) => {
     mount(<ConventionsPage />);
     expect(document.querySelector(`.cited a[href="${href}"]`)).toBeInTheDocument();

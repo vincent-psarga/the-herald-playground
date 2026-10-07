@@ -102,7 +102,7 @@ export const FrenchChargeType: Translation<ChargeType, FrenchWord> = {
     'goutte',
     {
       value:
-        'A drop, point upwards: a pear-shape drawn out to a point, with the sides curving in before they swell. Heraldry names the liquid where it can — goutté d’eau for the silver drops, de sang for the red — which is a vocabulary of waters and bloods this does not read, so a field sown with them is sown in as many words.',
+        'A drop, point upwards: a pear-shape drawn out to a point, with the sides curving in before they swell.',
       sources: [blasonArmoiries('Goutte, goutté', 'goutte')],
     },
     { isFeminine: true }

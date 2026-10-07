@@ -33,10 +33,10 @@ describe('the goutte', () => {
     );
   });
 
-  test('is sown in as many words, neither tongue naming the strewing by a tincture', () => {
+  test('is sown under the word each tongue names the strewing by', () => {
     const sown = inFrench.parse("D'azur semé de gouttes d'argent");
-    expect(writeFrench.write(sown)).toBe("D'azur semé de gouttes d'argent.");
-    expect(writeEnglish.write(sown)).toBe('Azure semy of gouttes argent.');
+    expect(writeFrench.write(sown)).toBe("D'azur goutté d'argent.");
+    expect(writeEnglish.write(sown)).toBe("Azure gutté d'eau.");
   });
 });
 
@@ -248,7 +248,7 @@ describe('the crescent', () => {
 describe('what the armorials can now be read as', () => {
   test.each([
     ["D'azur à trois étoiles d'or.", 'Azure three mullets or.'],
-    ['D’azur semé de gouttes d’argent.', 'Azure semy of gouttes argent.'],
+    ['D’azur semé de gouttes d’argent.', "Azure gutté d'eau."],
     ["D'azur semé de fleurs-de-lis d'or", 'Azure semy-de-lis or.'],
     ["De sinople à trois larmes d'argent.", 'Vert three larmes argent.'],
     ["De gueules à trois larmes d'argent.", 'Gules three larmes argent.'],

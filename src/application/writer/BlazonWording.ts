@@ -49,6 +49,13 @@ export interface BlazonWording<W extends Word = Word> {
   /** How a tincture is introduced: "d'or" in French, plain "or" in English. */
   readonly introduce: (word: W) => string;
   /**
+   * The liquid a figure in this tincture is written as, where the tongue writes
+   * one: "de sang" for a drop gules in English. Nothing where the tongue writes
+   * the tincture instead — French reads the liquids and writes the tincture, and
+   * leaves this off.
+   */
+  readonly pour?: (type: ChargeType, tincture: Tincture) => string | undefined;
+  /**
    * How something borne is introduced: "à la fasce" in French, "a fess" in English,
    * and, where several are borne, how many — "à trois chevrons", "three
    * chevrons". The count arrives spelled, the language having said how it spells
@@ -131,6 +138,9 @@ export function writeBlazon<W extends Word>(wording: BlazonWording<W>, blazon: B
  * be saying the same thing twice. So "d'azur au besant d'or" comes back as
  * "D'azur au besant", which is what the blazon was trying to be.
  *
+ * Where it is written, a tongue that names the figure's tincture by a liquid
+ * writes the liquid: "three gouttes de sang".
+ *
  * What was done to the charge stands between the name and the tincture, which is
  * where the armorials of both tongues put it: blazon takes its word order from
  * French, where what qualifies a thing follows the thing and the tincture comes
@@ -141,7 +151,10 @@ function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdi
   const several = count >= SEVERAL;
   const bearing = wording.bear(word, several ? counted(wording.numbers, count) : undefined);
   const tincture =
-    word.defaultTincture === one.tincture ? undefined : writeTincture(wording, one.tincture);
+    word.defaultTincture === one.tincture
+      ? undefined
+      : ((isCharge(one) ? wording.pour?.(one.type, one.tincture) : undefined) ??
+        writeTincture(wording, one.tincture));
   const modifier = modifying(wording, one, word)?.(several);
   return [bearing, modifier, tincture].filter((part) => part !== undefined).join(' ');
 }
@@ -231,7 +244,8 @@ function writePlain<W extends Word>(wording: BlazonWording<W>, field: Plain): st
  *
  * The tincture is written only where the word has not already said it, by the
  * same rule that governs anything borne: a besanté is gold entire, and the gold
- * written after it would be saying the one thing twice.
+ * written after it would be saying the one thing twice. Where it is written, it
+ * is poured where the tongue pours the figure: gutté de sang.
  */
 function writeSemy<W extends Word>(wording: BlazonWording<W>, semy: Semy): string {
   const named = strewnIn(wording.strewings, semy.type, semy.tincture);
@@ -239,7 +253,10 @@ function writeSemy<W extends Word>(wording: BlazonWording<W>, semy: Semy): strin
   const sowing = named === undefined ? wording.strew(word) : word.value;
   return word.defaultTincture === semy.tincture
     ? sowing
-    : [sowing, writeTincture(wording, semy.tincture)].join(' ');
+    : [
+        sowing,
+        wording.pour?.(semy.type, semy.tincture) ?? writeTincture(wording, semy.tincture),
+      ].join(' ');
 }
 
 /**
