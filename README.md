@@ -88,9 +88,11 @@ docker compose up
 starts the `app` service, which serves the demo at http://localhost:5173, and the
 `vocabulary` service, which serves the vocabulary MCP server at
 http://localhost:3100/mcp. The working tree is mounted into both containers,
-which keep their own `node_modules`. The demo reloads on edits as it does with
-`npm run dev`; the MCP server reads its definitions once, at start, so
-`docker compose restart vocabulary` picks up a change to them.
+which keep their own `node_modules`. Both run under nodemon. The demo reloads
+on edits as it does with `npm run dev`, and restarts when `package.json` or
+`tsconfig.json` changes. The MCP server reads its definitions once, at start, so
+it restarts on any edit to `src/`, `demo/` or its own sources. A service that
+crashes takes its container down with it, and Compose starts it again.
 
 A Husky pre-commit hook formats the staged files with `pretty-quick`, then runs
 `npm run typecheck` and `npm test`. What lands is therefore always formatted,

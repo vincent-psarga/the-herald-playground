@@ -1,6 +1,26 @@
+# Both services run under nodemon, which restarts them when what they read at
+# start changes, and exits when they crash (--exitcrash) so that Compose
+# restarts the container instead of nodemon waiting for an edit that may never
+# come.
 services:
   app:
     build: .
+    init: true
+    restart: unless-stopped
+    # Vite reloads the demo on edits by itself; nodemon only restarts it when
+    # the dependencies or the TypeScript settings it started with change.
+    command:
+      - npx
+      - nodemon
+      - --exitcrash
+      - --signal
+      - SIGTERM
+      - --watch
+      - package.json
+      - --watch
+      - tsconfig.json
+      - --exec
+      - vite demo --host 0.0.0.0
     ports:
       - '5173:5173'
     volumes:
@@ -9,7 +29,31 @@ services:
 
   vocabulary:
     build: .
-    command: ['npm', 'run', 'mcp:vocabulary']
+    init: true
+    restart: unless-stopped
+    # The server reads its definitions once, at start, from the library and the
+    # demo's vocabulary, so an edit to either restarts it.
+    command:
+      - npx
+      - nodemon
+      - --exitcrash
+      - --signal
+      - SIGTERM
+      - --watch
+      - src
+      - --watch
+      - demo
+      - --watch
+      - tooling/mcp/vocabulary
+      - --ext
+      - ts,tsx,mjs,json
+      - --ignore
+      - '*.test.ts'
+      - --ignore
+      - '*.test.tsx'
+      - --ignore
+      - demo/dist
+      - tooling/mcp/vocabulary/server.mjs
     environment:
       HOST: 0.0.0.0
       PORT: 3100
