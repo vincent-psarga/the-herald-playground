@@ -62,6 +62,16 @@ npm install
 | `npm run format:check`  | Report anything Prettier would reformat                     |
 | `npm run clean`         | Remove `lib/`                                               |
 
+### Docker
+
+```bash
+docker compose up
+```
+
+starts the `app` service, which serves the demo at http://localhost:5173. The
+working tree is mounted into the container, so edits reload as they do with
+`npm run dev`; the container keeps its own `node_modules`.
+
 A Husky pre-commit hook formats the staged files with `pretty-quick`, then runs
 `npm run typecheck` and `npm test`. What lands is therefore always formatted,
 type-clean and green. It is installed by `npm install`, through the `prepare`
