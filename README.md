@@ -49,19 +49,19 @@ npm install
 
 ## Scripts
 
-| Script                   | Description                                                 |
-| ------------------------ | ----------------------------------------------------------- |
-| `npm run build`          | Compile `src/` to `lib/` (declarations + source maps)       |
-| `npm run dev`            | Serve the demo page at http://localhost:5173                |
-| `npm test`               | Run the Vitest suite once                                   |
-| `npm run test:watch`     | Run Vitest in watch mode                                    |
-| `npm run test:coverage`  | Run the suite and report how much of `src/` it reaches      |
-| `npm run coverage`       | Run the suite, then measure what it and the armorials cover |
-| `npm run typecheck`      | Type-check everything, tests included, without emitting     |
-| `npm run format`         | Format the tree with Prettier                               |
-| `npm run format:check`   | Report anything Prettier would reformat                     |
-| `npm run clean`          | Remove `lib/`                                               |
-| `npm run mcp:vocabulary` | Start the vocabulary MCP server on stdio                    |
+| Script                   | Description                                                  |
+| ------------------------ | ------------------------------------------------------------ |
+| `npm run build`          | Compile `src/` to `lib/` (declarations + source maps)        |
+| `npm run dev`            | Serve the demo page at http://localhost:5173                 |
+| `npm test`               | Run the Vitest suite once                                    |
+| `npm run test:watch`     | Run Vitest in watch mode                                     |
+| `npm run test:coverage`  | Run the suite and report how much of `src/` it reaches       |
+| `npm run coverage`       | Run the suite, then measure what it and the armorials cover  |
+| `npm run typecheck`      | Type-check everything, tests included, without emitting      |
+| `npm run format`         | Format the tree with Prettier                                |
+| `npm run format:check`   | Report anything Prettier would reformat                      |
+| `npm run clean`          | Remove `lib/`                                                |
+| `npm run mcp:vocabulary` | Start the vocabulary MCP server on http://localhost:3100/mcp |
 
 ### Vocabulary MCP server
 
@@ -72,7 +72,10 @@ other words of the same term, its counterpart in the other tongue, the charges
 it applies to or the modifiers it takes, the tinctures it is held to, and an
 example blazon. It is built on the same entries as the demo's vocabulary page.
 
-`.mcp.json` registers it for Claude Code under the name `vocabulary`.
+It speaks Streamable HTTP at `/mcp`, on `127.0.0.1:3100` unless `HOST` and
+`PORT` say otherwise. `.mcp.json` registers it for Claude Code under the name
+`vocabulary`, at `http://localhost:3100/mcp`, so it must be running before
+Claude Code connects: start it with `npm run mcp:vocabulary` or `docker compose up`.
 
 ### Docker
 
@@ -80,9 +83,12 @@ example blazon. It is built on the same entries as the demo's vocabulary page.
 docker compose up
 ```
 
-starts the `app` service, which serves the demo at http://localhost:5173. The
-working tree is mounted into the container, so edits reload as they do with
-`npm run dev`; the container keeps its own `node_modules`.
+starts the `app` service, which serves the demo at http://localhost:5173, and the
+`vocabulary` service, which serves the vocabulary MCP server at
+http://localhost:3100/mcp. The working tree is mounted into both containers,
+which keep their own `node_modules`. The demo reloads on edits as it does with
+`npm run dev`; the MCP server reads its definitions once, at start, so
+`docker compose restart vocabulary` picks up a change to them.
 
 A Husky pre-commit hook formats the staged files with `pretty-quick`, then runs
 `npm run typecheck` and `npm test`. What lands is therefore always formatted,

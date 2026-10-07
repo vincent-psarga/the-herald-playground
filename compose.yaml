@@ -6,3 +6,15 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+
+  vocabulary:
+    build: .
+    command: ['npm', 'run', 'mcp:vocabulary']
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3100
+    ports:
+      - '3100:3100'
+    volumes:
+      - .:/app
+      - /app/node_modules
