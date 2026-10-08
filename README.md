@@ -49,18 +49,50 @@ npm install
 
 ## Scripts
 
-| Script                  | Description                                                 |
-| ----------------------- | ----------------------------------------------------------- |
-| `npm run build`         | Compile `src/` to `lib/` (declarations + source maps)       |
-| `npm run dev`           | Serve the demo page at http://localhost:5173                |
-| `npm test`              | Run the Vitest suite once                                   |
-| `npm run test:watch`    | Run Vitest in watch mode                                    |
-| `npm run test:coverage` | Run the suite and report how much of `src/` it reaches      |
-| `npm run coverage`      | Run the suite, then measure what it and the armorials cover |
-| `npm run typecheck`     | Type-check everything, tests included, without emitting     |
-| `npm run format`        | Format the tree with Prettier                               |
-| `npm run format:check`  | Report anything Prettier would reformat                     |
-| `npm run clean`         | Remove `lib/`                                               |
+| Script                   | Description                                                  |
+| ------------------------ | ------------------------------------------------------------ |
+| `npm run build`          | Compile `src/` to `lib/` (declarations + source maps)        |
+| `npm run dev`            | Serve the demo page at http://localhost:5173                 |
+| `npm test`               | Run the Vitest suite once                                    |
+| `npm run test:watch`     | Run Vitest in watch mode                                     |
+| `npm run test:coverage`  | Run the suite and report how much of `src/` it reaches       |
+| `npm run coverage`       | Run the suite, then measure what it and the armorials cover  |
+| `npm run typecheck`      | Type-check everything, tests included, without emitting      |
+| `npm run format`         | Format the tree with Prettier                                |
+| `npm run format:check`   | Report anything Prettier would reformat                      |
+| `npm run clean`          | Remove `lib/`                                                |
+| `npm run mcp:vocabulary` | Start the vocabulary MCP server on http://localhost:3100/mcp |
+
+### Vocabulary MCP server
+
+`tooling/mcp/vocabulary` is an MCP server with a single tool, `define`. Given a
+word (and, optionally, `en` or `fr`), it answers with everything the library
+knows about it: its rank, description and sources, its other spellings, its
+synonyms (the words that say exactly the same, as _évidé_ says _vidé_), its
+variations (the words of the same term that say more, as _rustre_ is a
+_losange_ pierced), its counterpart in the other tongue, the charges
+it applies to or the modifiers it takes, the tinctures it is held to, and an
+example blazon. It is built on the same entries as the demo's vocabulary page.
+
+It speaks Streamable HTTP at `/mcp`, on `127.0.0.1:3100` unless `HOST` and
+`PORT` say otherwise. `.mcp.json` registers it for Claude Code under the name
+`vocabulary`, at `http://localhost:3100/mcp`, so it must be running before
+Claude Code connects: start it with `npm run mcp:vocabulary` or `docker compose up`.
+
+### Docker
+
+```bash
+docker compose up
+```
+
+starts the `app` service, which serves the demo at http://localhost:5173, and the
+`vocabulary` service, which serves the vocabulary MCP server at
+http://localhost:3100/mcp. The working tree is mounted into both containers,
+which keep their own `node_modules`. Both run under nodemon. The demo reloads
+on edits as it does with `npm run dev`, and restarts when `package.json` or
+`tsconfig.json` changes. The MCP server reads its definitions once, at start, so
+it restarts on any edit to `src/`, `demo/` or its own sources. A service that
+crashes takes its container down with it, and Compose starts it again.
 
 A Husky pre-commit hook formats the staged files with `pretty-quick`, then runs
 `npm run typecheck` and `npm test`. What lands is therefore always formatted,
