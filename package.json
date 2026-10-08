@@ -15,7 +15,8 @@
     "prepare": "husky",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "dev": "vite demo"
+    "dev": "vite demo",
+    "mcp:vocabulary": "node tooling/mcp/vocabulary/server.mjs"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@mdx-js/rollup": "^3.1.1",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@revealjs/react": "^0.2.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -37,6 +39,7 @@
     "@vitest/coverage-v8": "^5.0.0",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "nodemon": "^3.1.14",
     "prettier": "^3.9.6",
     "pretty-quick": "^4.2.2",
     "react": "^19.3.0",
@@ -50,7 +53,8 @@
     "reveal.js": "^6.0.2",
     "typescript": "^7.0.2",
     "vite": "^8.3.0",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.0",
+    "zod": "^4.6.5"
   },
   "exports": {
     ".": {

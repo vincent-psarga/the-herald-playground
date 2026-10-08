@@ -12,6 +12,7 @@ export default defineConfig({
       'demo/**/*.test.mts',
       'demo/**/*.test.tsx',
       'scripts/**/*.test.ts',
+      'tooling/**/*.test.ts',
     ],
     environment: 'node',
     setupFiles: ['./vitest.setup.ts'],
