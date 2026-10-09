@@ -4,6 +4,7 @@ import { EnglishFurType } from '../../domain/translations/en/Furs';
 import { EnglishVariationType, OF } from '../../domain/translations/en/Variations';
 import { EnglishChargeType } from '../../domain/translations/en/Charges';
 import { EnglishModifiers } from '../../domain/translations/en/Modifiers';
+import { EnglishOverAll } from '../../domain/translations/en/OverAll';
 import { EnglishStrewings, OF as SOWN_OF, SOWN } from '../../domain/translations/en/Strewings';
 import { strewnTerms } from '../../domain/translations/Strewings';
 import { asSeveral, writtenAs } from '../../domain/translations/Translation';
@@ -11,9 +12,9 @@ import { EnglishOrdinaryType } from '../../domain/translations/en/Ordinaries';
 import { EnglishNumbers } from '../../domain/translations/en/Numbers';
 import { EnglishTinctures } from '../../domain/translations/en/Tinctures';
 import { BlazonGrammar } from '../parser/BlazonGrammar';
-import { anyKeyword, keyword, optional, spelledTerm, term } from '../parser/Combinators';
+import { anyKeyword, anyPhrase, keyword, optional, spelledTerm, term } from '../parser/Combinators';
 import { asOrdinary, asDivision, asTincture } from '../parser/Failures';
-import { NOT_IN_NUMBER, alone, bearings, modifiable, several } from '../parser/Borne';
+import { NOT_IN_NUMBER, alone, bearings, laidOver, modifiable, several } from '../parser/Borne';
 import { anyWriting, modifying } from '../parser/Modifiers';
 import { number } from '../parser/Numbers';
 import { strewing } from '../parser/Treatment';
@@ -59,6 +60,11 @@ const TREATMENT = strewing(alt(NAMED_STREWING, SOWN_CHARGE), term(EnglishTinctur
 // where another would have been right.
 const MODIFIER = modifying(anyWriting(EnglishModifiers));
 
+// "Over all a bend gules": English says it before what it is said of, where
+// French says its own word after the tincture. Standing in front of the article
+// and in front of the count alike, it is read once for either shape of phrase.
+const OVER_ALL = anyPhrase(writtenAs(EnglishOverAll));
+
 export const EnglishBlazonGrammar: BlazonGrammar = {
   tincture: term(EnglishTinctures, asTincture),
   division: term(EnglishDivisionType, asDivision),
@@ -72,9 +78,12 @@ export const EnglishBlazonGrammar: BlazonGrammar = {
   // business rather than the grammar's. Where several are borne the count says
   // it instead, and English puts nothing before the count: "Or three chevrons
   // gules".
-  borne: alt(
-    modifiable(alone(kright(ARTICLE, spelledTerm(BEARINGS, asOrdinary))), () => MODIFIER),
-    modifiable(several(BEARINGS, EnglishNumbers, asOrdinary, NOT_IN_NUMBER), () => MODIFIER)
+  borne: laidOver(
+    OVER_ALL,
+    alt(
+      modifiable(alone(kright(ARTICLE, spelledTerm(BEARINGS, asOrdinary))), () => MODIFIER),
+      modifiable(several(BEARINGS, EnglishNumbers, asOrdinary, NOT_IN_NUMBER), () => MODIFIER)
+    )
   ),
   and: AND,
 };

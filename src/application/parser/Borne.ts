@@ -23,7 +23,7 @@ import { NumberWords } from '../../domain/translations/Numbers';
 import { TermWord, Translation, asSeveral } from '../../domain/translations/Translation';
 import { Word } from '../../domain/translations/Word';
 import { TokenKind } from '../lexer/Lexer';
-import { guard, spelledTerm } from './Combinators';
+import { guard, optional, spelledTerm } from './Combinators';
 import { Vocabulary, complaining, positionOf, textBetween } from './Failures';
 import { number } from './Numbers';
 
@@ -59,6 +59,15 @@ export interface Borne<T extends string, W extends Word = Word> {
    * hands on one that accepts the word as it stands.
    */
   readonly modifier?: Parser<TokenKind, TermWord<Modifier> | undefined>;
+  /**
+   * Whether the blazon laid it over everything else, where the tongue says so
+   * before ever naming it: "over all a bend gules".
+   *
+   * English says it there and French says it after the tincture, so the two
+   * arrive by different roads — this one, and the rule that reads the end of the
+   * phrase. Either road sets the same thing, and a blazon travels one of them.
+   */
+  readonly overAll?: true;
 }
 
 /**
@@ -189,6 +198,27 @@ export function modifiable<T extends string, W extends Word>(
   modifier: (word: W) => Parser<TokenKind, TermWord<Modifier> | undefined>
 ): Parser<TokenKind, Borne<T, W>> {
   return apply(borne, (one): Borne<T, W> => ({ ...one, modifier: modifier(one.word) }));
+}
+
+/**
+ * Something borne, with the words a tongue puts before it to say it is laid over
+ * everything else: "over all a bend gules".
+ *
+ * Only a tongue that says it there needs this. French says the same thing after
+ * the tincture, where nothing has yet been named to put words in front of, and
+ * reads it at the end of the phrase instead.
+ *
+ * The key is left off rather than set false where the words were absent, as the
+ * count and the modifier are, so that what the field bears reads back as what
+ * the blazon wrote.
+ */
+export function laidOver<T extends string, W extends Word>(
+  said: Parser<TokenKind, unknown>,
+  borne: Parser<TokenKind, Borne<T, W>>
+): Parser<TokenKind, Borne<T, W>> {
+  return apply(seq(optional(said), borne), ([over, one]): Borne<T, W> =>
+    over === undefined ? one : { ...one, overAll: true }
+  );
 }
 
 /**

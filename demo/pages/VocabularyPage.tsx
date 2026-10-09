@@ -22,6 +22,7 @@ const SEVERAL: Record<Rank, readonly [string, string]> = {
   charge: ['charge', 'charges'],
   modifier: ['modifier', 'modifiers'],
   strewing: ['strewing', 'strewings'],
+  'over all': ['word for what is laid over all', 'words for what is laid over all'],
   field: ['word for the field itself', 'words for the field itself'],
 };
 

@@ -90,6 +90,69 @@ export function anyKeyword(expected: readonly string[]): Parser<TokenKind, Token
 }
 
 /**
+ * Matches any one of several spellings of the same keyword, each of which may
+ * run to more than one word: "brochant sur le tout" is four words and one
+ * spelling, and "brochant" is another spelling of the same thing.
+ *
+ * The longest spelling wins. Read the other way round, a blazon writing the
+ * whole phrase would be understood as the short one with three words left over,
+ * and those three would then be owed a reading nothing can give them.
+ *
+ * Which spelling was written is not kept, there being nothing to keep: a keyword
+ * names no term, so all it can say is that it was there.
+ */
+export function anyPhrase(expected: readonly string[]): Parser<TokenKind, Token<TokenKind>> {
+  const phrases = expected
+    .map((spelling) => spelling.toLowerCase().split(' '))
+    .sort((one, another) => another.length - one.length);
+
+  return {
+    parse(token: Token<TokenKind> | undefined): ParserOutput<TokenKind, Token<TokenKind>> {
+      for (const phrase of phrases) {
+        const after = spelt(token, phrase);
+        if (after !== false) {
+          return {
+            successful: true,
+            candidates: [
+              { firstToken: token, nextToken: after, result: token as Token<TokenKind> },
+            ],
+            error: undefined,
+          };
+        }
+      }
+      return {
+        successful: false,
+        error: complaining(
+          token?.pos,
+          new BlazonParseError(
+            `Expected "${expected[0]}", found "${token?.text ?? ''}"`,
+            positionOf(token?.pos)
+          )
+        ),
+      };
+    },
+  };
+}
+
+/**
+ * Where a phrase ends, having been written here — and false where it was not,
+ * which is not the same as a phrase ending on nothing at all.
+ */
+function spelt(
+  token: Token<TokenKind> | undefined,
+  phrase: readonly string[]
+): Token<TokenKind> | undefined | false {
+  let current = token;
+  for (const word of phrase) {
+    if (current?.kind !== TokenKind.Word || current.text.toLowerCase() !== word) {
+      return false;
+    }
+    current = current.next;
+  }
+  return current;
+}
+
+/**
  * Matches the words spelling one of a vocabulary's terms, keeping the word
  * alongside the term for grammars whose articles must agree with it.
  *
