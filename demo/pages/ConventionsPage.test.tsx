@@ -215,8 +215,8 @@ describe('what each rule shows', () => {
     expect(shown("D'or à la bordure componé de gueules et d'argent").refused).toBe(
       'Wrong agreement: expected "componée"'
     );
-    const refused = shown("D'or à la fasce componée de gueules et d'argent");
-    expect(refused.refused).toBe('Wrong modifier: fasce is never componée');
+    const refused = shown("D'or à la jumelle componée de gueules et d'argent");
+    expect(refused.refused).toBe('Wrong modifier: jumelle is never componée');
     expect(refused.arms).toBe(0);
   });
 

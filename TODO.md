@@ -15,11 +15,10 @@
 - Quarter a field beyond two tinctures: the quartering that marshals a coat to
   each quarter ("écartelé : aux 1 et 4 ..., aux 2 et 3 ..."), which needs a field
   able to hold a coat
-- Grow compony past the bend and the bordure: Au blason des armoiries lists "chef, pal, chevron,
-  fasce, croix, sautoir, bande, cotice, bordure", and the medieval rolls write it of the label and
-  the baston. Read the count of compons ("componnée d'argent et d'azur de six pièces"), and two
-  rows, which English calls counter-compony and French échiqueté de deux tires — French
-  contre-componé meaning a bordure compony counterchanged against a barry field instead
+- Read the count of compons ("componnée d'argent et d'azur de six pièces", and per tincture,
+  "de quatre pièces d'azur et de cinq pièces d'or"), and two rows, which English calls
+  counter-compony and French échiqueté de deux tires — French contre-componé meaning a bordure
+  compony counterchanged against a barry field instead
 - Counterchange a varied field by a partition line ("barry of six, sable and or,
   per pale counterchanged"), which is what Parker, Fox-Davies and Wikipedia all
   document under counterchanging a variation — a complex partition rather than a

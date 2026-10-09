@@ -134,12 +134,11 @@ describe('what compony refuses', () => {
   });
 
   test('a band never cut so, by name rather than as a tincture gone wrong', () => {
-    expect(() => inFrench.parse("D'or à la fasce componée de gueules et d'argent")).toThrow(
+    expect(() => inFrench.parse("D'or à la jumelle componée de gueules et d'argent")).toThrow(
       WrongModifier
     );
-    expect(() => inEnglish.parse('Or a fess compony gules and argent')).toThrow(WrongModifier);
-    expect(refused(() => inEnglish.parse('Or a chief compony gules and argent')).message).toBe(
-      'Wrong modifier: chief is never compony'
+    expect(refused(() => inEnglish.parse('Or a bar gemel compony gules and argent')).message).toBe(
+      'Wrong modifier: bar gemel is never compony'
     );
   });
 
@@ -163,13 +162,24 @@ describe('what compony refuses', () => {
 });
 
 describe('the bands that may be compony', () => {
-  test('are the bend and the bordure, each with the number it is understood to have', () => {
-    const compony = Object.values(OrdinaryType).filter(
-      (type) => OrdinaryDefinitions[type].compons !== undefined
+  test('are every band but the gemel, each with the number it is understood to have', () => {
+    const compons = Object.fromEntries(
+      Object.values(OrdinaryType).map((type) => [type, OrdinaryDefinitions[type].compons])
     );
-    expect(compony).toEqual([OrdinaryType.bend, OrdinaryType.bordure]);
-    // Parker: "A bordure compony should consist of sixteen pieces".
-    expect(OrdinaryDefinitions[OrdinaryType.bordure].compons).toBe(16);
+    expect(compons).toEqual({
+      [OrdinaryType.chief]: 6,
+      [OrdinaryType.pale]: 6,
+      [OrdinaryType.fess]: 6,
+      [OrdinaryType.barGemel]: undefined,
+      [OrdinaryType.bend]: 6,
+      [OrdinaryType.bendSinister]: 6,
+      [OrdinaryType.chevron]: 7,
+      // Rivière de La Mure's: "de quatre pièces d'azur et de cinq pièces d'or".
+      [OrdinaryType.cross]: 9,
+      [OrdinaryType.saltire]: 9,
+      // Parker: "A bordure compony should consist of sixteen pieces".
+      [OrdinaryType.bordure]: 16,
+    });
   });
 
   test('are every band the drawing can cut into compons, and no other', () => {
@@ -178,6 +188,33 @@ describe('the bands that may be compony', () => {
         OrdinaryDefinitions[type].compons !== undefined
       );
     }
+  });
+
+  test('agree with a masculine band as readily as a feminine one', () => {
+    expect(writeFrench.write(inFrench.parse("D'argent au pal componé de gueules et d'or"))).toBe(
+      "D'argent au pal componé de gueules et d'or."
+    );
+    expect(
+      refused(() => inFrench.parse("D'argent au pal componée de gueules et d'or"))
+    ).toBeInstanceOf(WrongAgreement);
+    expect(writeFrench.write(inEnglish.parse('Argent three pales compony gules and or'))).toBe(
+      "D'argent à trois pals componés de gueules et d'or."
+    );
+  });
+
+  test.each([
+    ["D'argent au chef componé d'azur et d'or", 'Argent a chief compony azure and or.'],
+    ["D'argent à la fasce componée de gueules et d'or", 'Argent a fess compony gules and or.'],
+    [
+      "D'argent à la barre componée de gueules et d'or",
+      'Argent a bend sinister compony gules and or.',
+    ],
+    ["D'argent au chevron componé de gueules et d'or", 'Argent a chevron compony gules and or.'],
+    ["De gueules à la croix componée d'azur et d'or", 'Gules a cross compony azure and or.'],
+    ["D'argent au sautoir componé de gueules et d'or", 'Argent a saltire compony gules and or.'],
+  ])('reads %s, and says it in English', (french, english) => {
+    expect(writeEnglish.write(inFrench.parse(french))).toBe(english);
+    expect(writeFrench.write(inEnglish.parse(english))).toBe(`${french}.`);
   });
 });
 
@@ -191,6 +228,16 @@ describe('a band cut into compons, drawn', () => {
     expect(ORDINARIES[OrdinaryType.bordure].compons?.(SHIELD_FRAME, 1, 16)).toHaveLength(8);
     expect(ORDINARIES[OrdinaryType.bend].compons?.(SHIELD_FRAME, 1, 6)).toHaveLength(3);
     expect(ORDINARIES[OrdinaryType.bend].compons?.(SHIELD_FRAME, 2, 6)).toHaveLength(6);
+  });
+
+  test('cuts a figure whose limbs meet with one compon where they meet', () => {
+    // The middle is the first tincture, left beneath; each arm of nine starts
+    // with the second and ends with the first, so one compon apiece is laid.
+    expect(ORDINARIES[OrdinaryType.cross].compons?.(SHIELD_FRAME, 1, 9)).toHaveLength(4);
+    expect(ORDINARIES[OrdinaryType.saltire].compons?.(SHIELD_FRAME, 1, 9)).toHaveLength(4);
+    // The point, and three down each limb: the second and fourth from the point
+    // are laid.
+    expect(ORDINARIES[OrdinaryType.chevron].compons?.(SHIELD_FRAME, 1, 7)).toHaveLength(4);
   });
 
   test('is painted in both its tinctures, cut to the band', () => {

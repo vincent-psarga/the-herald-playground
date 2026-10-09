@@ -1,6 +1,7 @@
 import { spaced } from '../../painting/arrange';
 import { inBend } from '../../shapes/bands';
-import { Point, stripsAlong } from '../../shapes/cuts';
+import { cutAcross } from '../../shapes/cuts';
+import { Frame } from '../../Ground';
 import { OrdinaryFigure } from '../Figures';
 
 /**
@@ -10,8 +11,13 @@ import { OrdinaryFigure } from '../Figures';
  */
 export const DIAGONALS = 240;
 
-/** How finely the length of a bend is searched for where the shield shows it. */
-const STEPS = 400;
+/**
+ * How wide a diagonal band is square across it, given how wide it is along the
+ * top edge: narrower by the slant it runs at.
+ */
+export function squareAcross({ width, height }: Frame, span: number): number {
+  return span * (height / Math.hypot(width, height));
+}
 
 /**
  * A band from dexter chief to sinister base.
@@ -25,18 +31,13 @@ const STEPS = 400;
 export const bend: OrdinaryFigure = {
   shapes: (frame, count) => spaced(count, -DIAGONALS / 2, DIAGONALS).map(inBend(frame)),
   compons: (frame, count, pieces) =>
-    spaced(count, -DIAGONALS / 2, DIAGONALS).flatMap(([at, span]) => {
-      const along = (step: number): Point => [
-        at + span / 2 + (frame.width * step) / STEPS,
-        (frame.height * step) / STEPS,
-      ];
-      const shown: Point[] = [];
-      for (let step = 0; step <= STEPS; step += 1) {
-        const point = along(step);
-        if (frame.encloses(...point)) {
-          shown.push(point);
-        }
-      }
-      return shown.length < 2 ? [] : stripsAlong(shown[0], shown[shown.length - 1], pieces);
-    }),
+    spaced(count, -DIAGONALS / 2, DIAGONALS).flatMap(([at, span]) =>
+      cutAcross(
+        frame.encloses,
+        [at + span / 2, 0],
+        [frame.width + at + span / 2, frame.height],
+        squareAcross(frame, span) / 2,
+        pieces
+      )
+    ),
 };

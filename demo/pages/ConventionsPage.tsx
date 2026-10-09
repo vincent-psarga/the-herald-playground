@@ -597,8 +597,8 @@ export const RULES: readonly Rule[] = [
         <p className="rule__law">
           How many compons the band is cut into is not written, nor read: the armorials write “de
           six pièces” now and then and leave it off as often. The band is drawn cut into as many as
-          it is understood to have. Only the bands the armorials write it of take it; any other
-          band, and any charge, is refused by name.
+          it is understood to have. Every band takes it but the gemel, whose bars are too narrow to
+          be cut into squares, and a charge is refused by name.
         </p>
       </>
     ),
@@ -619,7 +619,7 @@ export const RULES: readonly Rule[] = [
       en('Or a bordure gobony azure and argent'),
       en('Or a bend componée sable and argent'),
       fr("D'or à la bordure componé de gueules et d'argent"),
-      fr("D'or à la fasce componée de gueules et d'argent"),
+      fr("D'or à la jumelle componée de gueules et d'argent"),
     ],
   },
   {

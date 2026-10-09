@@ -93,9 +93,33 @@ export class OrdinaryDefinition {
 export const OrdinaryDefinitions: Record<OrdinaryType, OrdinaryDefinition> = {
   // The top of the shield itself rather than a band laid anywhere on it, and a
   // shield has one top.
-  [OrdinaryType.chief]: new OrdinaryDefinition(OrdinaryType.chief),
-  [OrdinaryType.pale]: new OrdinaryDefinition(OrdinaryType.pale, { canBeBorneInNumbers: true }),
-  [OrdinaryType.fess]: new OrdinaryDefinition(OrdinaryType.fess, { canBeBorneInNumbers: true }),
+  //
+  // Compony, though the sources disagree. O'Kelly de Galway's dictionary has it
+  // "se dit du chef, du pal, du chevron, de la fasce, de la croix, du sautoir, de
+  // la bande, de la cotice, de la bordure", and Wikipedia holds that "certain
+  // charges cannot be compony, for practical reasons, for example common charges
+  // and the chief as they are generally not long and thin in shape". A
+  // dictionary naming the chief outweighs a practical reason against it, and a
+  // chief cut into compons is drawn as plainly as a fess. Six, chosen here: no
+  // source gives the chief a number, and six is the bend's.
+  [OrdinaryType.chief]: new OrdinaryDefinition(OrdinaryType.chief, { compons: 6 }),
+  // Compony, as O'Kelly has it and Verfey de Saint-Nizier bears it — "De
+  // gueules, au pal componné d'or et d'azur". Six, chosen here: no source gives
+  // the pale a number, and six is the bend's.
+  [OrdinaryType.pale]: new OrdinaryDefinition(OrdinaryType.pale, {
+    canBeBorneInNumbers: true,
+    compons: 6,
+  }),
+  // Compony, as O'Kelly has it and Parker blazons it — "Argent, a fesse
+  // gobonated argent and gules between three owls". Six, chosen here, as the
+  // pale's.
+  [OrdinaryType.fess]: new OrdinaryDefinition(OrdinaryType.fess, {
+    canBeBorneInNumbers: true,
+    compons: 6,
+  }),
+  // Never compony. No source cuts it so — O'Kelly's list of the "pièces de
+  // longueur" stops at the cotice — and each of its two bars is a diminutive,
+  // too narrow to be cut into anything a reader would take for squares.
   [OrdinaryType.barGemel]: new OrdinaryDefinition(OrdinaryType.barGemel, {
     canBeBorneInNumbers: true,
   }),
@@ -106,18 +130,31 @@ export const OrdinaryDefinitions: Record<OrdinaryType, OrdinaryDefinition> = {
     canBeBorneInNumbers: true,
     compons: 6,
   }),
+  // Compony, and in six, as the bend it is the reverse of. No source names the
+  // bend sinister compony in so many words; O'Kelly names the bend, and nothing
+  // about turning it over takes that away.
   [OrdinaryType.bendSinister]: new OrdinaryDefinition(OrdinaryType.bendSinister, {
     canBeBorneInNumbers: true,
+    compons: 6,
   }),
+  // Compony, as O'Kelly has it. Seven, chosen here: a compon at the point and
+  // three down each limb, the point being where the limbs meet as the middle of
+  // a cross is.
   [OrdinaryType.chevron]: new OrdinaryDefinition(OrdinaryType.chevron, {
     canBeBorneInNumbers: true,
+    compons: 7,
   }),
   // A single charge for all that it is drawn as two limbs crossing, and
   // repeating it makes crosslets, which are small charges strewn over the field
   // rather than ordinaries. The saltire is the same figure turned, and answers
   // the same way.
-  [OrdinaryType.cross]: new OrdinaryDefinition(OrdinaryType.cross),
-  [OrdinaryType.saltire]: new OrdinaryDefinition(OrdinaryType.saltire),
+  //
+  // Both compony, as O'Kelly has it. The cross in nine, which is Rivière de La
+  // Mure's: "De gueules, à la croix componnée de quatre pièces d'azur et de cinq
+  // pièces d'or" — the middle, and two along each arm. The saltire in nine
+  // too, chosen here by the cross's, no source giving it a number.
+  [OrdinaryType.cross]: new OrdinaryDefinition(OrdinaryType.cross, { compons: 9 }),
+  [OrdinaryType.saltire]: new OrdinaryDefinition(OrdinaryType.saltire, { compons: 9 }),
   // The edge of the shield, and a shield has one of those too.
   //
   // Compony in sixteen, which is Parker's number: "A bordure compony should

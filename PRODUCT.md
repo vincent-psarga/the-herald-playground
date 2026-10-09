@@ -143,8 +143,9 @@ Supported vocabulary as it stands:
   "à la bordure componée de gueules et d'argent", "a bordure compony gules and argent". It stands
   where the tincture would, as counterchanging does, and names two: the first takes the first
   compon. French agrees it with the band and reads "componné" too; English reads "gobony" and the
-  borrowed "componée"; "componé" and "compony" are written. The bend and the bordure take it,
-  being the two the armorials write, and the bordure is cut gyronwise into Parker's sixteen. The
+  borrowed "componée"; "componé" and "compony" are written. Every band takes it but the gemel,
+  whose bars are too narrow to be cut into squares. The bordure is cut gyronwise into Parker's
+  sixteen, the cross into Rivière de La Mure's nine, the middle being a compon of its own. The
   number of compons — "de six pièces" — is not read, and a band never cut so, or a charge, is
   refused by name. Two rows — contre-componé, counter-compony — are not read either.
 - **Languages (2)** — French and English, both reading and writing. French agrees its article with
