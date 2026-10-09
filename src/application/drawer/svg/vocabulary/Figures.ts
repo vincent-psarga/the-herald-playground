@@ -66,6 +66,42 @@ export type BorneFigure = {
 };
 
 /**
+ * A band, which a blazon modifies by the line it is drawn along rather than by
+ * anything taken out of its middle: a fess indented is the fess it always was,
+ * its edges cut into teeth.
+ *
+ * What a modified line leaves is a band in its own right and not a shape: it
+ * lies where the plain one would lie, in the same number and the same width, so
+ * what is held here is a figure and the rest of the drawing never learns that
+ * there was a modifier at all.
+ */
+export type OrdinaryFigure = BorneFigure & {
+  /**
+   * The same band as each modifier draws it, for the modifiers it may be drawn
+   * under, and empty for the bands that take none.
+   */
+  readonly modified: Readonly<Partial<Record<Modifier, CutBand>>>;
+};
+
+/**
+ * A band drawn along a modified line, which is two drawings rather than one: the
+ * whole of the cut band, and the band inside the cut.
+ *
+ * The second is there because a blazon may paint the line in a tincture of its
+ * own — "à la bande de gueules engrêlée de sable" — and what is painted is the
+ * part of the band the line added. So the cut band is laid in the line's
+ * tincture and this is laid over it in the band's, the two meeting at the
+ * notches, where the cut comes back to the band it was cut in.
+ *
+ * A band whose line was given no tincture never asks for it: the whole of the
+ * cut band is painted in the one tincture and there is nothing to lay over
+ * anything.
+ */
+export type CutBand = BorneFigure & {
+  readonly within: (frame: Frame, count: number) => readonly Shape[];
+};
+
+/**
  * A charge, which is the one kind of borne figure a field may also be sown with.
  *
  * It answers for what it looks like at a single spot, and the dispositions

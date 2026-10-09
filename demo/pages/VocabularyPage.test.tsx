@@ -468,7 +468,10 @@ describe('what one drawing cannot say', () => {
   test('says why an ordinary is borne but once, rather than bearing it twice', async () => {
     mount(<VocabularyPage language={Languages.en} />);
     await strike('bordure');
-    expect(showing().querySelectorAll('.showing__variant')).toHaveLength(0);
+    // Never borne twice, so nothing is shown of a count — and still shown under
+    // every line it may be drawn along, which is another question about it.
+    expect(labels('Modified')).toEqual(['Indented', 'Dancetty', 'Vivré', 'Engrailed']);
+    expect(() => section('Borne in number')).toThrow();
     expect(within(showing()).getByText(/shield has one edge/)).toBeInTheDocument();
   });
 });

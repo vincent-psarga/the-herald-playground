@@ -1,7 +1,7 @@
-import { ChargeType } from '../models/Charge';
+import { BorneType } from '../models/Blazon';
 import { Languages } from '../models/Languages';
-import { Source } from '../models/Source';
 import { Modifier } from '../models/Modifier';
+import { Source } from '../models/Source';
 import { TINCTURES, Tincture } from '../models/Tinctures';
 
 /** One way a word is written, and how that writing counts more than one of it. */
@@ -37,8 +37,8 @@ export interface WordOptions {
   readonly alternateWording?: AlternateWording;
   readonly allowedTinctures?: readonly Tincture[];
   readonly defaultTincture?: Tincture;
-  /** The charges this word alone is said of, for a word that qualifies rather than names. */
-  readonly saidOf?: readonly ChargeType[];
+  /** What this word alone is said of, for a word that qualifies rather than names. */
+  readonly saidOf?: readonly BorneType[];
   /** What the word already says was done to the charge, for a name that says it. */
   readonly defaultModifier?: Modifier;
 }
@@ -85,11 +85,12 @@ const UNGLOSSED: Description<Languages.en> = { lang: Languages.en, value: '', so
  * that the vocabulary holds one entry where heraldry has one word and the parser
  * still answers to every spelling of it.
  *
- * A word may also carry the charges it is said of, which is the same question
- * asked of a word that qualifies instead of naming. A tongue may hold two words
- * for the one thing and give each its own charges — French voids the star with
- * évidé and everything else with vidé — and which is which is no more the term's
- * business than the difference between a besant and a tourteau is.
+ * A word may also carry what it is said of, which is the same question asked of
+ * a word that qualifies instead of naming. A tongue may hold two words for the
+ * one thing and give each its own — French voids the star with évidé and
+ * everything else with vidé — and which is which is no more the term's business
+ * than the difference between a besant and a tourteau is. It is asked of a band
+ * as readily as of a charge, both being things a blazon may say something of.
  *
  * A word may also carry what was done to the figure. Heraldry gives some of the
  * modified charges a name of their own — a lozenge voided is a mascle and a
@@ -136,17 +137,17 @@ export class Word {
   public readonly defaultTincture?: Tincture;
 
   /**
-   * The charges this word alone is said of, where the armorials keep it for
-   * some and not for others.
+   * What this word alone is said of, where the armorials keep it for some of the
+   * things a field bears and not for others.
    *
    * Left unsaid by every word that is said of whatever will take it, which is
    * every word that names something and most of the words that qualify one: the
-   * list is a claim on particular charges and not a licence, so a word making no
+   * list is a claim on particular terms and not a licence, so a word making no
    * claim is the general one and is written wherever no other word has claimed
-   * the charge. Every word is read of every charge either way — this settles
-   * which comes back, and never what may be said.
+   * what it is said of. Every word is read of everything either way — this
+   * settles which comes back, and never what may be said.
    */
-  public readonly saidOf?: readonly ChargeType[];
+  public readonly saidOf?: readonly BorneType[];
 
   /**
    * What the word already says was done to the charge, where the word says it.
@@ -197,8 +198,8 @@ export class Word {
     return this.allowedTinctures.includes(tincture);
   }
 
-  /** Whether the word claims a charge as one of its own. */
-  claims(type: ChargeType): boolean {
+  /** Whether the word claims a band or a charge as one of its own. */
+  claims(type: BorneType): boolean {
     return this.saidOf?.includes(type) ?? false;
   }
 

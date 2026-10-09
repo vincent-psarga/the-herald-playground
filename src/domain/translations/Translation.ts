@@ -1,4 +1,4 @@
-import { ChargeType } from '../models/Charge';
+import { BorneType } from '../models/Blazon';
 import { Modifier } from '../models/Modifier';
 import { Tincture } from '../models/Tinctures';
 import { Spelling, Word } from './Word';
@@ -83,24 +83,27 @@ export function wordIn<T extends string, W extends Word>(
 }
 
 /**
- * The word a term is written with when it is said of a given charge.
+ * The word a term is written with when it is said of a given band or charge.
  *
  * The tincture's question asked of a word that qualifies rather than names, and
  * answered the same way. A tongue may hold two words for the one term and keep
- * each for its own charges: French voids the star with évidé and the lozenge,
- * the roundel and the billet with vidé, exactly as English names the gold
- * roundel a besant and the red one a torteau. The term is one, the drawing is
- * one, and the word that comes back is the one the armorials write of that
- * charge.
+ * each for its own: French voids the star with évidé and the lozenge, the
+ * roundel and the billet with vidé, exactly as English names the gold roundel a
+ * besant and the red one a torteau. The term is one, the drawing is one, and the
+ * word that comes back is the one the armorials write of that figure.
  *
- * The word that claims the charge, then the word that claims none and is
+ * It is asked of a band as readily as of a charge, a band having modifiers of
+ * its own: nothing here is about what the figure is, only about which of a
+ * tongue's words is written of it.
+ *
+ * The word that claims the figure, then the word that claims none and is
  * therefore the general one, then the canonical word — which will be the wrong
- * word for the charge but is at least the term that was asked for.
+ * word for the figure but is at least the term that was asked for.
  */
 export function wordSaidOf<T extends string, W extends Word>(
   translation: Translation<T, W>,
   term: T,
-  type: ChargeType
+  type: BorneType
 ): W {
   const words = wordsOf(translation, term);
   return (

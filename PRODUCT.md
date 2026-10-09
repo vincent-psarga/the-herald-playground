@@ -73,10 +73,15 @@ Supported vocabulary as it stands:
 - **Ordinaries (10)** — chief, pale, fess, bar gemel, bend, bend sinister, chevron, cross, saltire,
   bordure. Laid on the field in the order the blazon names them, which is the order they are drawn.
   That order is the model's to keep: sorting what a field bears into separate lists would lose it.
-- **Modifiers (2)** — voided: the charge's middle taken out, so the field shows through the outline;
-  and pierced: a round hole punched through it, the rest of the charge left as it was. Two things
-  and not one said twice, whatever the dictionaries' filing — a billette percée is not a billette
-  vidée, and the two are drawn differently because they are different. Written between the charge
+  Seven of them may be drawn along any of the modified lines — chief, pale, fess, bend, bend
+  sinister, chevron, bordure — and which those are is declared with the ordinary, as which modifier
+  a charge takes is declared with the charge.
+- **Modifiers (6)** — voided: the charge's middle taken out, so the field shows through the outline;
+  pierced: a round hole punched through it, the rest of the charge left as it was; and the four
+  modified lines — indented, dancetty, the vivré and engrailed — which cut the edges of a band
+  rather than run them straight. The first two are two things and not one said twice, whatever the
+  dictionaries' filing — a billette percée is not a billette vidée, and the two are drawn
+  differently because they are different. Written between the charge
   and its tincture, which is where the armorials of both tongues put it — blazon takes its word
   order from French, so what qualifies the charge follows it and the tincture comes last. Read after
   the tincture as well, and never before the charge, blazon setting no adjective there. Refused
@@ -92,6 +97,61 @@ Supported vocabulary as it stands:
   written, exactly as a besant says gold, so nothing follows it — and a blazon that says the
   modifier anyway is understood where it agrees and refused where it does not. English names no
   pierced star, molette being French, and blazons it in the ordinary way.
+
+  A band is said of by the same rule and in the same place, and takes modifiers of its own: what is
+  done to a charge is done to its middle and what is done to a band is done to the line it is named
+  after, so no band is voided and no charge is indented, and either refuses the other's word by
+  name. Four of the six are modified lines. Three of those are saws and differ in the size of the
+  tooth and in the shape of it and in nothing else at all: indented, the small teeth — "notched
+  after the manner of dancetty, but with smaller teeth"; dancetty, the same teeth cut larger and so
+  fewer, three of them across a fess where the indented fess has half a dozen; and the vivré, those
+  great teeth brought to a right angle at the point instead of a sharper one — which on a band that
+  runs at a slant gives "the appearance of rectangular steps", a staircase rather than a zigzag.
+  French names all three — dentelé, denché, vivré — and English only two, so the third is blazoned
+  in English with the French word, which is how Parker files it.
+
+  The fourth line is no saw. Engrailed (French engrêlé) cuts the edge into "small semicircular
+  indents, the teeth or points of which being outward enter the field", which is what the French
+  dictionary parts it from the dentelé by: the engrêlé has "petites dents dont les intervalles sont
+  creux et arrondis", where the saw's "intervalles sont à angles droits, comme des dents de scie".
+  Every hollow bites the same way, so a band engrailed is widest at its points and narrowest between
+  them, both its edges hollowed from the field side at once — "when a fesse chevron or bend is
+  blazoned engrailed, it implies that the ordinary is to be so on both sides". The hollow is
+  measured square to the line it is cut in, so it stays a circle on a band that runs at a slant and
+  its points stand out of the band rather than down the field; a chevron is cut along each of its
+  limbs and keeps its point where the two meet. English reads ingrailed too, which is Parker's own
+  other spelling, and writes engrailed. The invected — the same hollows turned so that "the points
+  are inwards" — is a second drawing and is not read.
+
+  A line may also be painted in a tincture of its own, which no other modifier may: the band keeps
+  its tincture between the notches and the cut beyond them is drawn in whatever the blazon named —
+  "D'or à la bande de gueules engrêlée de sable", the bend red and its engrailing black. It is the
+  line that is painted and not a second band laid underneath: the band lies where it lay and is as
+  wide as it was, and what the second tincture takes is the teeth. A line a blazon says nothing of
+  is drawn in the band's own tincture, as it always was. Voided and pierced take no tincture and
+  are refused one by name, the reason being what each is done to: a line is an edge and an edge can
+  be drawn, where a lozenge voided shows the field through it, so a tincture there would be filling
+  the hole rather than colouring it — another figure, which the armorials also write ("deux
+  molletts d'or, voydes vert") and which is not read yet. Where the line is painted the band's own
+  tincture is written first and the modifier between the two, so that each tincture stands beside
+  what it belongs to; English has no form of its own for this — Parker's fimbriated is "a narrow
+  edging of some other tincture all round it", which is another figure — and is given the French
+  order.
+
+  The seven bands that take the lines are the four Parker names the indenting of, the mirror of the
+  bend, the chief, and the bordure; a band that can be cut at all can be cut by any of the four, and
+  the French dictionary writes the engrêlé of exactly that list — "du chef, du pal, du sautoir, du
+  chevron, de la fasce, de la croix, de la bande, de la bordure". The last two are the ones with a
+  single free edge: a chief's upper edge and a bordure's outer one are the shield's own outline,
+  which no blazon modifies, so their teeth are all on the one side and the band is deeper where a
+  tooth reaches and shallower where a notch does — "le chef ne peut être engrêlé que dans sa ligne
+  basse". Every other band cut by a saw keeps its width, both its edges being cut alike. The bar
+  gemel, the cross and the saltire take none of the four in any blazon here, though the armorials
+  write them — "D'argent, au sautoir denché de sable", and the engrêlé is said of the croix and the
+  sautoir in the same breath: teeth cannot yet be cut in a bar that narrow, nor where two limbs
+  meet. Which way the teeth point is said by the armorials — "à trois fasces denchées d'or, les
+  pointes en bas" — and is not read.
+
 - **Charges (10)** — annulet, billet, lozenge, roundel, goutte, mullet, fleur-de-lis, cross couped,
   crescent, larme. Some are plain shapes and some are pictures of something; all are borne once or in
   number, and any of them may be sown over a plain field instead. They
@@ -148,7 +208,7 @@ roadmap toward full blazon. Pages must state what is supported and must not prom
 
 ## Evidence on Hand
 
-- The working library itself: parser, writer and drawer, with 1193 passing tests. Any claim a page makes
+- The working library itself: parser, writer and drawer, with 1828 passing tests. Any claim a page makes
   can be demonstrated live rather than asserted.
 - Tincture shades and hatching marks are taken from Wikipedia's own tables
   (`https://en.wikipedia.org/wiki/Tincture_(heraldry)`, `https://en.wikipedia.org/wiki/Hatching_(heraldry)`),

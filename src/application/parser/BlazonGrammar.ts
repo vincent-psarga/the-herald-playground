@@ -1,6 +1,7 @@
 import {
   ParseResult,
   Parser,
+  ParserOutput,
   Token,
   alt,
   apply,
@@ -16,6 +17,7 @@ import {
 import { BlazonParseError } from '../../domain/errors/parsing/BlazonParseError';
 import { ChargedPlainField } from '../../domain/errors/parsing/ChargedPlainField';
 import { MissingPieces } from '../../domain/errors/parsing/MissingPieces';
+import { UntincturedModifier } from '../../domain/errors/parsing/UntincturedModifier';
 import { WrongModifier } from '../../domain/errors/parsing/WrongModifier';
 import { Blazon, ChargeOrOrdinary } from '../../domain/models/Blazon';
 import {
@@ -30,12 +32,13 @@ import {
   cutInPieces,
   usualPieces,
 } from '../../domain/models/Field';
-import { Modifier } from '../../domain/models/Modifier';
+import { Modifier, takesTincture } from '../../domain/models/Modifier';
 import { Tincture } from '../../domain/models/Tinctures';
+import { TermWord } from '../../domain/translations/Translation';
 import { TokenKind } from '../lexer/Lexer';
 import { BorneTerm, bornUnder, carried } from './Borne';
 import { guard, optional, optionalUnlessBegun } from './Combinators';
-import { within } from './Failures';
+import { complaining, positionOf, within } from './Failures';
 import { Treatment, isBare } from './Treatment';
 import { VariedField } from './Variations';
 
@@ -234,6 +237,15 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
   // is no part of what was said, and the writer puts it back where the armorials
   // put it.
   //
+  // A modifier said late may carry a tincture of its own after it — "à la bande
+  // de gueules engrêlée de sable", where the bande is red and its engrailing
+  // black. Late and never early, which is what makes the phrase decidable: a
+  // tincture after a modifier is the band's own wherever the band has not had one
+  // yet, and the same armorial writes both — "au sautoir engrêlé de gueules" is a
+  // red saltire and not a saltire engrailed in red. So the second tincture is
+  // read only where a first one has already been, and a blazon with one tincture
+  // reads as it always did.
+  //
   // Whichever place it stands in, it is read by the phrase that named the charge
   // rather than by this rule: the words that may stand there have to agree with
   // what the blazon called the charge, and only the phrase knows what it called
@@ -246,17 +258,24 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
     combine(grammar.borne, (borne) =>
       combine(modifying(borne), (early) =>
         combine(carried(grammar.tincture, borne.word), (tincture) =>
-          apply(early === undefined ? modifying(borne) : nil(), (late): ChargeOrOrdinary => {
-            const one =
-              borne.count === undefined
-                ? { type: borne.type, tincture }
-                : { type: borne.type, tincture, count: borne.count };
-            // The name may have said it already: a mascle is a lozenge voided
-            // and says so by being the word it is, so where the blazon wrote no
-            // modifier the word supplies its own.
-            const modifier = early ?? late ?? borne.word.defaultModifier;
-            return modifier === undefined ? one : { ...one, modifier };
-          })
+          combine(early === undefined ? modifying(borne) : nil(), (late) =>
+            apply(painting(late, grammar.tincture), (painted): ChargeOrOrdinary => {
+              const one =
+                borne.count === undefined
+                  ? { type: borne.type, tincture }
+                  : { type: borne.type, tincture, count: borne.count };
+              // The name may have said it already: a mascle is a lozenge voided
+              // and says so by being the word it is, so where the blazon wrote no
+              // modifier the word supplies its own.
+              const modifier = early?.term ?? late?.term ?? borne.word.defaultModifier;
+              if (modifier === undefined) {
+                return one;
+              }
+              return painted === undefined
+                ? { ...one, modifier }
+                : { ...one, modifier, modifierTincture: painted };
+            })
+          )
         )
       )
     )
@@ -323,25 +342,79 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
  * modifier and a tincture would be taken for the modifier; the vocabularies hold
  * no such word, and the one that arrives will have to be given a place to stand.
  *
+ * What comes back is the word as well as the term, because the phrase is not
+ * done with it: a modifier may be given a tincture of its own, and whether it
+ * may is the term's to answer while the complaint about it has to name the word
+ * the blazon actually wrote.
+ *
  * The word that was written has a say as well as the charge behind it. A name
  * that already means a modifier will take that one and no other: "a mascle
  * voided" says the voiding twice and is understood, as "a besant or" says the
  * gold twice; "a mascle pierced" says two different things of the one figure and
  * is refused by name.
  */
-function modifying(borne: BorneTerm): Parser<TokenKind, Modifier | undefined> {
+function modifying(borne: BorneTerm): Parser<TokenKind, TermWord<Modifier> | undefined> {
   if (borne.modifier === undefined) {
     return nil();
   }
-  return apply(
-    guard(
-      borne.modifier,
-      (named) =>
-        named === undefined || (bornUnder(borne.type, named.term) && borne.word.takes(named.term)),
-      (named, position) => new WrongModifier(borne.word.value, named?.word.value ?? '', position)
-    ),
-    (named) => named?.term
+  return guard(
+    borne.modifier,
+    (named) =>
+      named === undefined || (bornUnder(borne.type, named.term) && borne.word.takes(named.term)),
+    (named, position) => new WrongModifier(borne.word.value, named?.word.value ?? '', position)
   );
+}
+
+/**
+ * The tincture a modifier is drawn in, where the blazon gives it one of its own.
+ *
+ * Nothing whatever is owed: a line said nothing of is drawn in the band's own
+ * tincture, which is what every armorial that says nothing means. So a blazon
+ * that names none reads exactly as it did before a line could be painted.
+ *
+ * It is offered only after a modifier that was written late, the early place
+ * being where the band's own tincture follows. And it is refused by name where
+ * the modifier is one that cannot be drawn: a line is an edge and an edge takes
+ * paint, where a charge voided shows the field through it and a tincture there
+ * would be filling the hole rather than colouring it. Refusing fails the phrase
+ * rather than passing the word by, both words being known and the blazon asking
+ * for a figure this vocabulary does not hold.
+ */
+function painting(
+  modifier: TermWord<Modifier> | undefined,
+  tincture: Parser<TokenKind, Tincture>
+): Parser<TokenKind, Tincture | undefined> {
+  if (modifier === undefined) {
+    return nil();
+  }
+  if (takesTincture(modifier.term)) {
+    return optional(tincture);
+  }
+  // A tincture standing after a modifier that is not drawn is refused by name
+  // rather than passed over. Passing it over would leave the blazon failing
+  // somewhere further on, with a complaint about a word that is perfectly well
+  // spelled and in the only place it could have been meant to stand; and nothing
+  // else can be meant by it, no phrase of either tongue beginning with a bare
+  // tincture.
+  return {
+    parse(token: Token<TokenKind> | undefined): ParserOutput<TokenKind, Tincture | undefined> {
+      const output = tincture.parse(token);
+      if (!output.successful) {
+        return {
+          successful: true,
+          candidates: [{ firstToken: token, nextToken: token, result: undefined }],
+          error: undefined,
+        };
+      }
+      return {
+        successful: false,
+        error: complaining(
+          token?.pos,
+          new UntincturedModifier(modifier.word.value, positionOf(token?.pos))
+        ),
+      };
+    },
+  };
 }
 
 /**

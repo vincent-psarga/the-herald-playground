@@ -1,6 +1,17 @@
-import { Charge, isChargeType } from './Charge';
+import { Charge, ChargeType, isChargeType } from './Charge';
 import { Field } from './Field';
-import { Ordinary, isOrdinaryType } from './Ordinary';
+import { Ordinary, OrdinaryType, isOrdinaryType } from './Ordinary';
+
+/**
+ * The name of something a field may bear: a band or a charge.
+ *
+ * Both vocabularies as one, because both are named by the same phrase and a word
+ * in neither is wrong in the same way. It is the model's rather than the
+ * parser's because the writer asks it too: which word a tongue says a modifier
+ * with is asked of what the modifier was said of, and that is a band as readily
+ * as a charge.
+ */
+export type BorneType = OrdinaryType | ChargeType;
 
 /**
  * What a field bears: a band or a charge. The two are borne by the same phrase

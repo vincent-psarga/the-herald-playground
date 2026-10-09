@@ -1,8 +1,20 @@
 # Parsing
 
+- Grow the line modifications past indented, dancetty, vivré and engrailed: embattled, wavy, and
+  the invected, which is the engrailed with its points turned inwards
+- Say which way a denché points, the armorials saying it: "à trois fasces denchées d'or, les
+  pointes en bas"
+- Cut the three bands that cannot be yet: the bar gemel, the cross, the saltire ("D'argent, au
+  sautoir denché de sable")
+- Let a division or a varied field take a modified line too ("per fess indented", "coupé denché",
+  "contre-écartelé denché"),
+  the quarterings among them: Parker writes "Quarterly, per fesse indented azure and argent" and
+  "Quarterly, embattled argent and sable", which are a quartering's own line cut rather than
+  anything laid on it
 - Handle the disposition of charges (en chef, en orle, mal ordonnées)
-- Let a modifier take a tincture (eg: "Monsire Gerard SALVAYN, port d'argent; au cheif de sable deux molletts d'or, voydes vert--Roll, temp. ED. III.")
-- Let an ordinary take a modifier, its own being lines drawn otherwise [#1](https://github.com/vincent-psarga/the-herald-playground/pull/1)
+- Let a charge's modifier take a tincture, which fills what was taken out rather than colouring it (eg: "Monsire Gerard SALVAYN, port d'argent; au cheif de sable deux molletts d'or, voydes vert--Roll, temp. ED. III."). A band's line already takes one.
+- Grow the modifiers past "voided" and "pierced": alésé, and the rest
+- Allow complex partition (eg: "per fess azur a bend or and argent")
 - Handle a semy of more than one figure ("semé alterné de tours et de fleurs de lys")
 - Sow a divided field, once the blazon can say which half was sown [#2](https://github.com/vincent-psarga/the-herald-playground/pull/2)
 - Support for "shortcuts" (eg: "du même", "l'un dans l'autre" [#4](https://github.com/vincent-psarga/the-herald-playground/pull/4), "brochant sur le tout")
