@@ -83,7 +83,8 @@ export type BorneFigure = {
 /**
  * A band, which a blazon modifies by the line it is drawn along rather than by
  * anything taken out of its middle: a fess indented is the fess it always was,
- * its edges cut into teeth.
+ * its edges cut into teeth. It may be cut across into compons as well as
+ * painted in one tincture.
  *
  * What a modified line leaves is a band in its own right and not a shape: it
  * lies where the plain one would lie, in the same number and the same width, so
@@ -96,6 +97,13 @@ export type OrdinaryFigure = BorneFigure & {
    * under, and empty for the bands that take none.
    */
   readonly modified: Readonly<Partial<Record<Modifier, CutBand>>>;
+  /**
+   * The compons of the second tincture where the band is cut across into
+   * compons: every other one along the band from the first, its own shapes —
+   * plain or cut along a modified line — cutting them to it. A band that is
+   * never compony has nothing to answer with, and leaves it off.
+   */
+  readonly compons?: (frame: Frame, count: number, pieces: number) => readonly Shape[];
 };
 
 /**

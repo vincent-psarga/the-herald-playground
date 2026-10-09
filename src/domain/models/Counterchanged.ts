@@ -1,3 +1,4 @@
+import type { Compony } from './Compony';
 import { Tincture } from './Tinctures';
 
 /**
@@ -27,15 +28,15 @@ export const COUNTERCHANGED = 'Counterchanged';
 export type Counterchanged = typeof COUNTERCHANGED;
 
 /**
- * What something borne is painted with: a tincture it names, or the field's own
- * two, reversed.
+ * What something borne is painted with: a tincture it names, the field's own
+ * two, reversed, or two of its own laid alternately along it in compons.
  *
  * A band alone, for now. A charge is counterchanged as readily — heraldry does
  * it constantly, and Parker's sentence says "charges" before it says "parts of
  * charges" — but the phrase French uses of charges is the other of its two, and
  * neither is read of one yet.
  */
-export type Tinctured = Tincture | Counterchanged;
+export type Tinctured = Tincture | Counterchanged | Compony;
 
 /** Whether what is borne takes the field's tinctures rather than naming one. */
 export function isCounterchanged(tinctured: Tinctured): tinctured is Counterchanged {

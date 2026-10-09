@@ -18,7 +18,7 @@ import {
 } from '../../domain/translations/Translation';
 import { Word } from '../../domain/translations/Word';
 import { TokenKind, tokenise } from '../lexer/Lexer';
-import { Vocabulary, complaining, owed, positionOf } from './Failures';
+import { Vocabulary, complaining, complains, owed, positionOf } from './Failures';
 
 /**
  * Keeps only the candidates a predicate accepts, reporting a rejection as a
@@ -278,6 +278,34 @@ export function optionalUnlessBegun<TKind, TResult>(
         candidates: [{ firstToken: token, nextToken: token, result: undefined }],
         error: undefined,
       };
+    },
+  };
+}
+
+/**
+ * One reading where its opening word was written, and the other where it was
+ * not.
+ *
+ * Alternatives are settled by which fails further along, and two that fail at
+ * the very same word by which was offered first — so a phrase whose first word
+ * was read and then refused there loses to a sibling that never read it, and
+ * the blazon is told the wrong thing: "à la fasce componée" would be an unknown
+ * tincture. Where the opening word is one no sibling could ever read, it is
+ * enough to settle the matter, and the reading it opens is the only one tried.
+ *
+ * The opening counts as written when it is read, and when it is refused by name:
+ * a word written in the wrong shape is still that word.
+ */
+export function begunBy<TResult>(
+  opening: Parser<TokenKind, unknown>,
+  reading: Parser<TokenKind, TResult>,
+  otherwise: Parser<TokenKind, TResult>
+): Parser<TokenKind, TResult> {
+  return {
+    parse(token: Token<TokenKind> | undefined): ParserOutput<TokenKind, TResult> {
+      const opened = opening.parse(token);
+      const written = opened.successful || complains(opened.error);
+      return (written ? reading : otherwise).parse(token);
     },
   };
 }

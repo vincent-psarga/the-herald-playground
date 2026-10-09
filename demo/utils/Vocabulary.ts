@@ -13,6 +13,7 @@ import {
   isChargeType,
   modifiersOf,
 } from '../../src/domain/models/Charge';
+import { Compony } from '../../src/domain/models/Compony';
 import { COUNTERCHANGED, Counterchanged } from '../../src/domain/models/Counterchanged';
 import { Modifier } from '../../src/domain/models/Modifier';
 import {
@@ -88,6 +89,10 @@ import { readBlazon } from './Reading';
  * it is none of the others: it stands where a tincture stands and is no
  * tincture, and it is said of a band without being one. A rank with one term in
  * it is what a page shows when a tongue has one word for a thing.
+ *
+ * Compony is a rank of its own for the same reason: it stands where a tincture
+ * stands and names two of them, and the model holds it as a pair of tinctures
+ * rather than as a term, so the page names the one it shows here.
  */
 export type Ranked =
   | { readonly rank: 'tincture'; readonly term: Tincture }
@@ -102,6 +107,7 @@ export type Ranked =
   | { readonly rank: 'over all'; readonly term: typeof OVER_ALL_TERM }
   | { readonly rank: 'counterchange'; readonly term: Counterchanged }
   | { readonly rank: 'liquid'; readonly term: Tincture }
+  | { readonly rank: 'compony'; readonly term: typeof COMPONY_TERM }
   | { readonly rank: 'field'; readonly term: typeof PLAIN_TERM | typeof SOWN_TERM };
 
 /**
@@ -227,6 +233,8 @@ const COVERED = Colours.sable;
 const COVERING = OrdinaryType.fess;
 const UNDERNEATH = ChargeType.billet;
 
+const COMPONY_TERM = 'Compony';
+
 // The arms that show counterchanging: a band laid across the line it is
 // counterchanged across, so that the drawing shows the figure cut by the
 // partition rather than merely standing on one side of it.
@@ -237,6 +245,17 @@ const COUNTERCHANGED_BAND = OrdinaryType.fess;
 // each half of a field parted per pale, which is the other half of what the
 // phrase does — each takes the tincture of the half it did not fall on.
 const COUNTERCHANGED_CHARGE = ChargeType.lozenge;
+
+// The arms that show compony: the bordure of Burgundy, which is the best known
+// band of the kind, on a field of neither of its two tinctures.
+const COMPONY_BAND = OrdinaryType.bordure;
+const COMPONY_ON = Colours.azure;
+const COMPONY: Compony = { compony: [COLOUR, METAL] };
+
+// The bands that may be cut into compons, read off the model.
+const COMPONY_BANDS = Object.values(OrdinaryType).filter(
+  (type) => OrdinaryDefinitions[type].compons !== undefined
+);
 
 const CHARGE_TYPES = Object.values(ChargeType);
 const ORDINARY_TYPES = Object.values(OrdinaryType);
@@ -425,6 +444,7 @@ function sensesOf<W extends Word>(tongue: Tongue<W>): readonly Sense<W>[] {
       words: [wording.counterchanged],
     } satisfies Sense<W>,
     ...poured(tongue.liquids),
+    { rank: 'compony', term: COMPONY_TERM, words: [wording.compony] } satisfies Sense<W>,
     ...(tongue.plain === undefined
       ? []
       : [{ rank: 'field', term: PLAIN_TERM, words: [tongue.plain] } satisfies Sense<W>]),
@@ -643,6 +663,11 @@ function armsOf<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W): Bl
           semy: { type: pouredAsFigure(word), tincture: sense.term },
         },
       };
+    case 'compony':
+      return {
+        field: { type: FieldType.plain, tincture: COMPONY_ON },
+        chargesOrOrdinaries: [{ type: COMPONY_BAND, tincture: COMPONY }],
+      };
     case 'field':
       return sense.term === PLAIN_TERM
         ? { field: { type: FieldType.plain, tincture: COLOUR } }
@@ -693,6 +718,7 @@ function insisting<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W):
     // word to a tongue for the counterchange as well, and nothing to narrow.
     case 'over all':
     case 'counterchange':
+    case 'compony':
       return wording;
     // Poured with this word whatever the tongue writes, French included: its
     // writer pours nothing, and a page showing the tincture under the liquid's
@@ -837,6 +863,9 @@ const OVER_ALL_NOTE: Record<Languages, string> = {
 const COUNTERCHANGE_NOTE =
   'Said of a band or a charge, and of several at once, over a field divided between two tinctures — a quartering among them, its two pairs of quarters standing for the two halves. A varied field is cut from two tinctures as well and is refused all the same, being cut into a row rather than by a line. Nothing follows the phrase: it stands where the tincture would stand and is the whole of what the figure is painted with — so a name that already means a tincture refuses it, a besant being gold and a counterchanged one being nothing.';
 
+const COMPONY_NOTE =
+  'Said of a band, never of a charge or a field, and only of the bands shown below. The band is cut into as many compons as it is understood to have, no blazon read here counting them.';
+
 const FURRED_NOTE =
   'Named where the fur itself is not. A fur is a tincture and carries its pair with it, so naming it is the whole of what a blazon says; a furred field is owed the two tinctures its figures are cut from.';
 
@@ -856,6 +885,8 @@ function noteOn<W extends Word>(sense: Sense<W>, word: W, language: Languages): 
       return OVER_ALL_NOTE[language];
     case 'counterchange':
       return COUNTERCHANGE_NOTE;
+    case 'compony':
+      return COMPONY_NOTE;
     default:
       return undefined;
   }
@@ -1119,6 +1150,25 @@ function otherwise<W extends Word>(
               chargesOrOrdinaries: [{ type, tincture, count }],
             },
             label
+          )
+        ),
+      },
+    ];
+  }
+
+  if (sense.rank === 'compony') {
+    // Every band the model lets be cut so, each on the one field: which bands
+    // they are is the model's to say, and the page counts them off it.
+    return [
+      {
+        heading: 'Said of',
+        entries: COMPONY_BANDS.map((type) =>
+          say(
+            {
+              field: { type: FieldType.plain, tincture: COMPONY_ON },
+              chargesOrOrdinaries: [{ type, tincture: COMPONY }],
+            },
+            capitalise(wordOf(tongue.wording.ordinaries, type).value)
           )
         ),
       },

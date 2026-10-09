@@ -9,6 +9,8 @@ import { OrdinaryFigure } from '../Figures';
  * A gemel takes the room of a fess and spends it on two bars, so three of them
  * sit where three fesses would and are drawn as six.
  */
+// Never compony: no source cuts the gemel into compons, and each of its bars is
+// a diminutive too narrow to hold a square — see its definition.
 export const barGemel: OrdinaryFigure = {
   shapes: (frame, count) => spaced(count, 0, frame.height).map(twinned(frame)),
   // Nothing: the model gives this band no modified line, so there is no second

@@ -5,7 +5,8 @@ import { Attribute, Attributed } from '../../src/domain/models/Attributes';
 import { Blazon, ChargeOrOrdinary, isCharge, isOrdinary } from '../../src/domain/models/Blazon';
 import { Languages } from '../../src/domain/models/Languages';
 import { numberBorne } from '../../src/domain/models/Charge';
-import { Tinctured, isCounterchanged } from '../../src/domain/models/Counterchanged';
+import { isCompony } from '../../src/domain/models/Compony';
+import { isCounterchanged } from '../../src/domain/models/Counterchanged';
 import {
   Division,
   Field,
@@ -368,7 +369,7 @@ function borneBranch<W extends Word>(
             },
           ]
         : []),
-      ...paintedSaid(wording, field, word, one.tincture),
+      ...paintedSaid(wording, field, word, one, count > 1),
       ...painted(wording, field, one, word),
     ],
   };
@@ -434,8 +435,9 @@ function painted<W extends Word>(
 }
 
 /**
- * What the thing is painted with, standing under it: the tincture it names, or
- * the phrase that says it takes the field's own two, reversed.
+ * What the thing is painted with, standing under it: the tincture it names, the
+ * phrase that says it takes the field's own two, reversed, or the word that cuts
+ * it into compons, with the two tinctures it was handed.
  *
  * The phrase names neither of the two and cannot, so what stands under it is the
  * field it takes them from, bare — which is the same rule the tincture follows,
@@ -445,8 +447,24 @@ function paintedSaid<W extends Word>(
   wording: BlazonWording<W>,
   field: Field,
   word: W,
-  tincture: Tinctured
+  one: ChargeOrOrdinary,
+  several: boolean
 ): readonly Branch[] {
+  const tincture = one.tincture;
+  if (isCompony(tincture)) {
+    // The word for compony, agreeing as it is written, with the two tinctures
+    // under it: the band itself, cut, on the field it is laid on is what the
+    // word does, and the tinctures are what it was handed.
+    const [first, second] = tincture.compony;
+    return [
+      {
+        word: wording.modify(word, wording.compony, several),
+        rank: 'compony',
+        arms: { field: bare(field), chargesOrOrdinaries: [{ ...one, count: undefined }] },
+        children: [tinctureBranch(wording, first), tinctureBranch(wording, second)],
+      },
+    ];
+  }
   if (!isCounterchanged(tincture)) {
     return tinctureSaid(wording, word, tincture);
   }

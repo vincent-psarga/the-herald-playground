@@ -1,6 +1,7 @@
 import { paintedIn } from '../../../domain/models/Attributes';
 import { Blazon, ChargeOrOrdinary, asLaid, isOrdinary } from '../../../domain/models/Blazon';
 import { Charge, numberBorne } from '../../../domain/models/Charge';
+import { Compony, isCompony } from '../../../domain/models/Compony';
 import { isCounterchanged } from '../../../domain/models/Counterchanged';
 import { Modifier } from '../../../domain/models/Modifier';
 import {
@@ -13,10 +14,11 @@ import {
   isPlain,
   isVariation,
 } from '../../../domain/models/Field';
-import { borne } from '../../../domain/models/Ordinary';
+import { Ordinary, OrdinaryDefinitions, borne } from '../../../domain/models/Ordinary';
 import { FIRST } from '../../../domain/translations/Ranks';
 import { Tincture } from '../../../domain/models/Tinctures';
 import { Frame, Ink, Painter } from './Ground';
+import { compony } from './painting/compony';
 import { countered } from './painting/countered';
 import { laid } from './painting/laid';
 import { modelled } from './painting/modelled';
@@ -258,7 +260,20 @@ function bearing(one: ChargeOrOrdinary, field: Field): Painter {
     if (isCounterchanged(one.tincture)) {
       return countering(shapes, field);
     }
-    if (one.modifierTincture === undefined || !isCutBand(cut)) {
+    const lined = one.modifierTincture !== undefined && isCutBand(cut);
+    // A band cut into compons is cut whatever line it is drawn along; where the
+    // line has a tincture of its own, what is cut is the band inside the line,
+    // the teeth being laid in the line's tincture beneath it as for any band.
+    if (isCompony(one.tincture)) {
+      const tincture = one.tincture;
+      return lined && one.modifierTincture !== undefined
+        ? over(
+            laid(shapes, INKS[one.modifierTincture]),
+            cutInCompons(one, (frame) => cut.within(frame, count), tincture)
+          )
+        : cutInCompons(one, shapes, tincture);
+    }
+    if (!lined || one.modifierTincture === undefined) {
       return laid(shapes, INKS[one.tincture]);
     }
     return over(
@@ -272,11 +287,42 @@ function bearing(one: ChargeOrOrdinary, field: Field): Painter {
   // A part painted apart carries a tincture of its own, so it is drawn over a
   // counterchanged charge exactly as over any other; a part the blazon left to
   // the charge's own tincture has none to fall back on here and is not drawn.
+  // A charge is never compony — the parser refuses it — and is painted in the
+  // first of the two should a drawing fall behind the model.
+  const tincture = one.tincture;
   return over(
-    isCounterchanged(one.tincture) ? countering(shapes, field) : laid(shapes, INKS[one.tincture]),
+    isCounterchanged(tincture)
+      ? countering(shapes, field)
+      : isCompony(tincture)
+        ? cutInCompons(undefined, shapes, tincture)
+        : laid(shapes, INKS[tincture]),
     ...painting(one, figure, count),
     ...modelling(figure, count)
   );
+}
+
+/**
+ * A band cut into compons of its two tinctures, as many as the band is
+ * understood to have.
+ *
+ * Painted in its first tincture alone where what is borne is no band, or the
+ * band or its drawing gives no compons. It cannot arrive — the parser refuses
+ * compony of a charge and of every band whose definition gives it no number,
+ * and every band that has one is drawn cut — so this says what to do about a
+ * drawing that has fallen behind the model.
+ */
+function cutInCompons(
+  band: Ordinary | undefined,
+  shapes: (frame: Frame) => readonly Shape[],
+  { compony: [first, second] }: Compony
+): Painter {
+  const pieces = band === undefined ? undefined : OrdinaryDefinitions[band.type].compons;
+  const compons = band === undefined ? undefined : ORDINARIES[band.type].compons;
+  if (band === undefined || pieces === undefined || compons === undefined) {
+    return laid(shapes, INKS[first]);
+  }
+  const count = borne(band);
+  return compony(shapes, (frame) => compons(frame, count, pieces), INKS[first], INKS[second]);
 }
 
 /**

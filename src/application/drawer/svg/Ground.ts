@@ -40,6 +40,13 @@ export type Frame = {
    */
   readonly bendFrom: number;
   readonly bendTo: number;
+  /**
+   * Whether a point lies inside the enclosed shape: where a band that runs off
+   * the edge is still seen, and so where whatever is measured along it has to
+   * fit. A bend compony is cut into its compons over the length of it the shield
+   * shows, which the curve of the base cuts short well before any corner.
+   */
+  readonly encloses: (x: number, y: number) => boolean;
 };
 
 /**

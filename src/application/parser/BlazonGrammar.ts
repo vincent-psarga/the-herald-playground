@@ -49,8 +49,8 @@ import { Tincture } from '../../domain/models/Tinctures';
 import { TermWord } from '../../domain/translations/Translation';
 import { Word } from '../../domain/translations/Word';
 import { TokenKind } from '../lexer/Lexer';
-import { BorneTerm, BorneType, bearsPart, bornUnder, carried } from './Borne';
-import { guard, optional, optionalUnlessBegun, present, unless } from './Combinators';
+import { BorneTerm, BorneType, bearsPart, bornUnder, carried, inCompons } from './Borne';
+import { begunBy, guard, optional, optionalUnlessBegun, present, unless } from './Combinators';
 import { asRank, asTincture, complaining, owedAtEnd, positionOf, within } from './Failures';
 import { Treatment, isBare } from './Treatment';
 import { VariedField } from './Variations';
@@ -326,25 +326,62 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
   // French, having no name for a disc of no particular tincture, cannot
   // counterchange one at all.
   //
+  // Or the band may be cut into compons of two tinctures, the word saying so
+  // standing where the tincture would and the two tinctures following it as a
+  // varied field's follow its name: "à la bordure componée de gueules et
+  // d'argent". Whether the band may be is the model's to say, and a band that
+  // may not is refused by name once the word has been read — "à la jumelle
+  // componée" is a word this vocabulary holds, said of a band it is never said
+  // of. A band drawn along a modified line is cut into compons all the same:
+  // "à la bordure engrêlée componée d'or et de gueules".
+  //
   // The count is left off rather than set to one when a single one is borne, so
   // that a fess reads back as the fess it was before a field could bear two.
   const tinctureOf = grammar.tinctureOf ?? (() => grammar.tincture);
   const paintedWith = (borne: BorneTerm): Parser<TokenKind, Tinctured> => {
     const tincture = carried(tinctureOf(borne.type), borne.word);
     const phrase = grammar.counterchanged;
-    if (phrase === undefined) {
+    const compony = borne.compony;
+    if (phrase === undefined && compony === undefined) {
       return tincture;
     }
     // The tincture is offered first, so that a phrase which is neither is
     // reported as a tincture gone wrong: that is what almost every such phrase
     // is, and the two readings fail at the same word often enough for the order
     // to be what settles it.
+    const tinctured = apply(tincture, (tincture): Painting => ({ painted: tincture, written: '' }));
+    const named =
+      phrase === undefined
+        ? tinctured
+        : alt(
+            tinctured,
+            apply(phrase, (written): Painting => ({ painted: COUNTERCHANGED, written }))
+          );
+    // The word for compony is no tincture and opens no phrase but its own, so
+    // once it is written nothing else is tried: a refusal of it — a band never
+    // cut so, a word that does not agree — is what the blazon is owed, and would
+    // otherwise lose to the tincture failing at the same word.
+    const read =
+      compony === undefined
+        ? named
+        : begunBy(
+            compony,
+            guard(
+              apply(
+                seq(compony, tinctureOf(borne.type), grammar.and, tinctureOf(borne.type)),
+                ([written, first, , second]): Painting => ({
+                  painted: { compony: [first, second] },
+                  written,
+                })
+              ),
+              () => inCompons(borne.type),
+              ({ written }, position) => new WrongModifier(borne.word.value, written, position)
+            ),
+            named
+          );
     return apply(
       guard(
-        alt<TokenKind, Painting, Painting>(
-          apply(tincture, (tincture): Painting => ({ painted: tincture, written: '' })),
-          apply(phrase, (written): Painting => ({ painted: COUNTERCHANGED, written }))
-        ),
+        read,
         ({ painted }) => borne.word.accepts(painted),
         ({ written }, position) => new InvalidTincture(borne.word.value, written, position)
       ),

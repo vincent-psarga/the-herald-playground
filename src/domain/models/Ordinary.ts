@@ -33,7 +33,8 @@ export enum OrdinaryType {
 
 /**
  * What is true of an ordinary whatever blazon names it: whether a field may bear
- * more than one of it, and which modified lines it may be drawn with.
+ * more than one of it, which modified lines it may be drawn with, and whether it
+ * may be cut into compons.
  *
  * It is not the drawing and it is not the word. An ordinary is a term of the
  * model, and what may be said of that term is the model's to know — "three
@@ -74,15 +75,27 @@ export class OrdinaryDefinition {
    */
   public readonly allowedModifiers: readonly Modifier[];
 
+  /**
+   * How many compons the band is cut into where it is borne compony, and nothing
+   * where it never is.
+   *
+   * One answer to two questions, because a band that may be compony and has no
+   * number to be cut into is a band nobody could draw. The number is the one the
+   * band is understood to have, no blazon this vocabulary reads counting them.
+   */
+  public readonly compons: number | undefined;
+
   constructor(
     public readonly type: OrdinaryType,
     opts?: Partial<{
       canBeBorneInNumbers: boolean;
       allowedModifiers: readonly Modifier[];
+      compons: number;
     }>
   ) {
     this.canBeBorneInNumbers = opts?.canBeBorneInNumbers ?? false;
     this.allowedModifiers = opts?.allowedModifiers ?? [];
+    this.compons = opts?.compons;
   }
 }
 
@@ -104,8 +117,18 @@ export const OrdinaryDefinitions: Record<OrdinaryType, OrdinaryDefinition> = {
   // writes of the arms of JAUCHE in Brabant. Which edge that is, the dictionary
   // says out loud of the engrêlé: "le chef ne peut être Engrêlé que dans sa
   // ligne basse".
+  //
+  // Compony, though the sources disagree. O'Kelly de Galway's dictionary has it
+  // "se dit du chef, du pal, du chevron, de la fasce, de la croix, du sautoir, de
+  // la bande, de la cotice, de la bordure", and Wikipedia holds that "certain
+  // charges cannot be compony, for practical reasons, for example common charges
+  // and the chief as they are generally not long and thin in shape". A
+  // dictionary naming the chief outweighs a practical reason against it, and a
+  // chief cut into compons is drawn as plainly as a fess. Six, chosen here: no
+  // source gives the chief a number, and six is the bend's.
   [OrdinaryType.chief]: new OrdinaryDefinition(OrdinaryType.chief, {
     allowedModifiers: LINES,
+    compons: 6,
   }),
   // The four Parker names as the bands the indenting is applied to — "most
   // frequently to the fesse, though the bend, the pale, and the chevron are
@@ -117,32 +140,56 @@ export const OrdinaryDefinitions: Record<OrdinaryType, OrdinaryDefinition> = {
   // pièces", and the engrêlé "du chef, du pal, du sautoir, du chevron, de la
   // fasce, de la croix, de la bande, de la bordure, et autres pièces longues" —
   // which is this list and the three bands below it.
+  //
+  // The pale compony, as O'Kelly has it and Verfey de Saint-Nizier bears it —
+  // "De gueules, au pal componné d'or et d'azur" — and the fess, as O'Kelly has
+  // it and Parker blazons it — "Argent, a fesse gobonated argent and gules
+  // between three owls". Six apiece, chosen here: no source gives either a
+  // number, and six is the bend's.
   [OrdinaryType.pale]: new OrdinaryDefinition(OrdinaryType.pale, {
     canBeBorneInNumbers: true,
     allowedModifiers: LINES,
+    compons: 6,
   }),
   [OrdinaryType.fess]: new OrdinaryDefinition(OrdinaryType.fess, {
     canBeBorneInNumbers: true,
     allowedModifiers: LINES,
+    compons: 6,
   }),
   // The gemel is a pair of bars in the room of one band, so each bar is a
   // fraction of a fess wide and teeth deep enough to be seen would eat it. The
   // armorials ask for it seldom and the drawing cannot yet answer, so it is left
   // out rather than drawn as a bar that only looks nibbled.
+  //
+  // Never compony either. No source cuts it so — O'Kelly's list of the "pièces
+  // de longueur" stops at the cotice — and each of its two bars is a diminutive,
+  // too narrow to be cut into anything a reader would take for squares.
   [OrdinaryType.barGemel]: new OrdinaryDefinition(OrdinaryType.barGemel, {
     canBeBorneInNumbers: true,
   }),
+  // Compony in six: no source gives a bend a usual number, but six is the one
+  // the armorials write when they write one — Vallin's "bande componnée d'argent
+  // et d'azur de six pièces", the "bâton componé … de six pièces" of Évreux.
   [OrdinaryType.bend]: new OrdinaryDefinition(OrdinaryType.bend, {
     canBeBorneInNumbers: true,
     allowedModifiers: LINES,
+    compons: 6,
   }),
+  // Compony, and in six, as the bend it is the reverse of. No source names the
+  // bend sinister compony in so many words; O'Kelly names the bend, and nothing
+  // about turning it over takes that away.
   [OrdinaryType.bendSinister]: new OrdinaryDefinition(OrdinaryType.bendSinister, {
     canBeBorneInNumbers: true,
     allowedModifiers: LINES,
+    compons: 6,
   }),
+  // Compony, as O'Kelly has it. Seven, chosen here: a compon at the point and
+  // three down each limb, the point being where the limbs meet as the middle of
+  // a cross is.
   [OrdinaryType.chevron]: new OrdinaryDefinition(OrdinaryType.chevron, {
     canBeBorneInNumbers: true,
     allowedModifiers: LINES,
+    compons: 7,
   }),
   // A single charge for all that it is drawn as two limbs crossing, and
   // repeating it makes crosslets, which are small charges strewn over the field
@@ -156,15 +203,24 @@ export const OrdinaryDefinitions: Record<OrdinaryType, OrdinaryDefinition> = {
   // sautoir denché de sable", and the engrêlé is said "du pal, de la croix, de
   // la bande, du sautoir" in the same breath — so this is a drawing that cannot
   // yet answer and not a blazon nobody writes.
-  [OrdinaryType.cross]: new OrdinaryDefinition(OrdinaryType.cross),
-  [OrdinaryType.saltire]: new OrdinaryDefinition(OrdinaryType.saltire),
+  //
+  // Both compony, as O'Kelly has it. The cross in nine, which is Rivière de La
+  // Mure's: "De gueules, à la croix componnée de quatre pièces d'azur et de cinq
+  // pièces d'or" — the middle, and two along each arm. The saltire in nine
+  // too, chosen here by the cross's, no source giving it a number.
+  [OrdinaryType.cross]: new OrdinaryDefinition(OrdinaryType.cross, { compons: 9 }),
+  [OrdinaryType.saltire]: new OrdinaryDefinition(OrdinaryType.saltire, { compons: 9 }),
   // The edge of the shield, and a shield has one of those too. Cut along any of
   // the lines it is the one band whose teeth are all on the one side: its outer
   // edge is the outline of the shield and no blazon may cut that, so what the
   // line modifies is where the band ends rather than where it begins. It is the
   // band Parker says the engrailing is "very frequently applied to".
+  //
+  // Compony in sixteen, which is Parker's number: "A bordure compony should
+  // consist of sixteen pieces or gobbits gyronwise."
   [OrdinaryType.bordure]: new OrdinaryDefinition(OrdinaryType.bordure, {
     allowedModifiers: LINES,
+    compons: 16,
   }),
 };
 

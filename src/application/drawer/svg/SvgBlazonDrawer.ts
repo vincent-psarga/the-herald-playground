@@ -1,5 +1,6 @@
 import { paintedIn } from '../../../domain/models/Attributes';
 import { Blazon, isCharge } from '../../../domain/models/Blazon';
+import { isCompony } from '../../../domain/models/Compony';
 import { isCounterchanged } from '../../../domain/models/Counterchanged';
 import { isDivision, isFurred, isVariation } from '../../../domain/models/Field';
 import { Tincture } from '../../../domain/models/Tinctures';
@@ -50,7 +51,8 @@ export class SvgBlazonDrawer implements IBlazonDrawer {
  * part's, however many parts there are and however deep they go.
  *
  * A figure painted out of the field names none of its own and adds none here:
- * what it is painted with is the field's two, which are already among these.
+ * what it is painted with is the field's two, which are already among these. A
+ * band cut into compons adds both of its own.
  */
 function tincturesOf(blazon: Blazon): readonly Tincture[] {
   const painted = blazon.field;
@@ -61,18 +63,23 @@ function tincturesOf(blazon: Blazon): readonly Tincture[] {
       : [painted.tincture, ...(painted.semy === undefined ? [] : [painted.semy.tincture])];
   return [
     ...field,
-    ...(blazon.chargesOrOrdinaries ?? []).flatMap((one) =>
-      isCounterchanged(one.tincture)
-        ? []
-        : [
-            one.tincture,
-            ...(isCharge(one)
-              ? (one.attributes ?? [])
-                  .map((painted) => paintedIn(painted, one.tincture))
-                  .filter((tincture) => tincture !== undefined)
-              : []),
-          ]
-    ),
+    ...(blazon.chargesOrOrdinaries ?? []).flatMap((one) => {
+      const tincture = one.tincture;
+      if (isCounterchanged(tincture)) {
+        return [];
+      }
+      if (isCompony(tincture)) {
+        return tincture.compony;
+      }
+      return [
+        tincture,
+        ...(isCharge(one)
+          ? (one.attributes ?? [])
+              .map((painted) => paintedIn(painted, tincture))
+              .filter((tincture) => tincture !== undefined)
+          : []),
+      ];
+    }),
   ];
 }
 

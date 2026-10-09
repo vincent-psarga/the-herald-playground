@@ -2,6 +2,7 @@ import { acrossCutBelow, acrossWithinBelow } from '../../shapes/bands';
 import { rectangle } from '../../shapes/rectangle';
 import { OrdinaryFigure } from '../Figures';
 import { alongLines } from '../lines';
+import { cutAcross } from '../../shapes/cuts';
 
 /** A chief takes a third of the shield, as every single band does. */
 const DEEP = 80;
@@ -20,4 +21,8 @@ export const chief: OrdinaryFigure = {
     shapes: (frame) => [acrossCutBelow(frame, cut)([0, DEEP])],
     within: (frame) => [acrossWithinBelow(frame, cut)([0, DEEP])],
   })),
+  // Compony, cut across from dexter to sinister as a fess is, the first compon
+  // at dexter.
+  compons: (frame, _, pieces) =>
+    cutAcross(frame.encloses, [0, DEEP / 2], [frame.width, DEEP / 2], DEEP, pieces),
 };

@@ -4,6 +4,7 @@ import { Shape, all } from '../../shapes/Shape';
 import { Cut, toothedInside } from '../../shapes/teeth';
 import { OrdinaryFigure } from '../Figures';
 import { alongLines } from '../lines';
+import { wedgesAround } from '../../shapes/cuts';
 
 /** How far a bordure reaches in from the edge: an eighth of the field, as armorials draw it. */
 const DEEP = 1 / 8;
@@ -28,6 +29,10 @@ export const bordure: OrdinaryFigure = {
     // band again, in its own tincture, over teeth laid in the line's.
     within: (frame) => [stroked(frame.path, beneathOf(frame, cut) * 2)],
   })),
+  // Compony, cut "gyronwise", as Parker has it: into wedges about the middle of
+  // the shield, a seam at the middle of the chief and the first compon to its
+  // dexter.
+  compons: ({ width, top, base }, _, pieces) => wedgesAround([width / 2, (top + base) / 2], pieces),
 };
 
 /**

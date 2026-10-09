@@ -71,5 +71,10 @@ function room(frame: Frame, x: number, y: number, width: number, height: number)
     // than any corner, but a room is a box and a box has corners.
     bendFrom: -width,
     bendTo: width,
+    // What the room shows is what the box and the shield both enclose: a band
+    // laid in a part runs off the box where the line cut it and off the shield
+    // where its curve does, and is seen only where neither has cut it off.
+    encloses: (atX, atY) =>
+      atX >= 0 && atX <= width && atY >= 0 && atY <= height && frame.encloses(atX + x, atY + y),
   };
 }

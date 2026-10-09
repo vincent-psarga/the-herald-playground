@@ -1,3 +1,4 @@
+import { isCompony } from './Compony';
 import { Tinctured, isCounterchanged } from './Counterchanged';
 import { Tincture } from './Tinctures';
 
@@ -88,7 +89,9 @@ export type Attributed = {
  *
  * Nothing at all where it has none and the charge has none to lend, which is a
  * charge counterchanged: what such a charge is painted with is the field's two
- * and neither of them is a tincture the part could borrow. The part is then left
+ * and neither of them is a tincture the part could borrow. A charge cut into
+ * compons would be painted two at once and lend neither, were a charge ever
+ * cut so. The part is then left
  * unsaid and undrawn rather than guessed at — a blazon that wanted it painted
  * had only to name its tincture, an attribute being owed one.
  */
@@ -96,7 +99,7 @@ export function paintedIn(attributed: Attributed, charge: Tinctured): Tincture |
   if (attributed.tincture !== undefined) {
     return attributed.tincture;
   }
-  return isCounterchanged(charge) ? undefined : charge;
+  return isCounterchanged(charge) || isCompony(charge) ? undefined : charge;
 }
 
 /** Whether a list of attributes already names one, an attribute being said once. */

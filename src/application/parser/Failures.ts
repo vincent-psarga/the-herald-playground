@@ -26,6 +26,11 @@ function named(error: ParseError): error is Complaint {
   return 'failure' in error;
 }
 
+/** Whether a failure is the blazon's fault, and says so, rather than a branch's. */
+export function complains(error: ParseError): boolean {
+  return named(error);
+}
+
 function owing(error: ParseError): error is Owing {
   return 'owed' in error && !named(error);
 }

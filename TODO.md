@@ -46,6 +46,10 @@
 - Refuse a field sown with a name that already says a modifier or a part — "semé
   de macles", "semé d'anneaux" are read today as semys of the plain figure, the
   model having no room for either on a sowing
+- Read the count of compons ("componnée d'argent et d'azur de six pièces", and per tincture,
+  "de quatre pièces d'azur et de cinq pièces d'or"), and two rows, which English calls
+  counter-compony and French échiqueté de deux tires — French contre-componé meaning a bordure
+  compony counterchanged against a barry field instead
 - Counterchange a varied field by a partition line ("barry of six, sable and or,
   per pale counterchanged"), which is what Parker, Fox-Davies and Wikipedia all
   document under counterchanging a variation — a complex partition rather than a

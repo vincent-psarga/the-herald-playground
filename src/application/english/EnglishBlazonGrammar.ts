@@ -1,4 +1,6 @@
 import { alt, apply, kright, list_sc, seq } from 'typescript-parsec';
+import { EnglishCompony } from '../../domain/translations/en/Compony';
+import { anyComponyWriting, componying } from '../parser/Compony';
 import { EnglishDivisionType } from '../../domain/translations/en/Divisions';
 import { EnglishFurType } from '../../domain/translations/en/Furs';
 import { EnglishVariationType, OF } from '../../domain/translations/en/Variations';
@@ -92,6 +94,10 @@ const RANK = list_sc(number(EnglishRanks, asRank), AND);
 // and in front of the count alike, it is read once for either shape of phrase.
 const OVER_ALL = anyPhrase(writtenAs(EnglishOverAll));
 
+// "a bordure compony gules and argent": said where the tincture would be, and
+// agreeing with nothing, as "voided" agrees with nothing.
+const COMPONY = componying(anyComponyWriting(EnglishCompony));
+
 // "a bordure counterchanged": said where the tincture would be said, and saying
 // that there is none of its own. One word where French has a phrase it spells
 // two ways, and read by the same rule for that reason — the writings the
@@ -119,12 +125,14 @@ export const EnglishBlazonGrammar: BlazonGrammar = {
       qualifiable(
         alone(kright(ARTICLE, spelledTerm(BEARINGS, asOrdinary))),
         () => MODIFIER,
-        () => ATTRIBUTE
+        () => ATTRIBUTE,
+        () => COMPONY
       ),
       qualifiable(
         several(BEARINGS, EnglishNumbers, asOrdinary, NOT_IN_NUMBER),
         () => MODIFIER,
-        () => ATTRIBUTE
+        () => ATTRIBUTE,
+        () => COMPONY
       )
     )
   ),

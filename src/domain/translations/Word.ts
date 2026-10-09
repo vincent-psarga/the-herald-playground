@@ -1,6 +1,7 @@
 import { Attribute } from '../models/Attributes';
 import { BorneType } from '../models/Blazon';
 import { Languages } from '../models/Languages';
+import { isCompony } from '../models/Compony';
 import { Tinctured, isCounterchanged } from '../models/Counterchanged';
 import { Modifier } from '../models/Modifier';
 import { Source } from '../models/Source';
@@ -263,9 +264,13 @@ export class Word {
    * the same word a blazon naming a fur falls back on — "a roundel", where
    * French, having no such word for the disc, has nothing to fall back on and
    * refuses the blazon.
+   *
+   * A band cut into compons is painted two things at once as well, both of them
+   * named, and answers the same way: no name chosen for one tincture is said of
+   * a band in two.
    */
   accepts(tinctured: Tinctured): boolean {
-    return isCounterchanged(tinctured)
+    return isCounterchanged(tinctured) || isCompony(tinctured)
       ? !this.namesATincture
       : this.allowedTinctures.includes(tinctured);
   }
