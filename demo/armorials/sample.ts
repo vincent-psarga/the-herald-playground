@@ -43,6 +43,18 @@ export const SampleArmorial: Armorial = {
       },
     },
     {
+      name: 'Bourgogne (moderne)',
+      slug: 'bourgogne-moderne',
+      blazon: "D'azur semé de fleurs de lys d'or ; à la bordure componée de gueules et d'argent.",
+      image:
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/dd/Blason_comte_fr_Touraine.svg/120px-Blason_comte_fr_Touraine.svg.png?utm_source=fr.wikipedia.org&utm_campaign=parser&utm_content=thumbnail',
+      source: {
+        title: 'Wikipédia, Armorial des familles de Bourgogne',
+        url: 'https://fr.wikipedia.org/wiki/Armorial_des_familles_de_Bourgogne',
+        language: Languages.fr,
+      },
+    },
+    {
       name: 'Anne de Bretagne',
       slug: 'anne-de-bretagne',
       blazon: "Parti d'azur à trois fleurs de lys d'or et d'hermine",
