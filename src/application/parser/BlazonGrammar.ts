@@ -7,6 +7,7 @@ import {
   betterError,
   combine,
   kleft,
+  kright,
   nil,
   resultOrError,
   rule,
@@ -16,7 +17,10 @@ import {
 import { BlazonParseError } from '../../domain/errors/parsing/BlazonParseError';
 import { ChargedPlainField } from '../../domain/errors/parsing/ChargedPlainField';
 import { MissingPieces } from '../../domain/errors/parsing/MissingPieces';
+import { RepeatedAttribute } from '../../domain/errors/parsing/RepeatedAttribute';
+import { WrongAttribute } from '../../domain/errors/parsing/WrongAttribute';
 import { WrongModifier } from '../../domain/errors/parsing/WrongModifier';
+import { Attribute, Attributed, namesPart } from '../../domain/models/Attributes';
 import { Blazon, ChargeOrOrdinary } from '../../domain/models/Blazon';
 import {
   Division,
@@ -32,9 +36,11 @@ import {
 } from '../../domain/models/Field';
 import { Modifier } from '../../domain/models/Modifier';
 import { Tincture } from '../../domain/models/Tinctures';
+import { TermWord } from '../../domain/translations/Translation';
+import { Word } from '../../domain/translations/Word';
 import { TokenKind } from '../lexer/Lexer';
-import { BorneTerm, bornUnder, carried } from './Borne';
-import { guard, optional, optionalUnlessBegun } from './Combinators';
+import { BorneTerm, bearsPart, bornUnder, carried } from './Borne';
+import { guard, optional, optionalUnlessBegun, present } from './Combinators';
 import { within } from './Failures';
 import { Treatment, isBare } from './Treatment';
 import { VariedField } from './Variations';
@@ -76,11 +82,11 @@ export interface BlazonGrammar {
    * The name of a band or a charge, with whatever says the field bears it, and
    * how many. Both are named by the same phrase, so both are read by one rule.
    *
-   * What the blazon may then say of it — that it is voided — comes back on the
-   * term rather than being asked for separately, because a modifier agrees with
-   * what the phrase called the charge and the phrase is the only thing that
-   * knows what it called it. A tongue whose blazons say nothing of the sort
-   * hands back nothing, and nothing is read.
+   * What the blazon may then say of it — that it is voided, that its stone is
+   * argent — comes back on the term rather than being asked for separately,
+   * because both kinds of word agree with what the phrase called the charge and
+   * the phrase is the only thing that knows what it called it. A tongue whose
+   * blazons say nothing of the sort hands back nothing, and nothing is read.
    */
   readonly borne: Parser<TokenKind, BorneTerm>;
   /** The conjunction joining the halves of a divided field. */
@@ -234,6 +240,12 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
   // is no part of what was said, and the writer puts it back where the armorials
   // put it.
   //
+  // What the blazon says was painted apart from the rest comes last of all, after
+  // the tincture — "three gem-rings argent stoned azure" — and is read nowhere
+  // else: a part is owed a tincture of its own, so written before the charge's it
+  // would leave two tinctures running together with nothing to say which was
+  // which.
+  //
   // Whichever place it stands in, it is read by the phrase that named the charge
   // rather than by this rule: the words that may stand there have to agree with
   // what the blazon called the charge, and only the phrase knows what it called
@@ -246,17 +258,20 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
     combine(grammar.borne, (borne) =>
       combine(modifying(borne), (early) =>
         combine(carried(grammar.tincture, borne.word), (tincture) =>
-          apply(early === undefined ? modifying(borne) : nil(), (late): ChargeOrOrdinary => {
-            const one =
-              borne.count === undefined
-                ? { type: borne.type, tincture }
-                : { type: borne.type, tincture, count: borne.count };
-            // The name may have said it already: a mascle is a lozenge voided
-            // and says so by being the word it is, so where the blazon wrote no
-            // modifier the word supplies its own.
-            const modifier = early ?? late ?? borne.word.defaultModifier;
-            return modifier === undefined ? one : { ...one, modifier };
-          })
+          combine(early === undefined ? modifying(borne) : nil(), (late) =>
+            apply(painting(borne, grammar.tincture, grammar.and), (painted): ChargeOrOrdinary => {
+              const one =
+                borne.count === undefined
+                  ? { type: borne.type, tincture }
+                  : { type: borne.type, tincture, count: borne.count };
+              // The name may have said it already: a mascle is a lozenge voided
+              // and says so by being the word it is, so where the blazon wrote no
+              // modifier the word supplies its own.
+              const modifier = early ?? late ?? borne.word.defaultModifier;
+              const said = modifier === undefined ? one : { ...one, modifier };
+              return painted.length === 0 ? said : { ...said, attributes: painted };
+            })
+          )
         )
       )
     )
@@ -342,6 +357,161 @@ function modifying(borne: BorneTerm): Parser<TokenKind, Modifier | undefined> {
     ),
     (named) => named?.term
   );
+}
+
+/**
+ * One part of a charge as the blazon painted it: which part, which word said so,
+ * and the tincture it is drawn in.
+ *
+ * The word is carried past the reading because a refusal names it — a blazon
+ * that stoned a billet is told which word it wrote — and because the charge's
+ * own name is not the one that says the part.
+ */
+type Painted = { readonly term: Attribute; readonly word: Word; readonly tincture: Tincture };
+
+/**
+ * What the blazon says was painted apart from the rest of the charge, and in
+ * what tincture.
+ *
+ * It stands last of all, after the tincture the charge itself carries, which is
+ * where the armorials of both tongues put it: "Gules, three gem-rings argent
+ * stoned azure", "au lion d'or armé de gueules". Unlike a modifier it may not
+ * stand anywhere else — a part is owed a tincture, so a blazon writing one
+ * before the charge's own would leave two tinctures running together with
+ * nothing to say which was which.
+ *
+ * As many as the blazon names, the parts of a figure being several: a lion is
+ * armed and lampassé in the one phrase. Each is named once — two tinctures for
+ * the one part is two answers to one question — and each must be a part the
+ * charge has. A band has none.
+ *
+ * The name may have said one already: a gem-ring is a ring with a stone in it
+ * and says so by being the word it is, so the word's own part is added where the
+ * blazon named no such part itself. What the name never says is the tincture, so
+ * a blazon that writes the part out after it is adding to the name rather than
+ * repeating it, and the written tincture is what comes back.
+ */
+function painting(
+  borne: BorneTerm,
+  tincture: Parser<TokenKind, Tincture>,
+  and: Parser<TokenKind, unknown>
+): Parser<TokenKind, readonly Attributed[]> {
+  const own = borne.word.defaultAttribute;
+  if (borne.attribute === undefined) {
+    return apply(nil(), () => carrying(own, []));
+  }
+  const attribute = borne.attribute;
+
+  // The first word of a run, with the mark a blazon may set before it: "au lion
+  // d'or, armé de gueules". Absence answers with nothing and disagreement
+  // refuses, which is the whole difference between a blazon that said nothing of
+  // the charge and one that said it in the wrong shape.
+  //
+  // The mark is stepped over only where a word does follow it. It is the same
+  // mark that parts one bearing from the next, so eating it where nothing was
+  // said of the charge would leave the phrase after it with nothing to be
+  // introduced by — and a blazon ending on a bare mark would be read as though
+  // it had not.
+  const first: Parser<TokenKind, TermWord<Attribute> | undefined> = {
+    parse(token) {
+      const after = token?.kind === TokenKind.Separator ? token.next : token;
+      const output = attribute.parse(after);
+      if (!output.successful) {
+        return output;
+      }
+      const said = output.candidates.filter(({ result }) => result !== undefined);
+      return said.length === 0
+        ? {
+            successful: true,
+            candidates: [{ firstToken: token, nextToken: token, result: undefined }],
+            error: undefined,
+          }
+        : {
+            successful: true,
+            candidates: said.map((candidate) => ({ ...candidate, firstToken: token })),
+            error: output.error,
+          };
+    },
+  };
+
+  // Another word sharing the run, which the conjunction or the mark introduces:
+  // "armé et lampassé", "armé, lampassé". Both promise a word, so an absence
+  // here is a refusal where at the opening it was silence.
+  const another = present<TokenKind, TermWord<Attribute>>(
+    kright(alt(and, SEPARATOR), attribute),
+    (position) => new BlazonParseError('Expected something else said of the charge', position)
+  );
+
+  // A run of words sharing one tincture: "armé et lampassé de gueules", which is
+  // how the armorials of both tongues write two parts of one colour. The
+  // tincture closes the run and is given to every word gathered into it.
+  const sharing = (
+    gathered: readonly TermWord<Attribute>[]
+  ): Parser<TokenKind, readonly Painted[]> =>
+    // The tincture is tried first of the two, and only to settle which complaint
+    // is reported when neither is there: a run that ends without one is owed a
+    // tincture, which is worth saying, where "no conjunction here" is not. A
+    // blazon that goes on is settled by what it goes on with, the conjunction
+    // being no tincture and no tincture being a conjunction.
+    alt(
+      apply(tincture, (painted) => gathered.map((word) => ({ ...word, tincture: painted }))),
+      combine(another, (next) => sharing([...gathered, next]))
+    );
+
+  // Run after run, each closing on a tincture of its own: "armé d'or, lampassé
+  // de gueules" paints the claws and the tongue two colours.
+  const painted = rule<TokenKind, readonly Painted[]>();
+  painted.setPattern(
+    combine(first, (word) =>
+      word === undefined
+        ? apply(nil(), (): readonly Painted[] => [])
+        : apply(seq(sharing([word]), painted), ([run, rest]): readonly Painted[] => [
+            ...run,
+            ...rest,
+          ])
+    )
+  );
+
+  return apply(
+    guard(
+      guard(
+        painted,
+        (all) => all.every(({ term }) => bearsPart(borne.type, term)),
+        (all, position) =>
+          new WrongAttribute(
+            borne.word.value,
+            all.find(({ term }) => !bearsPart(borne.type, term))?.word.value ?? '',
+            position
+          )
+      ),
+      (all) => all.every(({ term }, at) => all.findIndex((one) => one.term === term) === at),
+      (all, position) =>
+        new RepeatedAttribute(
+          all.find(({ term }, at) => all.findIndex((one) => one.term === term) !== at)?.word
+            .value ?? '',
+          position
+        )
+    ),
+    (all) =>
+      carrying(
+        own,
+        all.map(({ term, tincture }): Attributed => ({ attribute: term, tincture }))
+      )
+  );
+}
+
+/**
+ * The parts the name itself said, laid before the parts the blazon wrote out.
+ *
+ * A name that says a part says it first, being the first word of the phrase —
+ * and says nothing at all where the blazon wrote that same part itself, the
+ * written one carrying the tincture this one has not got.
+ */
+function carrying(
+  own: Attribute | undefined,
+  painted: readonly Attributed[]
+): readonly Attributed[] {
+  return own === undefined || namesPart(painted, own) ? painted : [{ attribute: own }, ...painted];
 }
 
 /**

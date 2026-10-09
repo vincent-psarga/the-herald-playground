@@ -5,6 +5,8 @@ import { WrongModifier } from '../../domain/errors/parsing/WrongModifier';
 import { SvgBlazonDrawer } from '../drawer/svg/SvgBlazonDrawer';
 import { CHARGES } from '../drawer/svg/vocabulary/charges';
 import { crescent } from '../drawer/svg/shapes/crescent';
+import { lion, lionClaws, lionTongue } from '../drawer/svg/shapes/lion';
+import { HatchingColours } from '../../infra/colours/HatchingColours';
 import { WikipediaColours } from '../../infra/colours/WikipediaColours';
 import { Colours, Metals } from '../../domain/models/Tinctures';
 import { EnglishBlazonParser } from './EnglishBlazonParser';
@@ -245,6 +247,90 @@ describe('the crescent', () => {
   });
 });
 
+describe('the lion, which is the first of the beasts', () => {
+  test('is the one word in both tongues, and masculine in French', () => {
+    expect(inFrench.parse("D'argent au lion de sable")).toEqual(
+      inEnglish.parse('Argent a lion sable')
+    );
+    expect(writeFrench.write(inEnglish.parse('Argent a lion sable'))).toBe(
+      "D'argent au lion de sable."
+    );
+  });
+
+  test('is borne in number like anything else', () => {
+    expect(inEnglish.parse('Argent three lions gules').chargesOrOrdinaries).toEqual([
+      { type: ChargeType.lion, tincture: Colours.gules, count: 3 },
+    ]);
+    expect(writeFrench.write(inEnglish.parse('Argent three lions gules'))).toBe(
+      "D'argent à trois lions de gueules."
+    );
+  });
+
+  test('is rampant, no blazon here being able to say otherwise', () => {
+    // The posture is the beast's own and is written nowhere: "le Lion dans sa
+    // position naturelle est rampant". Passant, couchant and the rest are a
+    // vocabulary this does not hold, so a blazon naming one is refused.
+    expect(() => inFrench.parse("D'argent au lion passant de sable")).toThrow();
+    expect(() => inEnglish.parse('Argent a lion passant sable')).toThrow();
+  });
+
+  test('is sown in as many words, neither tongue naming a strewing of beasts', () => {
+    const sown = inFrench.parse("D'argent semé de lions de sable");
+    expect(writeFrench.write(sown)).toBe("D'argent semé de lions de sable.");
+    expect(writeEnglish.write(sown)).toBe('Argent semy of lions sable.');
+  });
+
+  test('takes no modifier, voiding a beast naming no figure', () => {
+    expect(() => inEnglish.parse('Argent a lion sable voided')).toThrow();
+  });
+
+  test('keeps its claws and its tongue where no blazon paints them', () => {
+    // A lion has claws whether or not a blazon says anything of them: armed says
+    // what colour they are drawn and not that there are any. So the beast is
+    // drawn with them and in its own tincture, and an attribute paints over what
+    // is already there — which is what parts a part the figure has from a part a
+    // name gives it, a ring having no stone until something says there is one.
+    const drawn = (shape: (brush: { fill: string }) => string) => shape({ fill: 'x' });
+    const beast = drawn(lion(0, 0, 100));
+    for (const part of [lionClaws(0, 0, 100), lionTongue(0, 0, 100)]) {
+      const path = drawn(part).match(/ d="([^"]+)"/)?.[1];
+      expect(path).toBeDefined();
+      expect(beast).toContain(path);
+    }
+  });
+
+  test('is modelled in a wash that is no tincture, so it reads on any of them', () => {
+    // The folio paints the beast in two greens, and without the second it is a
+    // blot of one colour with its limbs lost in it. The wash is grey and laid
+    // through rather than over, which tells on a light tincture and a dark one
+    // alike where a black one would vanish on sable.
+    const drawer = new SvgBlazonDrawer(WikipediaColours);
+    for (const blazon of ['Argent a lion sable', 'Azure a lion or', 'Gules a lion argent']) {
+      expect(drawer.draw(inEnglish.parse(blazon))).toContain('fill-opacity="0.35"');
+    }
+  });
+
+  test('is not modelled where the colouring rules its tinctures', () => {
+    // Hatching reproduces arms in one ink and has no shades in it: every mark is
+    // a tincture being named, and a grey would name none and hide the ruling.
+    expect(
+      new SvgBlazonDrawer(HatchingColours).draw(inEnglish.parse('Argent a lion sable'))
+    ).not.toContain('fill-opacity');
+  });
+
+  test('is drawn as the folio draws it, claws and tongue apart from the rest', () => {
+    const drawer = new SvgBlazonDrawer(WikipediaColours);
+    const plain = drawer.draw(inEnglish.parse('Argent a lion sable'));
+    const painted = drawer.draw(inEnglish.parse('Argent a lion sable armed and langued gules'));
+    // The beast is the same drawing either way: what the parts add is laid over
+    // it, so the plain figure is still there underneath.
+    expect(painted).toContain(
+      plain.slice(plain.indexOf('<path d="M'), plain.indexOf('<path d="M') + 200)
+    );
+    expect(painted).not.toBe(plain);
+  });
+});
+
 describe('what the armorials can now be read as', () => {
   test.each([
     ["D'azur à trois étoiles d'or.", 'Azure three mullets or.'],
@@ -252,6 +338,17 @@ describe('what the armorials can now be read as', () => {
     ["D'azur semé de fleurs-de-lis d'or", 'Azure semy-de-lis or.'],
     ["De sinople à trois larmes d'argent.", 'Vert three larmes argent.'],
     ["De gueules à trois larmes d'argent.", 'Gules three larmes argent.'],
+    // The arms of Gallegantin le Gallois, as the folio the beast was traced
+    // from blazons them: "parti d'or et de sable a ung lyon de sinople arme et
+    // langue de gueulles".
+    [
+      "Parti d'or et de sable, au lion de sinople armé et lampassé de gueules",
+      'Per pale or and sable a lion vert armed and langued gules.',
+    ],
+    [
+      'D’argent au lion de sable, armé et lampassé de sinople.',
+      'Argent a lion sable armed and langued vert.',
+    ],
   ])('reads %s, copied from an armorial as it stands', (blazon, english) => {
     expect(writeEnglish.write(inFrench.parse(blazon))).toBe(english);
   });

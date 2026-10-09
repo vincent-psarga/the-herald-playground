@@ -48,6 +48,8 @@ const HEADINGS = [
   'A name that means a tincture is written without one',
   'A tincture that has a name of its own is written by it',
   'A name that means what was done to the charge is written without saying it',
+  'A name that means a part of the figure is written, and the part keeps its tincture',
+  'Two parts of one colour are written once, and the colour said last',
   'A strewing is named where heraldry names it',
   'A word that says nothing is read and never written',
   'A modifier stands after the charge and before its tincture',
@@ -223,6 +225,66 @@ describe('what each rule shows', () => {
       "D'azur à la molette d'or.",
       'Azure a mullet pierced or.',
     ]);
+  });
+
+  test('writes the name heraldry gave the figure with a part painted, and keeps the tincture', () => {
+    mount(<ConventionsPage />);
+    expect(shown('Azure a ring or stoned argent').written).toEqual([
+      "D'azur à l'anneau d'or chatonné d'argent.",
+      'Azure a gem-ring or stoned argent.',
+    ]);
+    expect(shown('Azure an annulet or stoned argent').written).toEqual(
+      shown('Azure a ring or stoned argent').written
+    );
+    // The name says there is a stone and never its colour, so a blazon that
+    // named none gets none back.
+    expect(shown('Azure a gem-ring or').written).toEqual([
+      "D'azur à l'anneau d'or.",
+      'Azure a gem-ring or.',
+    ]);
+  });
+
+  test('says the colour once where two parts share it, and twice where they do not', () => {
+    mount(<ConventionsPage />);
+    expect(shown("D'argent au lion de sable armé et lampassé de gueules").written).toEqual([
+      "D'argent au lion de sable armé et lampassé de gueules.",
+      'Argent a lion sable armed and langued gules.',
+    ]);
+    // Written with the mark instead, and answered with the conjunction.
+    expect(shown("D'argent au lion de sable, armé, lampassé de gueules").written).toEqual(
+      shown("D'argent au lion de sable armé et lampassé de gueules").written
+    );
+    expect(shown('Argent a lion sable armed gules langued azure').written).toEqual([
+      "D'argent au lion de sable armé de gueules, lampassé d'azur.",
+      'Argent a lion sable armed gules, langued azure.',
+    ]);
+  });
+
+  test('says a run of three as a list, and a run of two with the conjunction alone', () => {
+    mount(<ConventionsPage />);
+    expect(
+      shown("D'argent au lion de sable, armé, lampassé et couronné de gueules").written
+    ).toEqual([
+      "D'argent au lion de sable armé, lampassé et couronné de gueules.",
+      'Argent a lion sable armed, langued and crowned gules.',
+    ]);
+    expect(shown("D'argent au lion de sable armé et lampassé de gueules").written).toContain(
+      'Argent a lion sable armed and langued gules.'
+    );
+  });
+
+  test('agrees every word of the run with the charge, in number as in gender', () => {
+    mount(<ConventionsPage />);
+    expect(shown('Argent three lions sable armed and langued gules').written).toContain(
+      "D'argent à trois lions de sable armés et lampassés de gueules."
+    );
+  });
+
+  test('refuses a part of a figure the charge has not got', () => {
+    mount(<ConventionsPage />);
+    const refused = shown('Azure a billet or stoned argent');
+    expect(refused.refused).toBe('Wrong attribute: billet is never stoned');
+    expect(refused.arms).toBe(0);
   });
 
   test('never writes a pierced charge as a voided one, the two being two things', () => {

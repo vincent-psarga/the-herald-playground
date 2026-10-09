@@ -16,7 +16,16 @@ afterEach(cleanup);
 const FRENCH = vocabularyIn(Languages.fr);
 const ENGLISH = vocabularyIn(Languages.en);
 
-const ghost = (word: string) => screen.getByRole('link', { name: word });
+/**
+ * One word as the stack lists it, which is where a reader strikes one from.
+ *
+ * Looked for in the stack and not on the page at large: the struck word's own
+ * reading points at its siblings by name — an annulet at the ring and the
+ * gem-ring — so a word may stand twice over, once in the list and once in the
+ * reading of the word beside it.
+ */
+const ghost = (word: string) =>
+  within(document.querySelector('.stack') as HTMLElement).getByRole('link', { name: word });
 const showing = () => document.querySelector('.showing') as HTMLElement;
 /** What scrolls inside the reading, where the reading is a pane of its own. */
 const leaf = () => document.querySelector('.showing__leaf') as HTMLElement;

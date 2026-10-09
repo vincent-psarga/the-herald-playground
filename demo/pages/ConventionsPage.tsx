@@ -270,6 +270,99 @@ export const RULES: readonly Rule[] = [
     ],
   },
   {
+    id: 'a-name-that-means-a-part',
+    heading: 'A name that means a part of the figure is written, and the part keeps its tincture',
+    law: (
+      <>
+        <p className="rule__law">
+          The mascle’s rule again, read of a part of the figure instead of what was done to it.
+          Heraldry named the ring with a stone set in it outright — a gem-ring, the French anneau —
+          and such a name says the stone by being the word it is. So a blazon that paints the stone
+          comes back under that name whichever plain word it was written with: “Azure a ring or
+          stoned argent” and “Azure an annulet or stoned argent” both come back “Azure a gem-ring or
+          stoned argent”. Painted on nothing, the plain name stands.
+        </p>
+        <p className="rule__law">
+          What the name does not say is the tincture, and that is what parts a part from a modifier.
+          A mascle is voided entire and nothing follows it; a gem-ring has a stone and says nothing
+          of its colour, so the word for the part is still written where the blazon named one. It
+          stands last of all, after the tincture the charge itself carries, which is where the
+          armorials of both tongues put it. Named none, the stone is drawn in the hoop’s own
+          tincture and nothing is written: “Azure a gem-ring or” is a gold ring with a gold stone.
+        </p>
+        <p className="rule__law">
+          Which charges have such a part is declared with the charge and is the same in either
+          tongue, as a modifier’s charges are. Only the ring has one here, so a billet stoned is
+          refused by name rather than drawn with something the figure has not got.
+        </p>
+      </>
+    ),
+    authority: (
+      <>
+        Parker files the figure under Ring: “the most important bearing of this name is the
+        Gem-ring, that is a finger-ring set with a jewel, and this is sometimes described as stoned,
+        gemmed, or jewelled of another tincture”, and blazons “Gules, three gem-rings argent stoned
+        azure”. French draws the same line at the same place, Au blason des armoiries giving
+        “lorsque ce meuble est représenté avec un chaton, il se nomme anneau” against the annelet.
+      </>
+    ),
+    sources: [parker('Ring'), blasonArmoiries('Annelet')],
+    cases: [
+      en('Azure a ring or stoned argent'),
+      en('Azure an annulet or stoned argent'),
+      en('Azure a gem-ring or'),
+      fr("D'azur à l'annelet d'or chatonné d'argent"),
+      fr("D'azur à trois anneaux d'or chatonnés d'argent"),
+      en('Azure a billet or stoned argent'),
+    ],
+  },
+  {
+    id: 'parts-sharing-a-tincture',
+    heading: 'Two parts of one colour are written once, and the colour said last',
+    law: (
+      <>
+        <p className="rule__law">
+          A beast may have more than one of its parts painted apart from the rest, and heraldry says
+          the colour once where they share it: “armé et lampassé de gueules”, “armed and langued
+          gules”, and never the tincture twice over. So the words are gathered into a run and the
+          tincture closes it. The run is said as a list is said — the mark between all but the last
+          two and the conjunction before the last, “armé, lampassé et couronné d’or” — and the
+          conjunction alone where there are two of them.
+        </p>
+        <p className="rule__law">
+          Parts of different colours are two runs and are parted by the mark, there being two
+          tinctures in a row otherwise and no telling which belongs to which. The order is the
+          blazon’s own and is kept: only the parts standing next to each other are gathered, so a
+          blazon that said its parts in some order gets that order back.
+        </p>
+        <p className="rule__law">
+          Read more widely than written, as everything here is. An armorial may join the words with
+          the conjunction or with the mark — “au lion couronné du second, armé, lampassé de gueules”
+          — and either is understood; what comes back is the conjunction. French agrees every word
+          of the run with the charge, in gender and in number, so three lions are armés where one is
+          armé.
+        </p>
+      </>
+    ),
+    authority: (
+      <>
+        Both dictionaries write the run and not the repetition. Au blason des armoiries blazons
+        “D’argent, au lion de sable, armé et lampassé de gueules” under Lampassé and “De gueules, au
+        lion d’hermine, armé, lampassé et couronné d’or” under Armé; Parker has the claws and the
+        tongue as two words of one kind, armed being said “when any beast of prey has teeth and
+        claws … of a tincture different from its body” and langued the same of the tongue.
+      </>
+    ),
+    sources: [blasonArmoiries('Lampassé'), blasonArmoiries('Armé'), parker('Armed')],
+    cases: [
+      fr("D'argent au lion de sable armé et lampassé de gueules"),
+      fr("D'argent au lion de sable, armé, lampassé de gueules"),
+      fr("D'argent au lion de sable, armé, lampassé et couronné de gueules"),
+      en('Argent a lion sable armed gules langued azure'),
+      en('Argent three lions sable armed and langued gules'),
+    ],
+  },
+  {
     id: 'naming-a-strewing',
     heading: 'A strewing is named where heraldry names it',
     law: (

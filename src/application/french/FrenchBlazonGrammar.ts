@@ -10,17 +10,17 @@ import { FrenchWord } from '../../domain/translations/fr/FrenchWord';
 import { BlazonParseError } from '../../domain/errors/parsing/BlazonParseError';
 import { WrongOrdinaryArticle } from '../../domain/errors/parsing/WrongOrdinaryArticle';
 import { WrongTinctureArticle } from '../../domain/errors/parsing/WrongTinctureArticle';
+import { FrenchAttributes } from '../../domain/translations/fr/Attributes';
 import { FrenchModifiers } from '../../domain/translations/fr/Modifiers';
 import { FrenchNumbers } from '../../domain/translations/fr/Numbers';
 import { FrenchTinctures } from '../../domain/translations/fr/Tinctures';
-import { Modifier } from '../../domain/models/Modifier';
-import { asSeveral, wordsOf, writtenAs } from '../../domain/translations/Translation';
+import { Translation, asSeveral, wordsOf, writtenAs } from '../../domain/translations/Translation';
 import { TokenKind } from '../lexer/Lexer';
 import { BlazonGrammar } from '../parser/BlazonGrammar';
 import { anyKeyword, guard, keyword, optional, spelledTerm, term } from '../parser/Combinators';
 import { asOrdinary, asDivision, asTincture } from '../parser/Failures';
-import { NOT_IN_NUMBER, alone, bearings, modifiable, several } from '../parser/Borne';
-import { ModifierForm, modifying } from '../parser/Modifiers';
+import { NOT_IN_NUMBER, alone, bearings, qualifiable, several } from '../parser/Borne';
+import { QualifierForm, qualifying } from '../parser/Qualifiers';
 import { number } from '../parser/Numbers';
 import { BARE, strewing } from '../parser/Treatment';
 import { varied } from '../parser/Variations';
@@ -86,20 +86,25 @@ const borneAs = (article: Parser<TokenKind, unknown>, written: (word: FrenchWord
   );
 
 /**
- * Every writing of every modifier, and which of them a phrase agreeing so many
- * ways will take.
+ * Every writing of every word of one vocabulary that qualifies a charge, and
+ * which of them a phrase agreeing so many ways will take.
  *
  * All four writings of a word are held, the ones that agree and the ones that do
  * not, because a blazon that wrote the wrong one wrote this vocabulary's word
  * all the same: "au losange évidée" is a mistake to be named, not a word to be
  * passed over. The first agreement given is the one a refusal asks for.
+ *
+ * The modifiers and the attributes are two vocabularies and one reading: both
+ * are participles, both stand after the charge, and both agree with it in gender
+ * and in number — "à la billette vidée", "à l'anneau chatonné".
  */
-function agreeingForms(
+function agreeingForms<T extends string>(
+  terms: Translation<T, FrenchWord>,
   accepted: readonly Agreement[]
-): ReadonlyMap<string, ModifierForm<FrenchWord>> {
-  const forms = new Map<string, ModifierForm<FrenchWord>>();
-  for (const term of Object.keys(FrenchModifiers) as Modifier[]) {
-    for (const word of wordsOf(FrenchModifiers, term)) {
+): ReadonlyMap<string, QualifierForm<T, FrenchWord>> {
+  const forms = new Map<string, QualifierForm<T, FrenchWord>>();
+  for (const term of Object.keys(terms) as T[]) {
+    for (const word of wordsOf(terms, term)) {
       const agreed = new Set(
         accepted.map(({ feminine, several }) => word.agreeing(feminine, several).toLowerCase())
       );
@@ -118,23 +123,34 @@ function agreeingForms(
   return forms;
 }
 
-// Built once per shape of phrase rather than once per blazon: which writings
-// agree is settled by the article and the number, and neither depends on what
-// was written after them.
-const AGREEING = new Map<string, ReadonlyMap<string, ModifierForm<FrenchWord>>>();
+/**
+ * The reading one vocabulary is given, under each shape of phrase that asks for
+ * it.
+ *
+ * Built once per shape rather than once per blazon: which writings agree is
+ * settled by the article and the number, and neither depends on what was written
+ * after them. Each vocabulary keeps its own, the two holding different words.
+ */
+function agreeingWith<T extends string>(terms: Translation<T, FrenchWord>) {
+  const known = new Map<string, ReadonlyMap<string, QualifierForm<T, FrenchWord>>>();
+  return (accepted: readonly Agreement[]) => {
+    const shape = accepted.map(({ feminine, several }) => `${feminine}/${several}`).join(' ');
+    const forms = known.get(shape) ?? agreeingForms(terms, accepted);
+    known.set(shape, forms);
+    return qualifying(forms);
+  };
+}
 
-const modifierAgreeing = (accepted: readonly Agreement[]) => {
-  const shape = accepted.map(({ feminine, several }) => `${feminine}/${several}`).join(' ');
-  const known = AGREEING.get(shape) ?? agreeingForms(accepted);
-  AGREEING.set(shape, known);
-  return modifying(known);
-};
+const modifierAgreeing = agreeingWith(FrenchModifiers);
+const attributeAgreeing = agreeingWith(FrenchAttributes);
 
 // What the two gendered articles say of whatever follows the charge. The article
 // is the blazon's own word for the gender, so a blazon that has chosen one is
 // held to it: "au tourteau de gueules évidé", and never "évidée".
 const MASCULINE = modifierAgreeing([{ feminine: false, several: false }]);
 const FEMININE = modifierAgreeing([{ feminine: true, several: false }]);
+const MASCULINE_PART = attributeAgreeing([{ feminine: false, several: false }]);
+const FEMININE_PART = attributeAgreeing([{ feminine: true, several: false }]);
 
 // Where the phrase said nothing about gender — the article elided, or the count
 // having taken the article's place — the word's own gender governs, and a word
@@ -142,23 +158,39 @@ const FEMININE = modifierAgreeing([{ feminine: true, several: false }]);
 const asTheWordStands = (several: boolean) => (word: FrenchWord) =>
   modifierAgreeing(agreementsOf(word, several));
 
+const partAsTheWordStands = (several: boolean) => (word: FrenchWord) =>
+  attributeAgreeing(agreementsOf(word, several));
+
 // Nothing borne is ever named bare: the article is what says the field bears it
 // rather than is divided by it. Three articles, the third being the two others
 // elided before a vowel — "à l'annelet", which says nothing about gender and is
 // therefore accepted for either.
 const ONE = alt(
-  modifiable(alone(borneAs(A_LA, (word) => `à la ${word.value}`)), () => FEMININE),
-  modifiable(alone(borneAs(AU, (word) => `au ${word.value}`)), () => MASCULINE),
-  modifiable(alone(borneAs(A_L, (word) => `à l'${word.value}`)), asTheWordStands(false))
+  qualifiable(
+    alone(borneAs(A_LA, (word) => `à la ${word.value}`)),
+    () => FEMININE,
+    () => FEMININE_PART
+  ),
+  qualifiable(
+    alone(borneAs(AU, (word) => `au ${word.value}`)),
+    () => MASCULINE,
+    () => MASCULINE_PART
+  ),
+  qualifiable(
+    alone(borneAs(A_L, (word) => `à l'${word.value}`)),
+    asTheWordStands(false),
+    partAsTheWordStands(false)
+  )
 );
 
 // Several of one, named in the plural after the count: "à trois chevrons", "à
 // trois billettes". No gender is agreed with here, so unlike the singular there
 // is but one shape of the phrase to read — and what is said of the charge after
 // it agrees with the word rather than with anything the phrase supplied.
-const SEVERAL_BORNE = modifiable(
+const SEVERAL_BORNE = qualifiable(
   kright(BEFORE_SEVERAL, several(BEARINGS, FrenchNumbers, asOrdinary, NOT_IN_NUMBER)),
-  asTheWordStands(true)
+  asTheWordStands(true),
+  partAsTheWordStands(true)
 );
 
 const BORNE = alt(ONE, SEVERAL_BORNE);

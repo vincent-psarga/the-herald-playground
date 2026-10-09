@@ -488,7 +488,7 @@ describe('the words that say more than one drawing can', () => {
   });
 
   test('says nothing of a charge that will take nothing', () => {
-    expect(asked(word(english, 'annulet'))).toEqual(['Borne in number', 'Sown']);
+    expect(asked(word(english, 'crescent'))).toEqual(['Borne in number', 'Sown']);
   });
 
   test('tells each tongue its own rule about counting the pieces', () => {

@@ -244,3 +244,33 @@ export function optional<TKind, TResult>(
     },
   };
 }
+
+/**
+ * Something that reports its absence by leaving the phrase alone, read where the
+ * phrase does want it.
+ *
+ * A word that qualifies a charge answers with nothing rather than failing, so
+ * that a blazon which said nothing of the sort is left exactly as it stood. A
+ * rule that has already read a conjunction is owed one all the same — "armé et"
+ * promises a second word — so the absence is turned into a refusal here.
+ *
+ * The complaint is laid at the token the phrase began on and not at the one it
+ * failed on, which is what lets the caller tell a phrase that never began from
+ * one that began and went wrong: the mark and the conjunction are read before
+ * the word, and a refusal reported after them would look like a promise broken.
+ */
+export function present<TKind, TResult>(
+  parser: Parser<TKind, TResult | undefined>,
+  complain: (position?: TextPosition) => BlazonParseError
+): Parser<TKind, TResult> {
+  return apply(
+    guard(
+      parser,
+      (value) => value !== undefined,
+      (_, position) => complain(position)
+    ),
+    // The guard has refused every candidate that was undefined; nothing the
+    // compiler can see says so.
+    (value) => value as TResult
+  );
+}

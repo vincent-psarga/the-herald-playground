@@ -2,6 +2,7 @@ import { alt, apply, kright, seq } from 'typescript-parsec';
 import { EnglishDivisionType } from '../../domain/translations/en/Divisions';
 import { EnglishFurType } from '../../domain/translations/en/Furs';
 import { EnglishVariationType, OF } from '../../domain/translations/en/Variations';
+import { EnglishAttributes } from '../../domain/translations/en/Attributes';
 import { EnglishChargeType } from '../../domain/translations/en/Charges';
 import { EnglishModifiers } from '../../domain/translations/en/Modifiers';
 import { EnglishStrewings, OF as SOWN_OF, SOWN } from '../../domain/translations/en/Strewings';
@@ -13,8 +14,8 @@ import { EnglishTinctures } from '../../domain/translations/en/Tinctures';
 import { BlazonGrammar } from '../parser/BlazonGrammar';
 import { anyKeyword, keyword, optional, spelledTerm, term } from '../parser/Combinators';
 import { asOrdinary, asDivision, asTincture } from '../parser/Failures';
-import { NOT_IN_NUMBER, alone, bearings, modifiable, several } from '../parser/Borne';
-import { anyWriting, modifying } from '../parser/Modifiers';
+import { NOT_IN_NUMBER, alone, bearings, qualifiable, several } from '../parser/Borne';
+import { anyWriting, qualifying } from '../parser/Qualifiers';
 import { number } from '../parser/Numbers';
 import { strewing } from '../parser/Treatment';
 import { VariedField, varied } from '../parser/Variations';
@@ -57,7 +58,12 @@ const TREATMENT = strewing(alt(NAMED_STREWING, SOWN_CHARGE), term(EnglishTinctur
 // nothing: "voided" stands after one lozenge and after three of them unchanged,
 // so the one rule serves every phrase and no writing of the word is ever wrong
 // where another would have been right.
-const MODIFIER = modifying(anyWriting(EnglishModifiers));
+const MODIFIER = qualifying(anyWriting(EnglishModifiers));
+
+// What a blazon may say was painted apart from the rest of the charge, which
+// English agrees with no better than it agrees a modifier: "a gem-ring or stoned
+// azure", "three gem-rings argent stoned azure".
+const ATTRIBUTE = qualifying(anyWriting(EnglishAttributes));
 
 export const EnglishBlazonGrammar: BlazonGrammar = {
   tincture: term(EnglishTinctures, asTincture),
@@ -73,8 +79,16 @@ export const EnglishBlazonGrammar: BlazonGrammar = {
   // it instead, and English puts nothing before the count: "Or three chevrons
   // gules".
   borne: alt(
-    modifiable(alone(kright(ARTICLE, spelledTerm(BEARINGS, asOrdinary))), () => MODIFIER),
-    modifiable(several(BEARINGS, EnglishNumbers, asOrdinary, NOT_IN_NUMBER), () => MODIFIER)
+    qualifiable(
+      alone(kright(ARTICLE, spelledTerm(BEARINGS, asOrdinary))),
+      () => MODIFIER,
+      () => ATTRIBUTE
+    ),
+    qualifiable(
+      several(BEARINGS, EnglishNumbers, asOrdinary, NOT_IN_NUMBER),
+      () => MODIFIER,
+      () => ATTRIBUTE
+    )
   ),
   and: AND,
 };

@@ -1,3 +1,4 @@
+import { Attribute, Attributed } from './Attributes';
 import { Modifier } from './Modifier';
 import { Tincture } from './Tinctures';
 
@@ -9,13 +10,12 @@ import { Tincture } from './Tinctures';
  * after the thing it is a picture of, and owes the field nothing: it is set on
  * the field wherever the blazon says, as many times as the blazon says.
  *
- * Ten so far. Some are plain geometry and some are pictures of something: a
- * drop, a tear, a star, the lily heraldry drew as a smith would forge it, and
- * the moon with its horns up. A lion is
- * a charge by the same reckoning and is read by the same phrase, which is why
- * these are kept apart from the ordinaries rather than listed among them: what
- * will grow here is the beasts and the objects, and what an ordinary can be told
- * is quite another list.
+ * Eleven so far. Some are plain geometry and some are pictures of something: a
+ * drop, a tear, a star, the lily heraldry drew as a smith would forge it, the
+ * moon with its horns up, and the first of the beasts. They are kept apart from
+ * the ordinaries rather than listed among them because what will grow here is
+ * the beasts and the objects, and what an ordinary can be told is quite another
+ * list.
  *
  * The roundel is one term and not a dozen, though heraldry gives it a dozen
  * names: a bezant, a plate and a torteau are the same disc in three tinctures,
@@ -70,11 +70,25 @@ export enum ChargeType {
    * goutte was taken the other way.
    */
   larme = 'Charge.larme',
+  /**
+   * The lion, which Parker calls "perhaps the most frequent of all bearings".
+   *
+   * Rampant, which is the posture a blazon that names none means: "le Lion dans
+   * sa position naturelle est rampant, c'est-à-dire ayant le haut du corps levé
+   * vers le chef, et ne posant que sur ses pattes de derrière, la tête de
+   * profil, la queue retroussée vers le dos avec la houppe retombant en dehors".
+   * Every other posture is another word — passant, couchant, contourné — and
+   * they are a vocabulary of their own that this does not read.
+   *
+   * It is not the leopard, which early heraldry drew passant and guardant where
+   * the lion reared, and which the armorials here name léopard.
+   */
+  lion = 'Charge.lion',
 }
 
 /**
- * What is true of a charge whatever blazon names it: today, which modifiers it
- * may be borne under.
+ * What is true of a charge whatever blazon names it: which modifiers it may be
+ * borne under, and which of its parts a blazon may paint on their own.
  *
  * It is not the drawing and it is not the word. A charge is a term of the model,
  * and what may be said of that term is the model's to know — "an annulet voided"
@@ -90,13 +104,24 @@ export class ChargeDefinition {
    */
   public readonly allowedModifiers: readonly Modifier[];
 
+  /**
+   * The attributes a blazon may paint on it, which is none for most of them.
+   *
+   * Empty says the figure has no part worth naming apart from itself: a billet
+   * is a rectangle entire, and there is nothing in it to be given a second
+   * tincture.
+   */
+  public readonly allowedAttributes: readonly Attribute[];
+
   constructor(
     public readonly type: ChargeType,
     opts?: Partial<{
       allowedModifiers: readonly Modifier[];
+      allowedAttributes: readonly Attribute[];
     }>
   ) {
     this.allowedModifiers = opts?.allowedModifiers ?? [];
+    this.allowedAttributes = opts?.allowedAttributes ?? [];
   }
 }
 
@@ -108,7 +133,15 @@ export class ChargeDefinition {
  * charge, and the one easiest to forget.
  */
 export const ChargeDefinitions: Record<ChargeType, ChargeDefinition> = {
-  [ChargeType.annulet]: new ChargeDefinition(ChargeType.annulet),
+  // The one charge with a part to be painted apart from itself: a ring is a
+  // thing a stone is set in. Parker files the figure under Ring — "the most
+  // important bearing of this name is the Gem-ring, that is a finger-ring set
+  // with a jewel" — and blazons the stone of another tincture than the hoop.
+  //
+  // It takes no modifier: an annulet is a roundel voided already.
+  [ChargeType.annulet]: new ChargeDefinition(ChargeType.annulet, {
+    allowedAttributes: [Attribute.stoned],
+  }),
   // Voided and pierced both, which are two things done to it and not one said
   // twice: the outline of a billet is one figure and a billet with a hole in it
   // is another. The armorials name the second oftener than the first — "on se
@@ -138,6 +171,20 @@ export const ChargeDefinitions: Record<ChargeType, ChargeDefinition> = {
   [ChargeType.roundel]: new ChargeDefinition(ChargeType.roundel, {
     allowedModifiers: [Modifier.voided],
   }),
+  // The claws, the tongue and the crown, which are the parts of a beast the
+  // armorials here paint apart from the rest of it: "De gueules, au lion
+  // d'hermine, armé, lampassé et couronné d'or". All three are declared on the
+  // beast rather than on the attribute, so a charge with none of them refuses
+  // them by name.
+  //
+  // In the order the dictionaries say them, which is the order they are written
+  // back in where a blazon paints them all.
+  //
+  // It takes no modifier. Voiding or piercing a lion names no figure heraldry
+  // draws, where voiding a lozenge names the mascle.
+  [ChargeType.lion]: new ChargeDefinition(ChargeType.lion, {
+    allowedAttributes: [Attribute.armed, Attribute.langued, Attribute.crowned],
+  }),
 };
 
 /** The modifiers a charge may be borne under, in the order they are declared. */
@@ -153,6 +200,21 @@ export function modifiersOf(type: ChargeType): readonly Modifier[] {
  */
 export function allowsModifier(type: ChargeType, modifier: Modifier): boolean {
   return modifiersOf(type).includes(modifier);
+}
+
+/** The parts of a charge a blazon may paint, in the order they are declared. */
+export function attributesOf(type: ChargeType): readonly Attribute[] {
+  return ChargeDefinitions[type].allowedAttributes;
+}
+
+/**
+ * Whether a charge has a part a blazon may paint on its own.
+ *
+ * Asked of the term rather than of the word, as a modifier is: a stone is set in
+ * an anneau exactly as it is set in a gem-ring.
+ */
+export function allowsAttribute(type: ChargeType, attribute: Attribute): boolean {
+  return attributesOf(type).includes(attribute);
 }
 
 /**
@@ -182,6 +244,18 @@ export type Charge = {
    * a plain lozenge reads back as the lozenge it was written as.
    */
   modifier?: Modifier;
+  /**
+   * The parts of the figure the blazon painted apart from the rest, each in its
+   * own tincture: a gem-ring stoned azure is one charge or, with a blue stone.
+   *
+   * A list rather than the one, a figure having as many nameable parts as
+   * heraldry gave it names: a lion is armed and lampassé in the one blazon. They
+   * are kept in the order the blazon named them, and no part is named twice.
+   *
+   * Left off rather than emptied where the blazon named none, as the count and
+   * the modifier are.
+   */
+  attributes?: readonly Attributed[];
 };
 
 /** How many of a charge a blazon bears: one, unless it says otherwise. */

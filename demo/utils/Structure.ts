@@ -1,7 +1,8 @@
 import { EnglishBlazonWording } from '../../src/application/english/EnglishBlazonWording';
 import { FrenchBlazonWording } from '../../src/application/french/FrenchBlazonWording';
 import { BlazonWording } from '../../src/application/writer/BlazonWording';
-import { Blazon, ChargeOrOrdinary, isOrdinary } from '../../src/domain/models/Blazon';
+import { Attribute, Attributed } from '../../src/domain/models/Attributes';
+import { Blazon, ChargeOrOrdinary, isCharge, isOrdinary } from '../../src/domain/models/Blazon';
 import { Languages } from '../../src/domain/models/Languages';
 import { numberBorne } from '../../src/domain/models/Charge';
 import {
@@ -207,7 +208,7 @@ function borneBranch<W extends Word>(
   const band = isOrdinary(one);
   const word = band
     ? wordIn(wording.ordinaries, one.type, one.tincture)
-    : wordIn(wording.charges, one.type, one.tincture, one.modifier);
+    : wordIn(wording.charges, one.type, one.tincture, one.modifier, partsOf(one));
   const count = band ? borne(one) : numberBorne(one);
   return {
     word: word.value,
@@ -239,8 +240,68 @@ function borneBranch<W extends Word>(
             },
           ]),
       ...tinctureSaid(wording, word, one.tincture),
+      ...painted(wording, field, one, word),
     ],
   };
+}
+
+/** The parts a charge had painted, which is none for a band. */
+function partsOf(one: ChargeOrOrdinary): readonly Attribute[] {
+  return isCharge(one) ? (one.attributes ?? []).map(({ attribute }) => attribute) : [];
+}
+
+/**
+ * The parts of the charge painted apart from the rest, each with its own
+ * tincture standing under it.
+ *
+ * After the tincture the charge itself carries, which is where the blazon writes
+ * them: "à l'anneau de gueules chatonné d'or" says the hoop is red and then that
+ * the stone is gold, and a tree that said the two in the other order would be
+ * showing a sentence nobody wrote.
+ *
+ * A part the name has already said and that carries no tincture is left off, by
+ * the same rule the tincture is: an anneau has a stone by being an anneau, the
+ * writer writes nothing after it, and a branch the blazon does not carry is one
+ * the reader would look for in the sentence and not find.
+ */
+function painted<W extends Word>(
+  wording: BlazonWording<W>,
+  field: Field,
+  one: ChargeOrOrdinary,
+  named: W
+): readonly Branch[] {
+  if (!isCharge(one) || one.attributes === undefined) {
+    return [];
+  }
+  return one.attributes.flatMap(({ attribute, tincture }: Attributed) => {
+    if (tincture === undefined && named.defaultAttribute === attribute) {
+      return [];
+    }
+    const said = wordSaidOf(wording.attributes, attribute, one.type);
+    return [
+      {
+        word: said.value,
+        rank: 'attribute' as const,
+        /*
+         * The charge with this one part painted, borne once. A word for a part
+         * is no more a thing to be drawn on its own than a modifier is, so what
+         * it paints on the very charge it was said of is the whole of what can
+         * be shown, and the count is left to the charge above.
+         */
+        arms: {
+          field: bare(field),
+          chargesOrOrdinaries: [
+            { type: one.type, tincture: one.tincture, attributes: [{ attribute, tincture }] },
+          ],
+        },
+        // The part's own tincture, said of the part and not of the charge —
+        // which is the whole of what an attribute carries that a modifier does
+        // not. Left off where the blazon named none, the part taking the
+        // charge's own.
+        children: tincture === undefined ? [] : [tinctureBranch(wording, tincture)],
+      },
+    ];
+  });
 }
 
 /**
