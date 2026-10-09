@@ -1396,6 +1396,16 @@ body {
   color: var(--bone-quiet);
 }
 
+/* What a deck is about, in its own words. Prose rather than a tally, so it is
+   read at the strength prose is read at, and stands above the quieter line that
+   says where and when the talk was given. */
+.index__summary {
+  margin: 0;
+  max-width: var(--measure);
+  color: var(--bone);
+  text-wrap: pretty;
+}
+
 /* What a pull request says of itself. It is written on GitHub, in GitHub's
    markdown, and shown here as it was written there: a line about the work, the
    screenshot it was opened with, and a list of what is still to do. */
@@ -2121,4 +2131,363 @@ body {
 
 .showing__fields img {
   animation: strike 460ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─ a deck, shown as slides ──────────────────────────────────────────────── */
+
+/*
+ * The deck is a page of the demo and not a takeover of the window: the rail
+ * stays where it is, the title says which deck is open, and the slides get the
+ * room left over. The page itself does not scroll — slides are turned, not
+ * scrolled past — so it is held to the height of the window.
+ */
+.plane--deck {
+  padding-bottom: clamp(1.5rem, 4vw, 2.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: calc(100vh - 4.5rem);
+}
+
+.deck__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem 2rem;
+}
+
+/* A step down from a page's own title: the deck's first slide says the name
+   again, in full, and two full-sized titles above one another is one too many. */
+.plane--deck h1 {
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+}
+
+.deck__head a {
+  font-family: var(--display);
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-quiet);
+  text-decoration: none;
+  transition: color 140ms linear;
+}
+
+.deck__head a:hover,
+.deck__head a:focus-visible {
+  color: var(--strike);
+}
+
+/*
+ * The slides are drawn on a fixed canvas and scaled into whatever box they are
+ * given, so the box is what decides their size. It keeps the deck's own shape —
+ * sixteen by nine — and never grows past the room the window has left.
+ */
+.deck {
+  /* Exactly sixteen by nine, which is the shape of the canvas the slides are
+     drawn against, and never taller than the room the window has left. */
+  width: min(100%, (100vh - 12rem) * 16 / 9);
+  aspect-ratio: 16 / 9;
+  margin-inline: auto;
+  border: 1px solid rgb(var(--gauze) / 0.35);
+  background: var(--void-lift);
+  /* A slide is turned by sliding the next one in over the last, which is a wide
+     gesture: the box is told to keep its paint to itself so that none of it is
+     seen crossing the page outside the frame. */
+  overflow: hidden;
+  contain: paint;
+}
+
+/*
+ * The presenter draws the slides and lays them out; everything they are made of
+ * is dressed here, where the rest of the demo's look also lives. The sizes are
+ * given against the canvas the slides are drawn on — 1366 by 768, scaled into
+ * whatever room the box above leaves — so they are proportions of a slide and
+ * not pixels on a screen.
+ */
+.deck .reveal {
+  width: 100%;
+  height: 100%;
+  font-family: var(--prose);
+  font-size: 32px;
+  line-height: 1.4;
+  color: var(--bone);
+  /* The presenter paints its own ground white, having no theme of ours loaded.
+     The box above is the ground. */
+  background-color: transparent;
+}
+
+.deck .reveal .slides {
+  text-align: left;
+}
+
+/* A slide takes the whole of the frame rather than only as much as it holds,
+   there being nothing to divide between a title and a body otherwise. */
+.deck .reveal .slides > section {
+  height: 100%;
+}
+
+/* Said again in full, because a slide stands inside a page of the demo and the
+   page's own rule for a title would otherwise reach it: a slide's heading is
+   read across a room and is not the page's. */
+.deck .reveal h1,
+.deck .reveal h2,
+.deck .reveal h3 {
+  margin: 0 0 0.6em;
+  font-family: var(--display);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  text-align: center;
+  text-wrap: balance;
+  color: rgb(var(--gauze));
+}
+
+.deck .reveal h1 {
+  font-size: 64px;
+}
+
+.deck .reveal h2 {
+  font-size: 48px;
+}
+
+.deck .reveal h3 {
+  font-size: 40px;
+}
+
+.deck .reveal p {
+  margin: 0 0 0.5em;
+}
+
+.deck .reveal ul,
+.deck .reveal ol {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.deck .reveal li {
+  margin-bottom: 0.5em;
+}
+
+.deck .reveal li:last-child {
+  margin-bottom: 0;
+}
+
+.deck .reveal li::marker {
+  color: rgb(var(--gauze) / 0.9);
+}
+
+/* A quoted authority is set apart by a rule down its side rather than by a box:
+   this world frames nothing. */
+.deck .reveal blockquote {
+  margin: 0;
+  padding-left: 0.8em;
+  border-left: 3px solid rgb(var(--gauze) / 0.6);
+  font-size: 30px;
+  font-style: normal;
+  color: var(--bone);
+}
+
+.deck .reveal blockquote p:last-child {
+  margin-bottom: 0;
+  color: var(--bone-quiet);
+}
+
+.deck .reveal a {
+  color: rgb(var(--gauze));
+  text-decoration: none;
+  border-bottom: 1px solid rgb(var(--gauze) / 0.5);
+}
+
+.deck .reveal code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+}
+
+/* The presenter's own furniture: kept quiet, a deck being read and not driven. */
+.deck .reveal .controls {
+  color: rgb(var(--gauze) / 0.8);
+}
+
+.deck .reveal .progress {
+  height: 3px;
+  color: rgb(var(--gauze));
+  background: rgb(var(--gauze) / 0.15);
+}
+
+.deck .reveal .slide-number {
+  padding: 0.3em 0.6em;
+  font-family: var(--display);
+  font-size: 16px;
+  color: var(--bone-quiet);
+  background: transparent;
+}
+
+/*
+ * A blazon on a slide: the arms, the words that named them, and the same words
+ * in the other tongue. Sized against the canvas the slides are drawn on, which
+ * is scaled into the deck's box, so these are proportions of a slide and not
+ * pixels on a screen.
+ *
+ * The arms are what the slide is showing and the words under them are the
+ * evidence for it, so the words are set small and quiet: a room should look at
+ * the shield and hear the speaker, not read a caption. Whoever wants the blazon
+ * itself is close enough to the screen, or reading the deck afterwards, and
+ * either way is looking for it.
+ */
+.slide-blazon {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.slide-blazon figcaption {
+  text-align: center;
+}
+
+.slide-blazon figcaption p {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.35;
+  color: var(--bone-quiet);
+}
+
+/* The translation is the answer to the blazon above it, and reads as an answer:
+   quieter again, and in the gold the deck says its headings in. */
+.slide-blazon__abroad {
+  color: rgb(var(--gauze) / 0.85);
+}
+
+/* A refusal is the one thing here worth interrupting for: it is what the parser
+   could not read, and a talk that hides that is showing a rehearsal. So it keeps
+   the size the slide's own words are set at. */
+.slide-blazon__refused {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 24px;
+  color: var(--bone-quiet);
+}
+
+/*
+ * A slide is one column until something is set beside the rest of it, and two
+ * when something is: the build pairs the side off with the rest and writes them
+ * down in the order they are to be read across, so the laying out is only ever
+ * a matter of giving each a column. Sized against Spectacle's canvas like
+ * everything else on a slide, so these are proportions of a slide and not pixels
+ * on a screen.
+ */
+/* A slide is a title, a body and whatever the talk says under every slide, and
+   the three are placed differently: the title sits at the top, where a title is
+   looked for, the footer at the foot, and the body takes all the room between
+   them. A slide with no title is all body, and one with no footer gives the row
+   no height. */
+.deck__slide {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100%;
+  width: 100%;
+  /* A margin from the frame, so that nothing is read off the edge of it. Given
+     against the canvas the slides are drawn on, like every other length here. */
+  padding: 44px 56px;
+}
+
+/* What the talk is rather than what the slide says, so it is set apart from both
+   and kept quiet: the reader who wants it knows where to look, and nobody else
+   is made to read it twice. It stands clear of the presenter's own furniture,
+   which keeps to the other corner. */
+.deck__footer {
+  align-self: end;
+  font-family: var(--display);
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  color: var(--bone-quiet);
+}
+
+/* The body is set in the middle of the room the title left it: a slide carries
+   little and is read from a distance, and content pinned to an edge of a wide
+   frame reads as crowded against it. */
+.deck__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 64px;
+  align-content: center;
+  width: 100%;
+  min-height: 0;
+}
+
+/* What was written plainly spans the slide. */
+.deck__body > * {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+/* The two that were paired off take a column apiece, in the order they stand in,
+   and read from the same top edge: they are compared line against line, which
+   they cannot be if one is set against the other's height. */
+.deck__body > .deck__side,
+.deck__body > .deck__rest {
+  grid-column: auto;
+  align-self: start;
+}
+
+/* The wrapper is there to say that what it holds comes in turn, and for nothing
+   else: it takes no room and lays nothing out, so the steps stand exactly where
+   they would have stood written plainly. */
+.deck__steps {
+  display: contents;
+}
+
+/* A step is a box of its own, whatever it holds: it is shown and hidden whole,
+   and something with no box of its own cannot be. What it holds is one thing
+   said in several blocks, so those keep the closer spacing. */
+.deck__step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+
+/* The gap here falls between one thing and the next thing — between the steps of
+   a slide said in parts, or between what a column holds — so it is the wider of
+   the two: what is written apart is read apart. */
+.deck__side,
+.deck__rest {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9em;
+  min-width: 0;
+}
+
+/*
+ * Where what a side holds stands across its own column. A column is wider than
+ * what it usually holds, and the slide is allowed to mean something by where
+ * that sits: centred under a heading it reads as the subject of it, pushed to an
+ * edge it reads as a margin note.
+ *
+ * Left is what a column has always done and is written out all the same, so that
+ * a slide asking for it gets it rather than getting whatever was there already.
+ */
+.deck__side--left {
+  align-items: stretch;
+  text-align: left;
+}
+
+.deck__side--center {
+  align-items: center;
+  text-align: center;
+}
+
+.deck__side--right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+/* A marker that stayed at the left margin while its line moved away from it is
+   no longer marking anything, so it travels with the line it belongs to. */
+.deck__side--center :is(ul, ol),
+.deck__side--right :is(ul, ol) {
+  padding-left: 0;
+  list-style-position: inside;
 }
