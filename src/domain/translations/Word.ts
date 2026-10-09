@@ -1,6 +1,8 @@
 import { ChargeType } from '../models/Charge';
 import { Languages } from '../models/Languages';
 import { Source } from '../models/Source';
+import { isCompony } from '../models/Compony';
+import { Tinctured, isCounterchanged } from '../models/Counterchanged';
 import { Modifier } from '../models/Modifier';
 import { TINCTURES, Tincture } from '../models/Tinctures';
 
@@ -136,6 +138,21 @@ export class Word {
   public readonly defaultTincture?: Tincture;
 
   /**
+   * Whether the word says anything at all about what the figure is painted with.
+   *
+   * Most words name a figure and nothing more, and this is false of them. The
+   * roundel's names are why there is a question: a besant is gold, a torteau is
+   * red, and the French besant is any metal — each of those says something the
+   * blazon then need not, and each is therefore a claim the blazon can
+   * contradict.
+   *
+   * Read off whether the word was told anything rather than off what it ended up
+   * allowing, so that a word told nothing claims nothing however the defaults
+   * fill it in.
+   */
+  public readonly namesATincture: boolean;
+
+  /**
    * The charges this word alone is said of, where the armorials keep it for
    * some and not for others.
    *
@@ -185,6 +202,8 @@ export class Word {
       })),
     ];
     this.defaultTincture = options?.defaultTincture;
+    this.namesATincture =
+      options?.defaultTincture !== undefined || options?.allowedTinctures !== undefined;
     this.saidOf = options?.saidOf;
     this.defaultModifier = options?.defaultModifier;
     this.allowedTinctures =
@@ -192,9 +211,28 @@ export class Word {
       (this.defaultTincture === undefined ? TINCTURES : [this.defaultTincture]);
   }
 
-  /** Whether the word may be borne in a tincture. */
-  accepts(tincture: Tincture): boolean {
-    return this.allowedTinctures.includes(tincture);
+  /**
+   * Whether the word may be borne painted this way: in a tincture it names, or
+   * out of the field it is laid on.
+   *
+   * Only a word that claims no tincture may take the field. A name chosen for a
+   * tincture — or for a rank of them — says what the figure is painted with, and
+   * a figure painted out of a divided field is painted two things at once and
+   * neither of them the word's: a besant counterchanged would be saying gold of
+   * a disc that is half gold and half whatever the other half of the field is.
+   * So what answers is the word that named no tincture to begin with, which is
+   * the same word a blazon naming a fur falls back on — "a roundel", where
+   * French, having no such word for the disc, has nothing to fall back on and
+   * refuses the blazon.
+   *
+   * A band cut into compons is painted two things at once as well, both of them
+   * named, and answers the same way: no name chosen for one tincture is said of
+   * a band in two.
+   */
+  accepts(tinctured: Tinctured): boolean {
+    return isCounterchanged(tinctured) || isCompony(tinctured)
+      ? !this.namesATincture
+      : this.allowedTinctures.includes(tinctured);
   }
 
   /** Whether the word claims a charge as one of its own. */

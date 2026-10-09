@@ -59,6 +59,15 @@ export interface Borne<T extends string, W extends Word = Word> {
    * hands on one that accepts the word as it stands.
    */
   readonly modifier?: Parser<TokenKind, TermWord<Modifier> | undefined>;
+  /**
+   * The word saying it is cut into compons, where the language has one: read
+   * where its tincture would be, and agreeing with what the phrase said of it —
+   * "à la bordure componée", "au pal componé" — for the reason a modifier does.
+   *
+   * What comes back is the word as written. Whether this band may be compony at
+   * all is the model's to say, and is asked once the word has been read.
+   */
+  readonly compony?: Parser<TokenKind, string>;
 }
 
 /**
@@ -177,7 +186,8 @@ export type BorneType = OrdinaryType | ChargeType;
 export type BorneTerm = Borne<BorneType>;
 
 /**
- * Something borne, told what may be said of it after its tincture.
+ * Something borne, told what may be said of it after its tincture, and how the
+ * word for compony agrees with it where it may stand in its tincture's place.
  *
  * The rule is built from the word, because a tongue that agrees with its words
  * cannot say which writings are right until it knows what they will stand
@@ -186,9 +196,14 @@ export type BorneTerm = Borne<BorneType>;
  */
 export function modifiable<T extends string, W extends Word>(
   borne: Parser<TokenKind, Borne<T, W>>,
-  modifier: (word: W) => Parser<TokenKind, TermWord<Modifier> | undefined>
+  modifier: (word: W) => Parser<TokenKind, TermWord<Modifier> | undefined>,
+  compony?: (word: W) => Parser<TokenKind, string>
 ): Parser<TokenKind, Borne<T, W>> {
-  return apply(borne, (one): Borne<T, W> => ({ ...one, modifier: modifier(one.word) }));
+  return apply(borne, (one): Borne<T, W> => ({
+    ...one,
+    modifier: modifier(one.word),
+    ...(compony === undefined ? {} : { compony: compony(one.word) }),
+  }));
 }
 
 /**
@@ -201,6 +216,17 @@ export function modifiable<T extends string, W extends Word>(
  */
 export function bornUnder(type: BorneType, modifier: Modifier): boolean {
   return isChargeType(type) && allowsModifier(type, modifier);
+}
+
+/**
+ * Whether what is borne may be cut into compons.
+ *
+ * Only a band may, and only the bands whose definition gives them a number of
+ * compons: no source makes a charge compony, a charge being no band to be cut
+ * along.
+ */
+export function inCompons(type: BorneType): boolean {
+  return isOrdinaryType(type) && OrdinaryDefinitions[type].compons !== undefined;
 }
 
 /** The two vocabularies a field's bearings are named from, as one. */

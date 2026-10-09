@@ -504,6 +504,125 @@ export const RULES: readonly Rule[] = [
     ],
   },
   {
+    id: 'counterchanging-is-one-word',
+    heading: 'Counterchanging is one thing, whatever French calls it',
+    law: (
+      <>
+        <p className="rule__law">
+          A band laid on a divided field may take the field’s own two tinctures instead of naming
+          one, reversed: where the field is metal the band is colour, and where the field is colour
+          the band is metal. English says that in a word — counterchanged — and French says it in a
+          phrase. The phrase written back is “de l’un à l’autre”.
+        </p>
+        <p className="rule__law">
+          French writes it a second way, “de l’un en l’autre”, and both are read. The dictionaries
+          do try to divide the two, and disagree flatly about which way round. Au blason des
+          armoiries keeps “l’un à l’autre” for figures posées sur les partitions — standing on the
+          line — and “l’un en l’autre” for figures au centre des divisions, standing to one side of
+          it; La langue du blason has the two exactly the other way about; and the Manuel du blason
+          calls telling them apart a chinoiserie and keeps only “l’un en l’autre”. Nobody is going
+          to settle that here, so the two are one phrase spelled two ways, as Parker already treats
+          them.
+        </p>
+        <p className="rule__law">
+          What the dictionaries were reaching for with two phrases is said instead by the drawing.
+          Parker’s rule reaches both cases at once — the parts of the figure lying on the metal are
+          of the colour, and the parts lying on the colour are of the metal — and under it a band
+          crossing the line comes out cut by it while a band lying wholly in one half comes out
+          wholly of the other half’s tincture. Neither case is told the rule; both fall out of where
+          the figure happens to lie.
+        </p>
+        <p className="rule__law">
+          It is said of a charge as readily as of a band, and of several charges at once: each falls
+          where it falls, and each comes out the opposite of what it fell on. What it needs is a
+          field divided between two tinctures, a quartering among them — its two pairs of quarters
+          stand for the two halves — and a varied field is cut from two tinctures as well but is
+          refused by name rather than drawn wrongly, being cut into a row rather than by a line.
+        </p>
+        <p className="rule__law">
+          What it also needs is a name that has not already said what the figure is painted with.
+          The rule is the besant’s own: a besant is a gold coin, so a besant painted half out of the
+          sable half of a field is not a besant, and the blazon is refused exactly as “a besant
+          azure” is. English keeps a name for every colour of roundel and one for none of them, so a
+          roundel counterchanges under that last name; French tells the metal disc from the coloured
+          one and has no third word, so it cannot counterchange a disc at all. That is the tongue’s
+          own gap, not a rule imposed on it.
+        </p>
+      </>
+    ),
+    authority: (
+      <>
+        Counterchanged is said where “the field consists of metal and colour separated by one of the
+        lines of partition named from the ordinaries (per pale, per bend, &amp;c.), and … the
+        charges, or parts of charges, placed upon the metal are of the colour, and vice versa” —
+        Parker, who adds that the French “de l’un en l’autre” is “in most cases practically
+        equivalent”. Au blason des armoiries divides the two French phrases: “L’UN À L’AUTRE, se dit
+        des pièces ou meubles de l’écu, posés sur les partitions, les deux émaux étant changés
+        alternativement”, where “L’UN EN L’AUTRE … les pièces ou meubles ne sont pas sur les
+        partitions, mais au centre des divisions”.
+      </>
+    ),
+    sources: [parker('Counter'), blasonArmoiries("L'un à l'autre", 'l-un-a-l-autre')],
+    cases: [
+      fr("Parti d'or et de sable à la bordure de l'un à l'autre"),
+      fr("Parti d'or et de sable à la bordure de l'un en l'autre"),
+      fr("Coupé d'argent et de gueules au chevron de l'un à l'autre"),
+      fr("Tranché d'or et d'azur à trois bandes de l'un à l'autre"),
+      en('Per pale argent and sable a fess counterchanged'),
+      fr("Coupé d'or et de sable à deux losanges de l'un à l'autre"),
+      en('Per pale argent and sable three lozenges voided counterchanged'),
+      en('Per pale or and sable a roundel counterchanged'),
+      en('Or a bordure counterchanged'),
+      en('Per pale or and sable a besant counterchanged'),
+    ],
+  },
+  {
+    id: 'one-word-for-compony',
+    heading: 'Compony is written componé and compony, however it was spelled',
+    law: (
+      <>
+        <p className="rule__law">
+          A band cut across into squares of two tinctures laid alternately is componé in French and
+          compony in English. The word stands where the tincture would, agrees with the band in
+          French — “à la bordure componée”, “à deux bandes componées” — and is followed by the two
+          tinctures, written back in the order they were named.
+        </p>
+        <p className="rule__law">
+          French spells it “componné” as readily, and Au blason des armoiries spells it no other
+          way; English writes “gobony”, its older form, and borrows the French “componée”. All of
+          them are read. “Componé” and “compony” are what come back: the first is what the armorials
+          read here write, and the second is what modern blazon writes, Parker filing it beside
+          gobony as the one word.
+        </p>
+        <p className="rule__law">
+          How many compons the band is cut into is not written, nor read: the armorials write “de
+          six pièces” now and then and leave it off as often. The band is drawn cut into as many as
+          it is understood to have. Every band takes it but the gemel, whose bars are too narrow to
+          be cut into squares, and a charge is refused by name.
+        </p>
+      </>
+    ),
+    authority: (
+      <>
+        Parker: “Gobony, goboné, gobonated, and compony (fr. componé): said of an ordinary composed
+        of small squares of two tinctures alternately in one row”, adding that “the name gobony is a
+        corruption of some word (possibly even of compony)”. Au blason des armoiries, under
+        Componné: “Se dit des pals, bandes, fasces, etc., qui sont composés de pièces carrées,
+        appelées compons, chargés de deux émaux alternés”.
+      </>
+    ),
+    sources: [parker('Gobony'), blasonArmoiries('Componné', 'compone')],
+    cases: [
+      fr("D'azur semé de fleurs de lys d'or ; à la bordure componée de gueules et d'argent"),
+      fr("D'or à la bande componnée d'azur et d'argent"),
+      fr("D'argent à deux bandes componées de gueules et d'or"),
+      en('Or a bordure gobony azure and argent'),
+      en('Or a bend componée sable and argent'),
+      fr("D'or à la bordure componé de gueules et d'argent"),
+      fr("D'or à la jumelle componée de gueules et d'argent"),
+    ],
+  },
+  {
     id: 'the-smaller-settlements',
     heading: 'The smaller settlements',
     law: (

@@ -1,6 +1,6 @@
 import { ChargeType } from '../models/Charge';
+import { Tinctured } from '../models/Counterchanged';
 import { Modifier } from '../models/Modifier';
-import { Tincture } from '../models/Tinctures';
 import { Spelling, Word } from './Word';
 
 /**
@@ -65,11 +65,16 @@ export function wordOf<T extends string, W extends Word>(
  * tincture and a name per modifier. Asked in this order they could: the tincture
  * is chosen among the words that mean what was done, which is the way round that
  * keeps a name meaning what it says.
+ *
+ * A figure painted out of the field rather than in a tincture is asked the same
+ * question and answered by the same rule: no word is that by default and only a
+ * word claiming no tincture will take it, so what comes back is the plain name —
+ * "a roundel counterchanged", never "a besant counterchanged".
  */
 export function wordIn<T extends string, W extends Word>(
   translation: Translation<T, W>,
   term: T,
-  tincture: Tincture,
+  tincture: Tinctured,
   modifier?: Modifier
 ): W {
   const words = wordsOf(translation, term);

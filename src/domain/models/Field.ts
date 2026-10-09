@@ -376,3 +376,39 @@ export function isVariation(field: Field): field is Variation {
 export function isFurred(field: Field): field is Furred {
   return kindOf(field.type) === FieldKind.furred;
 }
+
+/**
+ * Whether a figure laid on this field can be counterchanged between its
+ * tinctures: whether the field is cut from two of them along a line that can cut
+ * the figure in its turn.
+ *
+ * The partitions alone, and not for want of drawing: a varied field is cut from
+ * two tinctures as well and the same paint would cover it. It is refused because
+ * no source asks for it. Parker's counterchanged blazons are partitions to a
+ * man, and the one varied field among them — "Barry of six, argent and gules,
+ * per pale indented counterchanged" — is counterchanged by a partition line
+ * drawn across it rather than by anything laid on it.
+ *
+ * Fox-Davies says the same of Ballingall, Wikipedia says "any of these patterns
+ * may be counterchanged by the addition of a division line", the French
+ * dictionaries define both their phrases against les partitions, and the
+ * armorials in demo/ counterchange over nothing else. A field counterchanged by
+ * a partition line is a complex partition and is a different thing from this; it
+ * is in TODO.md under its own name.
+ *
+ * A quartering is among the partitions and needs nothing said of it here: it is
+ * cut by a line like the rest, and Parker counterchanges over one as readily —
+ * "Quarterly, argent and azure, a cross engrailed counterchanged"; "Quarterly,
+ * sable and argent, a cross counterchanged".
+ *
+ * A fur is cut from two tinctures too and is not divided by them: its figures
+ * are scattered over the field rather than laid on either side of a line, so a
+ * figure counterchanged across one would be counterchanged across every bell it
+ * happened to touch, which is a drawing nobody blazons.
+ *
+ * So both are refused rather than drawn on a guess, and this is the one place
+ * that has to change the day an armorial asks for either.
+ */
+export function isCounterchangeable(field: Field): field is Division {
+  return isDivision(field);
+}

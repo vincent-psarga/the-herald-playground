@@ -120,6 +120,34 @@ Supported vocabulary as it stands:
   plain that then bears something is refused. The word adds nothing to the model and is never
   written back. English is given no equivalent — Parker's "plain" is a band with a straight line —
   and "plein" is another word about another thing.
+- **Counterchanging (1)** — a band may take the field's own two tinctures instead of naming one,
+  reversed: every part of it is painted the opposite of the part of the field beneath it, so a band
+  crossing the partition comes out cut by it and a band lying wholly in one half comes out wholly
+  of the other half's tincture. One term for what English says in a word — counterchanged — and
+  French in a phrase it spells two ways, "de l'un à l'autre" and "de l'un en l'autre". Both are
+  read and the first is written: the dictionaries variously make the second the same thing or its
+  opposite, so the model takes no side and lets the shape of the figure answer what the phrases
+  argue over — which is what Parker already does, quoting the pair as one word. Said of a band or a
+  charge, and of several at once: each falls where it falls and each comes out the opposite of what
+  it fell on. What it needs is a field divided between two tinctures, a quartering among them — its two pairs
+  of quarters stand for the two halves, so a cross counterchanged over a quarterly field comes out
+  of whichever quarter each arm lies in. A varied field is cut from two tinctures as well and is
+  refused, being cut into a row rather than by a line — and it needs a name that has not already
+  said what the figure is painted with: a besant is a gold coin, so a counterchanged besant is
+  refused by the rule that refuses an azure one, and French, naming the metal disc and the coloured
+  one and nothing between, cannot counterchange a disc at all. Where the charges stand is the
+  disposition and is not read, so several counterchanged charges fall where the drawer puts them.
+  It is not a tincture and is never one — a colouring answers for the tinctures, and what this is
+  painted with is known only once the field is.
+- **Compony (1)** — a band may be cut across into compons of two tinctures laid alternately,
+  "à la bordure componée de gueules et d'argent", "a bordure compony gules and argent". It stands
+  where the tincture would, as counterchanging does, and names two: the first takes the first
+  compon. French agrees it with the band and reads "componné" too; English reads "gobony" and the
+  borrowed "componée"; "componé" and "compony" are written. Every band takes it but the gemel,
+  whose bars are too narrow to be cut into squares. The bordure is cut gyronwise into Parker's
+  sixteen, the cross into Rivière de La Mure's nine, the middle being a compon of its own. The
+  number of compons — "de six pièces" — is not read, and a band never cut so, or a charge, is
+  refused by name. Two rows — contre-componé, counter-compony — are not read either.
 - **Languages (2)** — French and English, both reading and writing. French agrees its article with
   the word it introduces, elision included — "à la billette", "au losange", "à l'annelet"; English
   chooses "a" or "an".
@@ -133,6 +161,9 @@ Constraints and facts future work must preserve:
 - A blazon is a field, plain or divided between two tinctures or sown with a charge, with whatever
   bands are laid on it and whatever charges it bears. Nothing may be charged upon a charge, no line
   but the straight one is drawn, and no disposition is read.
+- What a band is painted with is not always a tincture. A band may take the field's, reversed, so
+  the model holds that beside the tinctures rather than among them: every record keyed on a tincture
+  — the colourings above all — answers for shades and must never be asked about this.
 - The rule of tincture (metal may not lie on metal, nor colour on colour) is why the tinctures carry
   three ranks. The furs answer to neither rank.
 - Heraldry fixes no shade. Colours are supplied to the drawer, never assumed by it. A fur's figure is
@@ -148,7 +179,7 @@ roadmap toward full blazon. Pages must state what is supported and must not prom
 
 ## Evidence on Hand
 
-- The working library itself: parser, writer and drawer, with 1193 passing tests. Any claim a page makes
+- The working library itself: parser, writer and drawer, with 1689 passing tests. Any claim a page makes
   can be demonstrated live rather than asserted.
 - Tincture shades and hatching marks are taken from Wikipedia's own tables
   (`https://en.wikipedia.org/wiki/Tincture_(heraldry)`, `https://en.wikipedia.org/wiki/Hatching_(heraldry)`),

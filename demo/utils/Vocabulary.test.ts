@@ -2,6 +2,8 @@ import { describe, expect, test } from 'vitest';
 import { EnglishBlazonWriter } from '../../src/application/writer/EnglishBlazonWriter';
 import { FrenchBlazonWriter } from '../../src/application/writer/FrenchBlazonWriter';
 import { Languages, TONGUES } from '../../src/domain/models/Languages';
+import { isCompony } from '../../src/domain/models/Compony';
+import { isCounterchanged } from '../../src/domain/models/Counterchanged';
 import { isFur } from '../../src/domain/models/Tinctures';
 import { IBlazonWriter } from '../../src/domain/services/IBlazonWriter';
 import { anchorOf, folded } from './Anchors';
@@ -52,6 +54,42 @@ describe('what the vocabulary holds', () => {
     expect(spellings).toContain(language === Languages.fr ? 'gueules' : 'gules');
     expect(spellings).toContain(language === Languages.fr ? 'croisette' : 'cross couped');
     expect(spellings).toContain(language === Languages.fr ? 'billeté' : 'billetty');
+  });
+
+  test('holds the word each tongue counterchanges a band with', () => {
+    expect(spelled(french)).toContain("de l'un à l'autre");
+    expect(spelled(english)).toContain('counterchanged');
+  });
+
+  test('stands both French phrases under the one heading, the written one first', () => {
+    // Two spellings of one phrase and not two phrases: the dictionaries divide
+    // them and disagree about which way round, so the page shows a reader that
+    // either is read and says which comes back.
+    expect(word(french, "de l'un en l'autre").spellings).toEqual([
+      "de l'un à l'autre",
+      "de l'un en l'autre",
+    ]);
+    expect(word(french, "de l'un en l'autre").word).toBe("de l'un à l'autre");
+  });
+
+  test('shows it on a band laid across the line it is counterchanged across', () => {
+    // A fess on a field parted per pale, so the drawing shows the band cut by
+    // the partition rather than merely standing to one side of it.
+    expect(word(french, "de l'un à l'autre").typed).toBe(
+      "Parti d'argent et de gueules à la fasce de l'un à l'autre."
+    );
+    expect(word(english, 'counterchanged').typed).toBe(
+      'Per pale argent and gules a fess counterchanged.'
+    );
+  });
+
+  test('leads across to the one word the other tongue says it with', () => {
+    expect(word(french, "de l'un à l'autre").otherTongue.map((seen) => seen.word)).toEqual([
+      'counterchanged',
+    ]);
+    expect(word(english, 'counterchanged').otherTongue.map((seen) => seen.word)).toEqual([
+      "de l'un à l'autre",
+    ]);
   });
 
   test('holds the two words that say what a field is rather than what it bears', () => {
@@ -262,7 +300,15 @@ describe('the arms a word is shown in', () => {
     for (const entry of vocabularyIn(language)) {
       const borne = entry.blazon.chargesOrOrdinaries ?? [];
       for (const one of borne) {
-        expect(isFur(one.tincture) && entry.rank !== 'tincture', entry.word).toBe(false);
+        // A band that takes the field's own tinctures names none of its own, so
+        // there is no fur here to have been chosen; a band cut into compons names
+        // two, and neither may be one.
+        const chosen = isCounterchanged(one.tincture)
+          ? []
+          : isCompony(one.tincture)
+            ? one.tincture.compony
+            : [one.tincture];
+        expect(chosen.some(isFur) && entry.rank !== 'tincture', entry.word).toBe(false);
       }
     }
   });

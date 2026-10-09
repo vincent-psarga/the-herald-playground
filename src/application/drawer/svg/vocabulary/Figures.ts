@@ -66,6 +66,18 @@ export type BorneFigure = {
 };
 
 /**
+ * A band, which may be cut across into compons as well as painted in one
+ * tincture.
+ *
+ * What it answers with is the compons of the second tincture, every other one
+ * along the band from the first, its own shapes cutting them to it. A band
+ * that is never compony has nothing to answer with, and leaves it off.
+ */
+export type OrdinaryFigure = BorneFigure & {
+  readonly compons?: (frame: Frame, count: number, pieces: number) => readonly Shape[];
+};
+
+/**
  * A charge, which is the one kind of borne figure a field may also be sown with.
  *
  * It answers for what it looks like at a single spot, and the dispositions

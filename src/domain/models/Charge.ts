@@ -1,5 +1,5 @@
 import { Modifier } from './Modifier';
-import { Tincture } from './Tinctures';
+import { Tinctured } from './Counterchanged';
 
 /**
  * The charges: the figures a field bears that follow no line across it.
@@ -80,6 +80,13 @@ export enum ChargeType {
  * and what may be said of that term is the model's to know — "an annulet voided"
  * is refused in either tongue, and for the same reason, so neither vocabulary
  * should have to hold the list.
+ *
+ * No charge is ever compony, and so nothing here says whether one may be.
+ * Every dictionary that names what compony is said of names bands — O'Kelly de
+ * Galway's "pièces de longueur" — and Wikipedia says why outright: "certain
+ * charges cannot be compony, for practical reasons, for example common charges
+ * … as they are generally not long and thin in shape". A charge added later is
+ * asked again only if a source cuts it so.
  */
 export class ChargeDefinition {
   /**
@@ -162,6 +169,12 @@ export function allowsModifier(type: ChargeType, modifier: Modifier): boolean {
  * ordinary may be the one top or the one edge of the shield — so there is no
  * list here saying which may and which may not.
  *
+ * The tincture may be no tincture at all but the field's own two, reversed,
+ * exactly as a band's may: whatever part of the figure lies over one half of the
+ * field is painted the other half's tincture. Several charges counterchanged are
+ * the commonest case there is — each of them falls where it falls, and each
+ * comes out the opposite of what it fell on.
+ *
  * The count is left off rather than set to one when a single charge is borne, so
  * that a lozenge reads back as the lozenge it was written as.
  *
@@ -171,7 +184,7 @@ export function allowsModifier(type: ChargeType, modifier: Modifier): boolean {
  */
 export type Charge = {
   type: ChargeType;
-  tincture: Tincture;
+  tincture: Tinctured;
   /** How many are borne, where more than one is. */
   count?: number;
   /**
