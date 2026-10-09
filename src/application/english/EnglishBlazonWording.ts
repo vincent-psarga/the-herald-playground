@@ -8,6 +8,9 @@ import { EnglishOrdinaryType } from '../../domain/translations/en/Ordinaries';
 import { EnglishTinctures } from '../../domain/translations/en/Tinctures';
 import { EnglishVariationType, OF } from '../../domain/translations/en/Variations';
 import { BlazonWording } from '../writer/BlazonWording';
+import { EnglishLiquids } from '../../domain/translations/en/Liquids';
+import { pouredIn } from '../../domain/translations/Liquids';
+import { withArticle } from '../Articles';
 import { CONJUNCTION, bearing } from './EnglishGrammar';
 
 export const EnglishBlazonWording: BlazonWording = {
@@ -22,6 +25,12 @@ export const EnglishBlazonWording: BlazonWording = {
   numbers: EnglishNumbers,
   // English names a tincture bare: "Azure.", "Per pale azure and or."
   introduce: (word) => word.value,
+  // "gutté de sang", "three gouttes d'eau": Parker gives a distinct term for each
+  // tincture of a drop, and they are French and keep their French article.
+  pour: (type, tincture) => {
+    const liquid = pouredIn(EnglishLiquids, type, tincture);
+    return liquid === undefined ? undefined : withArticle(liquid);
+  },
   bear: bearing,
   // English counts the pieces of a varied field wherever it can: Greaves' Guide
   // to Blazonry, published by the Royal Heraldry Society of Canada, uses "terms

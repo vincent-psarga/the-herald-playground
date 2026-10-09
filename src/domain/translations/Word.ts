@@ -41,6 +41,8 @@ export interface WordOptions {
   readonly saidOf?: readonly ChargeType[];
   /** What the word already says was done to the charge, for a name that says it. */
   readonly defaultModifier?: Modifier;
+  /** Whether "de" contracts to "d'" before the word, where the first letter is wrong. */
+  readonly needsElision?: boolean;
 }
 
 /**
@@ -136,6 +138,20 @@ export class Word {
   public readonly defaultTincture?: Tincture;
 
   /**
+   * Whether the French "de" contracts to "d'" before the word: "d'or", but "de
+   * gueules".
+   *
+   * Asked of every word a blazon introduces with that article, which is every
+   * French word and the French words English borrows too — Parker's "gutté
+   * d'eau" elides as French does. Elision can usually be read off the first
+   * letter, but not always: a French h is either mute, when the word behaves as
+   * though it began with the vowel behind it, or aspirated, when it does not —
+   * "d'hermine", but "de hérisson". So it is declared where the letter is wrong.
+   * A word nothing introduces with "de" is never asked.
+   */
+  public readonly needsElision: boolean;
+
+  /**
    * The charges this word alone is said of, where the armorials keep it for
    * some and not for others.
    *
@@ -187,6 +203,7 @@ export class Word {
     this.defaultTincture = options?.defaultTincture;
     this.saidOf = options?.saidOf;
     this.defaultModifier = options?.defaultModifier;
+    this.needsElision = options?.needsElision ?? /^[aeiouyàâäéèêëîïôöùûü]/.test(value);
     this.allowedTinctures =
       options?.allowedTinctures ??
       (this.defaultTincture === undefined ? TINCTURES : [this.defaultTincture]);

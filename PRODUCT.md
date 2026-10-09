@@ -112,10 +112,16 @@ Supported vocabulary as it stands:
 - **Sown fields** — any charge may be sown over a field of one tincture instead of borne on it:
   "semé de billettes d'or", "semy of billets or". It is the field's own state rather than something
   the field bears, so nothing is counted and a band blazoned after it covers the sowing. Where the
-  language names the strewing it is written by that name — billeté, billetty, besanté, bezanty —
-  and the name carries its tincture exactly as a charge's does. One figure only: a field sown with
+  language names the strewing it is written by that name — billeté, billetty, besanté, bezanty,
+  goutté, gutté — and the name carries its tincture exactly as a charge's does. One figure only: a field sown with
   two alternately is a second list and is not read. A plain field only: which half of a divided one
   was sown is said in words this does not read.
+- **Liquids** — a drop is named by what it is a drop of: gutté de sang, three gouttes d'eau.
+  English pours six tinctures after Parker — d'eau, d'or, de larmes, de poix, de sang, d'huile (or
+  d'olive) — and writes the liquid wherever it has one, borne or sown. French reads the three its
+  dictionary names — de sang, de poix, d'eau — and writes the tincture. A liquid is said of the
+  goutte and of nothing else, so a bend de sang is refused. The liquids are French words in either
+  tongue and keep their French article.
 - **Plain** — French may call a bare field plain, and the parser holds it to it: a field called
   plain that then bears something is refused. The word adds nothing to the model and is never
   written back. English is given no equivalent — Parker's "plain" is a band with a straight line —

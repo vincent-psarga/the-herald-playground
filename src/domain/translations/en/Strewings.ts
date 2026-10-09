@@ -35,15 +35,42 @@ export const EnglishStrewings: Strewings = {
     },
     { defaultTincture: Metals.or }
   ),
-  // A field sown with drops has a word — gutté, gutty — and the word does not
-  // take a tincture. Parker names the liquid instead: "when argent, gutté d'eau
-  // ... when gules, gutté de sang", which is a second vocabulary of waters and
-  // bloods and pitches that nothing here reads. So a sown goutte is sown in as
-  // many words, where "gutty argent" would be a form no armorial writes.
-  [ChargeType.goutte]: undefined,
+  // A field sown with drops. Parker files it "Guttée, gutty" and gives "the more
+  // frequent form" as "gutté, or gutty, goutty, gouté", so there are two words
+  // here as there are for vair: gutty is English, gutté the French participle
+  // English borrowed, and telling a reader they were one spelling would be
+  // false. Goutty and gouté are the same two with a letter changed.
+  //
+  // Neither carries a tincture. What follows it is the liquid the drops are of —
+  // gutté d'eau, gutté de sang — which is a tincture under another name, kept
+  // with the liquids and said of the drop wherever it is poured. A tincture with
+  // no liquid is written as a tincture: gutté purpure.
+  //
+  // Gutté is written back, being the form Parker's table of liquids is written
+  // in, and the liquids being French reads best after the French participle.
+  [ChargeType.goutte]: [
+    new Word(
+      'gutté',
+      {
+        value:
+          'A field sown with gouttes, from the French participle. The drops are named by their liquid where there is one: gutté de sang is gules, gutté d’eau argent.',
+        sources: [parker('Gouttes')],
+      },
+      { alternateWording: { gouté: {}, guttée: {} } }
+    ),
+    new Word(
+      'gutty',
+      {
+        value:
+          'A field sown with gouttes, taking the same liquids as gutté: gutty d’eau, goutty de larmes.',
+        sources: [parker('Gouttes')],
+      },
+      { alternateWording: { goutty: {} } }
+    ),
+  ],
   // English names no strewing of tears, having no name for the figure itself:
-  // gutty is the drop's word, and names a liquid where this would need a
-  // tincture. Sown in as many words, as the drop is.
+  // gutté is the drop's word, and says what the drop is of rather than what it
+  // looks like. Sown in as many words.
   [ChargeType.larme]: undefined,
   [ChargeType.mullet]: undefined,
   // The arms of France before they were reduced to three, and the one strewing

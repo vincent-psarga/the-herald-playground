@@ -119,6 +119,8 @@ export { counted, numberWord } from './domain/translations/Numbers';
 export type { NumberWords } from './domain/translations/Numbers';
 export { strewnIn, strewnTerms } from './domain/translations/Strewings';
 export type { Strewings } from './domain/translations/Strewings';
+export { pouredAs, pouredIn } from './domain/translations/Liquids';
+export type { Liquids } from './domain/translations/Liquids';
 export { Word } from './domain/translations/Word';
 export type {
   AlternateWording,
@@ -139,6 +141,7 @@ export { EnglishOrdinaryType } from './domain/translations/en/Ordinaries';
 export { EnglishChargeType } from './domain/translations/en/Charges';
 export { EnglishModifiers } from './domain/translations/en/Modifiers';
 export { EnglishStrewings } from './domain/translations/en/Strewings';
+export { EnglishLiquids } from './domain/translations/en/Liquids';
 export {
   EnglishColours,
   EnglishMetals,
@@ -152,6 +155,7 @@ export { FrenchOrdinaryType } from './domain/translations/fr/Ordinaries';
 export { FrenchChargeType } from './domain/translations/fr/Charges';
 export { FrenchModifiers } from './domain/translations/fr/Modifiers';
 export { FrenchStrewings } from './domain/translations/fr/Strewings';
+export { FrenchLiquids } from './domain/translations/fr/Liquids';
 export {
   FrenchColours,
   FrenchFurs,
@@ -167,8 +171,8 @@ export {
   cutIn,
   everyBearing,
   sownIn,
-  withArticle,
 } from './application/french/FrenchGrammar';
+export { expectedArticle, withArticle } from './application/Articles';
 export type { Agreement } from './application/french/FrenchGrammar';
 export { bearing as englishBearing, indefiniteArticle } from './application/english/EnglishGrammar';
 

@@ -23,6 +23,8 @@ import { NOT_IN_NUMBER, alone, bearings, modifiable, several } from '../parser/B
 import { ModifierForm, modifying } from '../parser/Modifiers';
 import { number } from '../parser/Numbers';
 import { BARE, strewing } from '../parser/Treatment';
+import { namedIn } from '../parser/Liquids';
+import { FrenchLiquids } from '../../domain/translations/fr/Liquids';
 import { varied } from '../parser/Variations';
 import {
   AND,
@@ -35,10 +37,9 @@ import {
   agreementsOf,
   bearing,
   everyBearing,
-  expectedArticle,
   sownIn,
-  withArticle,
 } from './FrenchGrammar';
+import { expectedArticle, withArticle } from '../Articles';
 
 // A tincture may be named bare ("or") or introduced by an article ("d'or"), so
 // the article is part of the grammar rather than part of the vocabulary.
@@ -59,6 +60,10 @@ const TINCTURE = apply(
   ),
   ({ term }) => term
 );
+
+// "Goutté de sang", "trois gouttes de poix": some authors name a drop by the
+// liquid it is a drop of, and are understood. The tincture is what comes back.
+const TINCTURE_OF = namedIn(TINCTURE, FrenchLiquids);
 
 // A band and a charge are borne by the same phrase and are read from one
 // vocabulary: "à la fasce" and "à la billette" differ in nothing a grammar can
@@ -195,11 +200,12 @@ const SOWN_CHARGE = kright(
 // is never both: what "plain" promises is that nothing was sown on it either.
 const TREATMENT = alt(
   apply(PLAIN, () => BARE),
-  strewing(alt(NAMED_STREWING, SOWN_CHARGE), TINCTURE)
+  strewing(alt(NAMED_STREWING, SOWN_CHARGE), (type) => TINCTURE_OF(type))
 );
 
 export const FrenchBlazonGrammar: BlazonGrammar = {
   tincture: TINCTURE,
+  tinctureOf: TINCTURE_OF,
   division: term(FrenchDivisionType, asDivision),
   // A furred field is named bare too, and nothing is counted after it: "Vairé
   // d'or et de gueules" is the whole of the phrase.
