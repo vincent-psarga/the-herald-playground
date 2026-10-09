@@ -1,3 +1,4 @@
+import { FrenchCompony } from '../../domain/translations/fr/Compony';
 import { FrenchDivisionType } from '../../domain/translations/fr/Divisions';
 import { FrenchFurType } from '../../domain/translations/fr/Furs';
 import { FrenchChargeType } from '../../domain/translations/fr/Charges';
@@ -23,6 +24,10 @@ export const FrenchBlazonWording: BlazonWording<FrenchWord> = {
   // "à la bordure de l'un à l'autre": the phrase stands where the tincture would
   // and agrees with nothing, naming the two halves rather than the band.
   counterchanged: FrenchCounterchanged,
+  // "à la bordure componée de gueules et d'argent": the participle agrees with
+  // the band as a modifier does, and the two tinctures follow it as a varied
+  // field's follow its name.
+  compony: FrenchCompony,
   strewings: FrenchStrewings,
   numbers: FrenchNumbers,
   introduce: withArticle,

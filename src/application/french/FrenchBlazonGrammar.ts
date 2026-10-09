@@ -7,6 +7,7 @@ import { FrenchCounterchanged } from '../../domain/translations/fr/Counterchange
 import { FrenchStrewings, SOWN } from '../../domain/translations/fr/Strewings';
 import { strewnTerms } from '../../domain/translations/Strewings';
 import { FrenchOrdinaryType } from '../../domain/translations/fr/Ordinaries';
+import { FrenchCompony } from '../../domain/translations/fr/Compony';
 import { FrenchWord } from '../../domain/translations/fr/FrenchWord';
 import { BlazonParseError } from '../../domain/errors/parsing/BlazonParseError';
 import { WrongOrdinaryArticle } from '../../domain/errors/parsing/WrongOrdinaryArticle';
@@ -29,6 +30,7 @@ import {
 } from '../parser/Combinators';
 import { asOrdinary, asDivision, asTincture } from '../parser/Failures';
 import { NOT_IN_NUMBER, alone, bearings, modifiable, several } from '../parser/Borne';
+import { ComponyForm, componying } from '../parser/Compony';
 import { ModifierForm, modifying } from '../parser/Modifiers';
 import { number } from '../parser/Numbers';
 import { BARE, strewing } from '../parser/Treatment';
@@ -139,6 +141,34 @@ const modifierAgreeing = (accepted: readonly Agreement[]) => {
   return modifying(known);
 };
 
+/**
+ * Every writing of the word for compony, and which of them a phrase agreeing so
+ * many ways will take — built as the modifiers' are, and for the same reason.
+ *
+ * Every spelling agrees by the one rule, "componné" as readily as "componé":
+ * the word's own spelling may be told otherwise, and the rest add "-e" and "-s"
+ * as a participle does.
+ */
+function componyAgreeing(accepted: readonly Agreement[]): ReadonlyMap<string, ComponyForm> {
+  const writings = (spelling: string) => (feminine: boolean, several: boolean) =>
+    spelling === FrenchCompony.value
+      ? FrenchCompony.agreeing(feminine, several)
+      : `${spelling}${feminine ? 'e' : ''}${several ? 's' : ''}`;
+  const forms = new Map<string, ComponyForm>();
+  for (const { value } of FrenchCompony.spellings) {
+    const written = writings(value);
+    const agreed = new Set(accepted.map(({ feminine, several }) => written(feminine, several)));
+    const expected = written(accepted[0].feminine, accepted[0].several);
+    for (const feminine of [false, true]) {
+      for (const several of [false, true]) {
+        const writing = written(feminine, several);
+        forms.set(writing, { agrees: agreed.has(writing), expected });
+      }
+    }
+  }
+  return forms;
+}
+
 // What the two gendered articles say of whatever follows the charge. The article
 // is the blazon's own word for the gender, so a blazon that has chosen one is
 // held to it: "au tourteau de gueules évidé", and never "évidée".
@@ -151,14 +181,34 @@ const FEMININE = modifierAgreeing([{ feminine: true, several: false }]);
 const asTheWordStands = (several: boolean) => (word: FrenchWord) =>
   modifierAgreeing(agreementsOf(word, several));
 
+// The word for compony, agreeing with the phrase as a modifier does: "à la
+// bordure componée", and under a count with the word's own gender, "à deux
+// bandes componées".
+const FEMININE_COMPONY = componying(componyAgreeing([{ feminine: true, several: false }]));
+const MASCULINE_COMPONY = componying(componyAgreeing([{ feminine: false, several: false }]));
+const componyAsTheWordStands = (several: boolean) => (word: FrenchWord) =>
+  componying(componyAgreeing(agreementsOf(word, several)));
+
 // Nothing borne is ever named bare: the article is what says the field bears it
 // rather than is divided by it. Three articles, the third being the two others
 // elided before a vowel — "à l'annelet", which says nothing about gender and is
 // therefore accepted for either.
 const ONE = alt(
-  modifiable(alone(borneAs(A_LA, (word) => `à la ${word.value}`)), () => FEMININE),
-  modifiable(alone(borneAs(AU, (word) => `au ${word.value}`)), () => MASCULINE),
-  modifiable(alone(borneAs(A_L, (word) => `à l'${word.value}`)), asTheWordStands(false))
+  modifiable(
+    alone(borneAs(A_LA, (word) => `à la ${word.value}`)),
+    () => FEMININE,
+    () => FEMININE_COMPONY
+  ),
+  modifiable(
+    alone(borneAs(AU, (word) => `au ${word.value}`)),
+    () => MASCULINE,
+    () => MASCULINE_COMPONY
+  ),
+  modifiable(
+    alone(borneAs(A_L, (word) => `à l'${word.value}`)),
+    asTheWordStands(false),
+    componyAsTheWordStands(false)
+  )
 );
 
 // Several of one, named in the plural after the count: "à trois chevrons", "à
@@ -167,7 +217,8 @@ const ONE = alt(
 // it agrees with the word rather than with anything the phrase supplied.
 const SEVERAL_BORNE = modifiable(
   kright(BEFORE_SEVERAL, several(BEARINGS, FrenchNumbers, asOrdinary, NOT_IN_NUMBER)),
-  asTheWordStands(true)
+  asTheWordStands(true),
+  componyAsTheWordStands(true)
 );
 
 const BORNE = alt(ONE, SEVERAL_BORNE);

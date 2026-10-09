@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { EnglishBlazonWriter } from '../../src/application/writer/EnglishBlazonWriter';
 import { FrenchBlazonWriter } from '../../src/application/writer/FrenchBlazonWriter';
 import { Languages, TONGUES } from '../../src/domain/models/Languages';
+import { isCompony } from '../../src/domain/models/Compony';
 import { isCounterchanged } from '../../src/domain/models/Counterchanged';
 import { isFur } from '../../src/domain/models/Tinctures';
 import { IBlazonWriter } from '../../src/domain/services/IBlazonWriter';
@@ -300,11 +301,14 @@ describe('the arms a word is shown in', () => {
       const borne = entry.blazon.chargesOrOrdinaries ?? [];
       for (const one of borne) {
         // A band that takes the field's own tinctures names none of its own, so
-        // there is no fur here to have been chosen.
-        const chosen = isCounterchanged(one.tincture) ? undefined : one.tincture;
-        expect(chosen !== undefined && isFur(chosen) && entry.rank !== 'tincture', entry.word).toBe(
-          false
-        );
+        // there is no fur here to have been chosen; a band cut into compons names
+        // two, and neither may be one.
+        const chosen = isCounterchanged(one.tincture)
+          ? []
+          : isCompony(one.tincture)
+            ? one.tincture.compony
+            : [one.tincture];
+        expect(chosen.some(isFur) && entry.rank !== 'tincture', entry.word).toBe(false);
       }
     }
   });

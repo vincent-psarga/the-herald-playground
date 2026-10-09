@@ -1,5 +1,6 @@
 import { Blazon, ChargeOrOrdinary, isOrdinary } from '../../../domain/models/Blazon';
 import { Charge, numberBorne } from '../../../domain/models/Charge';
+import { Compony, isCompony } from '../../../domain/models/Compony';
 import { isCounterchanged } from '../../../domain/models/Counterchanged';
 import {
   Field,
@@ -9,8 +10,10 @@ import {
   isFurred,
   isVariation,
 } from '../../../domain/models/Field';
-import { borne } from '../../../domain/models/Ordinary';
+import { Ordinary, OrdinaryDefinitions, borne } from '../../../domain/models/Ordinary';
 import { Frame, Painter } from './Ground';
+import { Shape } from './shapes/Shape';
+import { compony } from './painting/compony';
 import { countered } from './painting/countered';
 import { laid } from './painting/laid';
 import { over } from './painting/over';
@@ -113,6 +116,9 @@ function bearing(one: ChargeOrOrdinary, field: Field): Painter {
     ? ([ORDINARIES[one.type], borne(one)] as const)
     : ([drawn(one), numberBorne(one)] as const);
   const shapes = (frame: Frame) => figure.shapes(frame, count);
+  if (isCompony(one.tincture)) {
+    return cutInCompons(isOrdinary(one) ? one : undefined, shapes, one.tincture);
+  }
   if (!isCounterchanged(one.tincture)) {
     return laid(shapes, INKS[one.tincture]);
   }
@@ -129,6 +135,30 @@ function bearing(one: ChargeOrOrdinary, field: Field): Painter {
         INKS[field.secondTincture]
       )
     : over();
+}
+
+/**
+ * A band cut into compons of its two tinctures, as many as the band is
+ * understood to have.
+ *
+ * Painted in its first tincture alone where what is borne is no band, or the
+ * band or its drawing gives no compons. It cannot arrive — the parser refuses
+ * compony of a charge and of every band whose definition gives it no number,
+ * and every band that has one is drawn cut — so this says what to do about a
+ * drawing that has fallen behind the model.
+ */
+function cutInCompons(
+  band: Ordinary | undefined,
+  shapes: (frame: Frame) => readonly Shape[],
+  { compony: [first, second] }: Compony
+): Painter {
+  const pieces = band === undefined ? undefined : OrdinaryDefinitions[band.type].compons;
+  const compons = band === undefined ? undefined : ORDINARIES[band.type].compons;
+  if (band === undefined || pieces === undefined || compons === undefined) {
+    return laid(shapes, INKS[first]);
+  }
+  const count = borne(band);
+  return compony(shapes, (frame) => compons(frame, count, pieces), INKS[first], INKS[second]);
 }
 
 /**

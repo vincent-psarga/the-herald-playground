@@ -577,6 +577,52 @@ export const RULES: readonly Rule[] = [
     ],
   },
   {
+    id: 'one-word-for-compony',
+    heading: 'Compony is written componé and compony, however it was spelled',
+    law: (
+      <>
+        <p className="rule__law">
+          A band cut across into squares of two tinctures laid alternately is componé in French and
+          compony in English. The word stands where the tincture would, agrees with the band in
+          French — “à la bordure componée”, “à deux bandes componées” — and is followed by the two
+          tinctures, written back in the order they were named.
+        </p>
+        <p className="rule__law">
+          French spells it “componné” as readily, and Au blason des armoiries spells it no other
+          way; English writes “gobony”, its older form, and borrows the French “componée”. All of
+          them are read. “Componé” and “compony” are what come back: the first is what the armorials
+          read here write, and the second is what modern blazon writes, Parker filing it beside
+          gobony as the one word.
+        </p>
+        <p className="rule__law">
+          How many compons the band is cut into is not written, nor read: the armorials write “de
+          six pièces” now and then and leave it off as often. The band is drawn cut into as many as
+          it is understood to have. Only the bands the armorials write it of take it; any other
+          band, and any charge, is refused by name.
+        </p>
+      </>
+    ),
+    authority: (
+      <>
+        Parker: “Gobony, goboné, gobonated, and compony (fr. componé): said of an ordinary composed
+        of small squares of two tinctures alternately in one row”, adding that “the name gobony is a
+        corruption of some word (possibly even of compony)”. Au blason des armoiries, under
+        Componné: “Se dit des pals, bandes, fasces, etc., qui sont composés de pièces carrées,
+        appelées compons, chargés de deux émaux alternés”.
+      </>
+    ),
+    sources: [parker('Gobony'), blasonArmoiries('Componné', 'compone')],
+    cases: [
+      fr("D'azur semé de fleurs de lys d'or ; à la bordure componée de gueules et d'argent"),
+      fr("D'or à la bande componnée d'azur et d'argent"),
+      fr("D'argent à deux bandes componées de gueules et d'or"),
+      en('Or a bordure gobony azure and argent'),
+      en('Or a bend componée sable and argent'),
+      fr("D'or à la bordure componé de gueules et d'argent"),
+      fr("D'or à la fasce componée de gueules et d'argent"),
+    ],
+  },
+  {
     id: 'the-smaller-settlements',
     heading: 'The smaller settlements',
     law: (

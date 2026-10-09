@@ -1,5 +1,6 @@
 import { Blazon, ChargeOrOrdinary, isCharge, isOrdinary } from '../../domain/models/Blazon';
 import { ChargeType, numberBorne } from '../../domain/models/Charge';
+import { isCompony } from '../../domain/models/Compony';
 import { Tinctured, isCounterchanged } from '../../domain/models/Counterchanged';
 import { Modifier } from '../../domain/models/Modifier';
 import {
@@ -52,6 +53,11 @@ export interface BlazonWording<W extends Word = Word> {
    * what the phrase means travels with it onto the page that lists it.
    */
   readonly counterchanged: W;
+  /**
+   * The word saying a band is cut into compons of two tinctures: "componé",
+   * "compony". It agrees as a modifier agrees, and is written by the same rule.
+   */
+  readonly compony: W;
   /** What the language calls a field sown with each charge, where it has a word. */
   readonly strewings: Strewings<W>;
   /** How the language counts what a field bears several of. */
@@ -151,7 +157,7 @@ function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdi
   const several = count >= SEVERAL;
   const bearing = wording.bear(word, several ? counted(wording.numbers, count) : undefined);
   const modifier = modifying(wording, one, word)?.(several);
-  return [bearing, modifier, painting(wording, one.tincture, word)]
+  return [bearing, modifier, painting(wording, one.tincture, word, several)]
     .filter((part) => part !== undefined)
     .join(' ');
 }
@@ -159,9 +165,11 @@ function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdi
 /**
  * What the thing is painted with, written after the name.
  *
- * Three answers, and the last of them is silence. A band painted out of the
+ * Four answers, and the last of them is silence. A band painted out of the
  * field it is laid on is written with the phrase that says so, there being no
- * tincture to write. A name chosen for the tincture it means has said it by
+ * tincture to write. A band cut into compons is written with the word that says
+ * so, agreeing with the band, and its two tinctures after it in the order they
+ * were named: "à la bordure componée de gueules et d'argent". A name chosen for the tincture it means has said it by
  * being written — a besant is a gold coin entire — so nothing follows it, and an
  * armorial that wrote the tincture after such a name would be saying the one
  * thing twice. Everything else is written with its tincture.
@@ -169,10 +177,20 @@ function writeBorne<W extends Word>(wording: BlazonWording<W>, one: ChargeOrOrdi
 function painting<W extends Word>(
   wording: BlazonWording<W>,
   tincture: Tinctured,
-  named: W
+  named: W,
+  several: boolean
 ): string | undefined {
   if (isCounterchanged(tincture)) {
     return wording.counterchanged.value;
+  }
+  if (isCompony(tincture)) {
+    const [first, second] = tincture.compony;
+    return [
+      wording.modify(named, wording.compony, several),
+      writeTincture(wording, first),
+      wording.conjunction,
+      writeTincture(wording, second),
+    ].join(' ');
   }
   return named.defaultTincture === tincture ? undefined : writeTincture(wording, tincture);
 }

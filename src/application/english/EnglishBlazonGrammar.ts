@@ -1,3 +1,5 @@
+import { EnglishCompony } from '../../domain/translations/en/Compony';
+import { anyComponyWriting, componying } from '../parser/Compony';
 import { alt, apply, kright, seq } from 'typescript-parsec';
 import { EnglishDivisionType } from '../../domain/translations/en/Divisions';
 import { EnglishFurType } from '../../domain/translations/en/Furs';
@@ -60,6 +62,10 @@ const TREATMENT = strewing(alt(NAMED_STREWING, SOWN_CHARGE), term(EnglishTinctur
 // where another would have been right.
 const MODIFIER = modifying(anyWriting(EnglishModifiers));
 
+// "a bordure compony gules and argent": said where the tincture would be, and
+// agreeing with nothing, as "voided" agrees with nothing.
+const COMPONY = componying(anyComponyWriting(EnglishCompony));
+
 // "a bordure counterchanged": said where the tincture would be said, and saying
 // that there is none of its own. One word where French has a phrase it spells
 // two ways, and read by the same rule for that reason — the writings the
@@ -81,8 +87,16 @@ export const EnglishBlazonGrammar: BlazonGrammar = {
   // it instead, and English puts nothing before the count: "Or three chevrons
   // gules".
   borne: alt(
-    modifiable(alone(kright(ARTICLE, spelledTerm(BEARINGS, asOrdinary))), () => MODIFIER),
-    modifiable(several(BEARINGS, EnglishNumbers, asOrdinary, NOT_IN_NUMBER), () => MODIFIER)
+    modifiable(
+      alone(kright(ARTICLE, spelledTerm(BEARINGS, asOrdinary))),
+      () => MODIFIER,
+      () => COMPONY
+    ),
+    modifiable(
+      several(BEARINGS, EnglishNumbers, asOrdinary, NOT_IN_NUMBER),
+      () => MODIFIER,
+      () => COMPONY
+    )
   ),
   counterchanged: COUNTERCHANGED,
   and: AND,

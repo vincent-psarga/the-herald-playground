@@ -30,8 +30,8 @@ export enum OrdinaryType {
 }
 
 /**
- * What is true of an ordinary whatever blazon names it: today, whether a field
- * may bear more than one of it.
+ * What is true of an ordinary whatever blazon names it: whether a field may bear
+ * more than one of it, and whether it may be cut into compons.
  *
  * It is not the drawing and it is not the word. An ordinary is a term of the
  * model, and what may be said of that term is the model's to know — "three
@@ -57,13 +57,25 @@ export class OrdinaryDefinition {
    */
   public readonly canBeBorneInNumbers: boolean;
 
+  /**
+   * How many compons the band is cut into where it is borne compony, and nothing
+   * where it never is.
+   *
+   * One answer to two questions, because a band that may be compony and has no
+   * number to be cut into is a band nobody could draw. The number is the one the
+   * band is understood to have, no blazon this vocabulary reads counting them.
+   */
+  public readonly compons: number | undefined;
+
   constructor(
     public readonly type: OrdinaryType,
     opts?: Partial<{
       canBeBorneInNumbers: boolean;
+      compons: number;
     }>
   ) {
     this.canBeBorneInNumbers = opts?.canBeBorneInNumbers ?? false;
+    this.compons = opts?.compons;
   }
 }
 
@@ -87,7 +99,13 @@ export const OrdinaryDefinitions: Record<OrdinaryType, OrdinaryDefinition> = {
   [OrdinaryType.barGemel]: new OrdinaryDefinition(OrdinaryType.barGemel, {
     canBeBorneInNumbers: true,
   }),
-  [OrdinaryType.bend]: new OrdinaryDefinition(OrdinaryType.bend, { canBeBorneInNumbers: true }),
+  // Compony in six: no source gives a bend a usual number, but six is the one
+  // the armorials write when they write one — Vallin's "bande componnée d'argent
+  // et d'azur de six pièces", the "bâton componé … de six pièces" of Évreux.
+  [OrdinaryType.bend]: new OrdinaryDefinition(OrdinaryType.bend, {
+    canBeBorneInNumbers: true,
+    compons: 6,
+  }),
   [OrdinaryType.bendSinister]: new OrdinaryDefinition(OrdinaryType.bendSinister, {
     canBeBorneInNumbers: true,
   }),
@@ -101,7 +119,10 @@ export const OrdinaryDefinitions: Record<OrdinaryType, OrdinaryDefinition> = {
   [OrdinaryType.cross]: new OrdinaryDefinition(OrdinaryType.cross),
   [OrdinaryType.saltire]: new OrdinaryDefinition(OrdinaryType.saltire),
   // The edge of the shield, and a shield has one of those too.
-  [OrdinaryType.bordure]: new OrdinaryDefinition(OrdinaryType.bordure),
+  //
+  // Compony in sixteen, which is Parker's number: "A bordure compony should
+  // consist of sixteen pieces or gobbits gyronwise."
+  [OrdinaryType.bordure]: new OrdinaryDefinition(OrdinaryType.bordure, { compons: 16 }),
 };
 
 /** The fewest of an ordinary that is more than one of it. */

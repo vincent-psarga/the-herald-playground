@@ -1,3 +1,4 @@
+import { EnglishCompony } from '../../domain/translations/en/Compony';
 import { EnglishDivisionType } from '../../domain/translations/en/Divisions';
 import { EnglishFurType } from '../../domain/translations/en/Furs';
 import { EnglishChargeType } from '../../domain/translations/en/Charges';
@@ -22,6 +23,8 @@ export const EnglishBlazonWording: BlazonWording = {
   // "a bordure counterchanged": one word where French writes a phrase, and one
   // word for both of the cases French tries to tell apart.
   counterchanged: EnglishCounterchanged,
+  // "a bordure compony gules and argent", unchanged after any number of bands.
+  compony: EnglishCompony,
   strewings: EnglishStrewings,
   numbers: EnglishNumbers,
   // English names a tincture bare: "Azure.", "Per pale azure and or."

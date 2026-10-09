@@ -139,6 +139,14 @@ Supported vocabulary as it stands:
   disposition and is not read, so several counterchanged charges fall where the drawer puts them.
   It is not a tincture and is never one — a colouring answers for the tinctures, and what this is
   painted with is known only once the field is.
+- **Compony (1)** — a band may be cut across into compons of two tinctures laid alternately,
+  "à la bordure componée de gueules et d'argent", "a bordure compony gules and argent". It stands
+  where the tincture would, as counterchanging does, and names two: the first takes the first
+  compon. French agrees it with the band and reads "componné" too; English reads "gobony" and the
+  borrowed "componée"; "componé" and "compony" are written. The bend and the bordure take it,
+  being the two the armorials write, and the bordure is cut gyronwise into Parker's sixteen. The
+  number of compons — "de six pièces" — is not read, and a band never cut so, or a charge, is
+  refused by name. Two rows — contre-componé, counter-compony — are not read either.
 - **Languages (2)** — French and English, both reading and writing. French agrees its article with
   the word it introduces, elision included — "à la billette", "au losange", "à l'annelet"; English
   chooses "a" or "an".

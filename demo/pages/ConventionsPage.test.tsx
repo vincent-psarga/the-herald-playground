@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
+import { isCompony } from '../../src/domain/models/Compony';
 import { isCounterchanged } from '../../src/domain/models/Counterchanged';
 import { isDivision, isFurred, isPlain, isVariation } from '../../src/domain/models/Field';
 import { Languages } from '../../src/domain/models/Languages';
@@ -56,6 +57,7 @@ const HEADINGS = [
   'A modifier is said only of a charge that can show it',
   'A word the armorials keep for one charge is written of that charge alone',
   'Counterchanging is one thing, whatever French calls it',
+  'Compony is written componé and compony, however it was spelled',
   'The smaller settlements',
 ];
 
@@ -187,6 +189,35 @@ describe('what each rule shows', () => {
         'Per pale argent and sable three mascles counterchanged.',
       ]
     );
+  });
+
+  test('writes compony as componé and compony, whichever spelling was read', () => {
+    mount(<ConventionsPage />);
+    expect(shown("D'or à la bande componnée d'azur et d'argent").written).toEqual([
+      "D'or à la bande componée d'azur et d'argent.",
+      'Or a bend compony azure and argent.',
+    ]);
+    expect(shown('Or a bordure gobony azure and argent').written).toEqual([
+      "D'or à la bordure componée d'azur et d'argent.",
+      'Or a bordure compony azure and argent.',
+    ]);
+    expect(shown('Or a bend componée sable and argent').written).toEqual([
+      "D'or à la bande componée de sable et d'argent.",
+      'Or a bend compony sable and argent.',
+    ]);
+  });
+
+  test('agrees compony with the band in French, and refuses it of a band never cut so', () => {
+    mount(<ConventionsPage />);
+    expect(shown("D'argent à deux bandes componées de gueules et d'or").written).toContain(
+      "D'argent à deux bandes componées de gueules et d'or."
+    );
+    expect(shown("D'or à la bordure componé de gueules et d'argent").refused).toBe(
+      'Wrong agreement: expected "componée"'
+    );
+    const refused = shown("D'or à la fasce componée de gueules et d'argent");
+    expect(refused.refused).toBe('Wrong modifier: fasce is never componée');
+    expect(refused.arms).toBe(0);
   });
 
   test('refuses a name that has already said what the figure is painted with', () => {
@@ -414,11 +445,22 @@ describe('the rule of tincture, which every example must keep', () => {
         if (isCounterchanged(one.tincture)) {
           continue;
         }
-        const laid = rank(one.tincture);
-        expect(
-          ground === 'fur' || laid === 'fur' || ground !== laid,
-          `«${typed}» lays ${laid} on ${ground}`
-        ).toBe(true);
+        // A band cut into compons of a metal and a colour is exempt, as any
+        // charge composed of both is: "The rule of tincture does not apply when
+        // a charge is composed of both a colour and metal" (Wikipedia, Rule of
+        // tincture). Two of a kind are weighed, each of them.
+        const laying = isCompony(one.tincture) ? one.tincture.compony : [one.tincture];
+        const kinds = new Set(laying.map(rank));
+        if (kinds.size > 1 && !kinds.has('fur')) {
+          continue;
+        }
+        for (const tincture of laying) {
+          const laid = rank(tincture);
+          expect(
+            ground === 'fur' || laid === 'fur' || ground !== laid,
+            `«${typed}» lays ${laid} on ${ground}`
+          ).toBe(true);
+        }
       }
     }
   });

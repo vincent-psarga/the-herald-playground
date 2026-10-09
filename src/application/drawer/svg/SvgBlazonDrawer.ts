@@ -1,4 +1,5 @@
 import { Blazon } from '../../../domain/models/Blazon';
+import { isCompony } from '../../../domain/models/Compony';
 import { isCounterchanged } from '../../../domain/models/Counterchanged';
 import { isDivision, isFurred, isVariation } from '../../../domain/models/Field';
 import { Tincture } from '../../../domain/models/Tinctures';
@@ -44,7 +45,8 @@ export class SvgBlazonDrawer implements IBlazonDrawer {
  * placed or it is drawn in nothing at all.
  *
  * A band painted out of the field names none of its own and adds none here: what
- * it is painted with is the field's two, which are already among these.
+ * it is painted with is the field's two, which are already among these. A band
+ * cut into compons adds both of its own.
  */
 function tincturesOf(blazon: Blazon): readonly Tincture[] {
   const painted = blazon.field;
@@ -54,9 +56,9 @@ function tincturesOf(blazon: Blazon): readonly Tincture[] {
       : [painted.tincture, ...(painted.semy === undefined ? [] : [painted.semy.tincture])];
   return [
     ...field,
-    ...(blazon.chargesOrOrdinaries ?? [])
-      .map(({ tincture }) => tincture)
-      .filter((tincture) => !isCounterchanged(tincture)),
+    ...(blazon.chargesOrOrdinaries ?? []).flatMap(({ tincture }) =>
+      isCounterchanged(tincture) ? [] : isCompony(tincture) ? tincture.compony : [tincture]
+    ),
   ];
 }
 

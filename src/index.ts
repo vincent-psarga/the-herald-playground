@@ -27,6 +27,8 @@ export type {
 } from './application/armorial/ArmorialReading';
 export { COUNTERCHANGED, isCounterchanged } from './domain/models/Counterchanged';
 export type { Counterchanged, Tinctured } from './domain/models/Counterchanged';
+export { isCompony } from './domain/models/Compony';
+export type { Compony } from './domain/models/Compony';
 export {
   DIVISIONS,
   FURS,
