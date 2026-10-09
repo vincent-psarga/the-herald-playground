@@ -29,10 +29,12 @@ export const lexer = buildLexer<TokenKind>([
   // read as numbers yet.
   [true, /^[0-9]+/g, TokenKind.Number],
   [true, /^\./g, TokenKind.Period],
-  // What a blazon sets between the things a field bears: "à trois bandes de
-  // sable ; à la bordure de gueules". Which mark is used says nothing, so the
-  // two are one kind, and a blazon that sets none is read just the same.
-  [true, /^[,;]/g, TokenKind.Separator],
+  // What a blazon sets between the things a field bears, and between the parts
+  // of a divided field: "à trois bandes de sable ; à la bordure de gueules",
+  // "mi-parti : au premier d'or, et au second de gueules". Which mark is used
+  // says nothing, so the three are one kind, and a blazon that sets none is read
+  // just the same.
+  [true, /^[,;:]/g, TokenKind.Separator],
   [false, /^\s+/g, TokenKind.Space],
 ]);
 

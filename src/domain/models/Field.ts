@@ -1,3 +1,4 @@
+import type { Blazon } from './Blazon';
 import { ChargeType } from './Charge';
 import { Tincture } from './Tinctures';
 
@@ -5,11 +6,12 @@ import { Tincture } from './Tinctures';
  * The field terms: every way a field may be painted, in one vocabulary.
  *
  * Four kinds of thing are named here — a field of one tincture, a field divided
- * along a line, that line taken over and over into a row of equal pieces, and a
- * pelt cut from two tinctures — and they are named together because a
- * blazon names them in the same place, first of all, before anything the field
- * bears. Which kind a term belongs to is declared with the term below, once, and
- * every reading, writing and drawing of it is settled by that declaration.
+ * along a line into parts each of which is arms, that line taken over and over
+ * into a row of equal pieces, and a pelt cut from two tinctures — and they are
+ * named together because a blazon names them in the same place, first of all,
+ * before anything the field bears. Which kind a term belongs to is declared with
+ * the term below, once, and every reading, writing and drawing of it is settled
+ * by that declaration.
  *
  * The plain field is a term here like the rest, though it names no cut of the
  * field: it is what a field is when nothing has been done to it, and naming it
@@ -72,10 +74,12 @@ export enum FieldType {
  * apart.
  *
  * Nothing about a term's spelling says which kind it is, and nothing about the
- * shape of the field it makes says so either: three of the four kinds carry a
- * type and two tinctures, and the words for them stand in the same place in a
- * blazon. So the kind is declared with the term and read off the declaration,
- * and a term added to the vocabulary belongs to no kind until it is given one.
+ * shape of the field it makes says so either: a varied field and a furred one
+ * carry a type and the same two tinctures, the words for every kind stand in the
+ * same place in a blazon, and the shapes that differ differ in what the kind
+ * needed rather than in anything that could be read back off them. So the kind
+ * is declared with the term and read off the declaration, and a term added to
+ * the vocabulary belongs to no kind until it is given one.
  */
 export enum FieldKind {
   plain = 'FieldKind.plain',
@@ -114,21 +118,33 @@ export class PlainDefinition extends FieldDefinition<FieldKind.plain> {
 }
 
 /**
- * A field divided along a line, which has nothing further to declare: the line
- * is drawn where its name says, and both halves are of a size.
+ * A field divided along a line, and into how many parts that line cuts it.
  *
- * Once along it, for four of the six. The other two are cut by a line that
- * crosses itself and leave four pieces rather than two, but they declare no more
- * than the rest do: the pieces are still of a size, they are still painted in two
- * tinctures, and which of them takes which is settled by the line's own name.
- * So there is nothing here to tell the two kinds apart, and the drawing is the
- * only thing that needs to know.
+ * The line is drawn where its name says and the parts are all of a size, so the
+ * count is the only thing such a term has to declare — and it has to, because a
+ * line that crosses itself leaves four parts where a line drawn once leaves two.
+ *
+ * It is declared here and not in a vocabulary because the answer is the same in
+ * every tongue: écartelé leaves four quarters and so does quarterly, and neither
+ * tongue is free to disagree. Everything that reads, writes or draws a divided
+ * field asks this rather than counting for itself, so a partition added with the
+ * wrong count is wrong in one place instead of five.
  */
 export class DivisionDefinition extends FieldDefinition<FieldKind.division> {
-  constructor(type: FieldType) {
+  /** How many parts the line cuts the field into: two, or four where it crosses itself. */
+  public readonly parts: number;
+
+  constructor(type: FieldType, opts?: Partial<{ parts: number }>) {
     super(type, FieldKind.division);
+    this.parts = opts?.parts ?? HALVES;
   }
 }
+
+/** The parts a line drawn once leaves, which is what most partitions leave. */
+export const HALVES = 2;
+
+/** The parts a line that crosses itself leaves: the quarters. */
+export const QUARTERS = 4;
 
 /** A field cut along one line over and over, and how it is counted. */
 export class VariationDefinition extends FieldDefinition<FieldKind.variation> {
@@ -188,8 +204,11 @@ export const FieldDefinitions = {
   [FieldType.fess]: new DivisionDefinition(FieldType.fess),
   [FieldType.bend]: new DivisionDefinition(FieldType.bend),
   [FieldType.bendSinister]: new DivisionDefinition(FieldType.bendSinister),
-  [FieldType.cross]: new DivisionDefinition(FieldType.cross),
-  [FieldType.saltire]: new DivisionDefinition(FieldType.saltire),
+  // The two whose line crosses itself, and the only terms here that leave more
+  // than two parts. Both are quartered — the one into squares and the other into
+  // triangles — and a quarter carries a coat exactly as a half does.
+  [FieldType.cross]: new DivisionDefinition(FieldType.cross, { parts: QUARTERS }),
+  [FieldType.saltire]: new DivisionDefinition(FieldType.saltire, { parts: QUARTERS }),
 
   // Six pieces for the four that repeat a line: both tongues understand six and
   // neither writes it — "Le bandé est normalement divisé en six pièces (qu'on ne
@@ -313,20 +332,134 @@ export type Plain = {
  * One charge, for now. A field sown with two of them alternately — "semé alterné
  * de tours et de fleurs de lys" — is a second list and is not read.
  *
- * Only a plain field carries one. Heraldry sows a divided field as readily, but
- * which half is sown is a thing the blazon says in words this does not yet read,
- * and a model able to hold the answer would be claiming to have read it.
+ * Only a plain field carries one, which is no bar to sowing a divided field: a
+ * half is arms with a plain field of its own, and the sowing belongs to that
+ * field. Both tongues say which half — "Parti de gueules semé de larmes
+ * d'argent, et de sinople semé de larmes d'or" sows each with its own — and both
+ * are read. What no tongue says here is a sowing laid over a divided field
+ * entire, and nothing holds one.
  */
 export type Semy = {
   type: ChargeType;
   tincture: Tincture;
 };
 
+/**
+ * A field divided along a line, and what each part of it carries.
+ *
+ * A part is arms and not a tincture, because heraldry charges one: "Parti
+ * d'azur à trois fleurs de lys d'or et d'hermine" divides the field per pale,
+ * sets three lilies on the half at dexter, and leaves the other half the fur it
+ * named. The half at dexter is a shield's worth of blazon and is held as one.
+ *
+ * The part that carries nothing but a tincture — which is what most parts carry
+ * — is arms that bear nothing, its list left off exactly as a plain field's is.
+ * So there is one way to say a part and not two, and a part read from "parti
+ * d'azur et d'or" comes back out as the tincture it was written as.
+ *
+ * A list rather than a part apiece, because how many there are is the term's to
+ * say: a line drawn once leaves two and a line that crosses itself leaves four,
+ * and every one of them is a part in the same sense. The list is as long as the
+ * term declares — nothing here is free to hold three — and what holds it to that
+ * is how a division comes to be built: filled out from a pair, or ranked part by
+ * part with every rank accounted for.
+ *
+ * They stand in the order a blazon ranks them, which both tongues number from
+ * the part in chief: the upper, or the one at dexter where two stand side by
+ * side. Of four they run along the chief and then along the base, so the parts
+ * ranked 1 and 4 stand corner to corner.
+ */
 export type Division = {
   type: DivisionType;
-  firstTincture: Tincture;
-  secondTincture: Tincture;
+  parts: readonly Blazon[];
 };
+
+/** A part that carries one tincture and bears nothing, as most parts do. */
+export function half(tincture: Tincture): Blazon {
+  return { field: { type: FieldType.plain, tincture } };
+}
+
+/** How many parts this partition's line cuts the field into. */
+export function partsOf(type: DivisionType): number {
+  return FieldDefinitions[type].parts;
+}
+
+/** Whether this is as many parts as the partition leaves, no more and no fewer. */
+export function dividedInto(type: DivisionType, parts: number): boolean {
+  return parts === partsOf(type);
+}
+
+/**
+ * The parts of a field a blazon said two things about, which is what the short
+ * form of every partition says however many parts the line leaves.
+ *
+ * Two parts take one apiece. Four take them cornerwise — the first in the parts
+ * ranked 1 and 4, the second in the two between them — which is what both
+ * tongues mean by "écartelé d'argent et d'azur", and what puts the first in the
+ * part in chief either way.
+ *
+ * The rule lives here rather than with whatever is filling the parts out,
+ * because it is the same rule for a blazon being read, one being written and one
+ * being shown: which parts a pair falls into is a fact about the line.
+ */
+export function fillingOut(type: DivisionType, first: Blazon, second: Blazon): readonly Blazon[] {
+  return partsOf(type) === QUARTERS ? [first, second, second, first] : [first, second];
+}
+
+/**
+ * Whether the short form says this division whole: the name of the line and two
+ * arms with the conjunction between them, which is what the armorials write and
+ * what `fillingOut` fills the parts out from.
+ *
+ * It is asked wherever a divided field is put back into words — by the writer
+ * choosing a form, and by anything showing a blazon's shape beside it — because
+ * it is one question about the field and not a matter of taste.
+ *
+ * Two parts are said by it unless the second carries something. The short form
+ * has nowhere to put that: what stands after the second part belongs to the
+ * shield, so a blazon written that way comes back as different arms.
+ *
+ * Four are said by it only where they are the pair it would fill them out from
+ * — the first and fourth alike, the second and third alike, and none of them
+ * carrying anything — because two arms is the whole of what it can say about
+ * four parts.
+ */
+export function saidInTwo(division: Division): boolean {
+  const parts = division.parts;
+  if (partsOf(division.type) !== QUARTERS) {
+    return !carriesAnything(parts[1]);
+  }
+  return (
+    !parts.some(carriesAnything) && sameArms(parts[0], parts[3]) && sameArms(parts[1], parts[2])
+  );
+}
+
+/** Whether a part carries anything beyond the tincture of its field. */
+function carriesAnything(part: Blazon): boolean {
+  const field = part.field;
+  return (
+    (part.chargesOrOrdinaries ?? []).length !== 0 || !isPlain(field) || field.semy !== undefined
+  );
+}
+
+/**
+ * Whether two parts carry the same arms, which is what lets one rank speak for
+ * both.
+ *
+ * Compared by what they are made of rather than by identity, because a blazon
+ * read from "aux 1 et 4" hands the one object to both parts and a blazon built
+ * by hand need not have. Arms are plain data — a field, and a list of what is
+ * laid on it — so writing them out is a fair reading of sameness, and two arms
+ * that write the same are the same arms.
+ */
+export function sameArms(one: Blazon, other: Blazon): boolean {
+  return JSON.stringify(one) === JSON.stringify(other);
+}
+
+/** The same, for the commonest thing a blazon says of two parts: their tinctures. */
+export function painted(type: DivisionType, first: Tincture, second: Tincture): readonly Blazon[] {
+  return fillingOut(type, half(first), half(second));
+}
 
 /**
  * A varied field, and how many pieces it is cut into, counting both tinctures.
@@ -353,9 +486,9 @@ export type Furred = {
 };
 
 /**
- * Which kind a field's term was declared under is what tells the four apart: the
- * three that cut the field up all carry a type and two tinctures, and nothing
- * about the shape of the object says which it is.
+ * Which kind a field's term was declared under is what tells the four apart: a
+ * varied field and a furred one carry a type and the same two tinctures, and
+ * nothing about the shape of the object says which it is.
  *
  * Each is asked after by name rather than left to be whatever the others are
  * not, so that a kind added to the vocabulary is refused by all four until it is

@@ -1,14 +1,17 @@
 import { describe, expect, test } from 'vitest';
 import {
   DIVISIONS,
+  DivisionType,
   FieldType,
   Furred,
   VARIATIONS,
   VariationType,
+  half,
+  painted,
 } from '../../../domain/models/Field';
 import { ChargeType } from '../../../domain/models/Charge';
 import { OrdinaryType } from '../../../domain/models/Ordinary';
-import { Colours, Furs, Metals, SHADES, TINCTURES } from '../../../domain/models/Tinctures';
+import { Colours, Furs, Metals, SHADES, Shade, TINCTURES } from '../../../domain/models/Tinctures';
 import { ColorModel, isPattern } from '../../../domain/services/IBlazonDrawer';
 import { HatchingColours } from '../../../infra/colours/HatchingColours';
 import { WikipediaColours } from '../../../infra/colours/WikipediaColours';
@@ -36,6 +39,37 @@ const paints = (svg: string) => Array.from(inside(svg).matchAll(/="(#[0-9a-f]{6}
 const inside = (svg: string) => {
   const from = svg.indexOf('<g clip-path');
   return svg.slice(from, svg.indexOf('</g>', from));
+};
+
+/**
+ * Where each figure of one paint was drawn, and how big, in the drawing's own
+ * coordinates.
+ *
+ * A figure is written about its own origin and placed by scaling its numbers, so
+ * the numbers in its path are where it ended up: every one of them is a
+ * coordinate, x first and y second, over and over. What is drawn inside a part
+ * of a divided field is drawn in the part's own corner and moved there by the
+ * one translation, which is added back here so that every box is answered for in
+ * the same coordinates.
+ */
+const spotted = (svg: string, tincture: Shade) => {
+  const paint = WikipediaColours[tincture];
+  const fill = isPattern(paint) ? paint.fill : paint;
+  const moved = /<g transform="translate\((-?[\d.]+) (-?[\d.]+)\)">/.exec(inside(svg));
+  const [dx, dy] = [Number(moved?.[1] ?? 0), Number(moved?.[2] ?? 0)];
+  return Array.from(
+    inside(svg).matchAll(new RegExp(`<path d="([^"]+)" fill="${fill}"/>`, 'g')),
+    ([, path]) => {
+      const numbers = Array.from(path.matchAll(/-?\d*\.?\d+/g), (found) => Number(found[0]));
+      const xs = numbers.filter((_, along) => along % 2 === 0).map((x) => x + dx);
+      const ys = numbers.filter((_, along) => along % 2 === 1).map((y) => y + dy);
+      return {
+        x: Math.min(...xs),
+        y: Math.min(...ys),
+        size: Math.max(...xs) - Math.min(...xs),
+      };
+    }
+  );
 };
 
 describe('SvgBlazonDrawer', () => {
@@ -82,7 +116,7 @@ describe('SvgBlazonDrawer', () => {
     // passes like any other partition, each pass covering two quarters.
     test.each(DIVISIONS)('paints both halves of a field per %s, the first first', (type) => {
       const svg = drawer.draw({
-        field: { type, firstTincture: Colours.azure, secondTincture: Metals.or },
+        field: { type, parts: [half(Colours.azure), half(Metals.or)] },
       });
       expect([...new Set(fills(svg))]).toEqual([
         WikipediaColours[Colours.azure],
@@ -92,61 +126,299 @@ describe('SvgBlazonDrawer', () => {
 
     test('gives the first tincture the half in chief', () => {
       const perPale = drawer.draw({
-        field: {
-          type: FieldType.pale,
-          firstTincture: Colours.gules,
-          secondTincture: Metals.argent,
-        },
+        field: { type: FieldType.pale, parts: [half(Colours.gules), half(Metals.argent)] },
       });
-      // Dexter is the viewer's left, so the first tincture starts at x=0.
-      expect(perPale).toContain(`<rect x="0" y="0" width="100" height="240" fill="#ff0000"/>`);
-      expect(perPale).toContain(`<rect x="100" y="0" width="100" height="240" fill="#ffffff"/>`);
+      // Dexter is the viewer's left, so the first tincture starts at x=0. Each
+      // half covers a box of the field, written as the path that also cuts off
+      // whatever the half carries.
+      expect(perPale).toContain(`<path d="M 0 0 H 100 V 240 H 0 Z" fill="#ff0000"/>`);
+      expect(perPale).toContain(`<path d="M 100 0 H 200 V 240 H 100 Z" fill="#ffffff"/>`);
     });
 
-    test('gives the first tincture the quarters at dexter chief and sinister base', () => {
+    test('paints a half that carries nothing and says no more about it', () => {
+      // Which is every divided field in the armorials: two shapes, no clip and
+      // no group, exactly as it was drawn before a half could carry anything.
+      const svg = drawer.draw({
+        field: { type: FieldType.pale, parts: [half(Colours.gules), half(Metals.argent)] },
+      });
+      expect(svg).not.toContain('<clipPath id="blason-part');
+      expect(svg).not.toContain('<g transform');
+    });
+
+    test('gives the first tincture the quarters ranked 1 and 4', () => {
       const quarterly = drawer.draw({
         field: {
           type: FieldType.cross,
-          firstTincture: Colours.gules,
-          secondTincture: Metals.argent,
+          parts: painted(FieldType.cross, Colours.gules, Metals.argent),
         },
       });
-      // The quarters are numbered from dexter chief, which is the viewer's top
-      // left: the first tincture takes that one and the one across from it.
-      expect(quarterly).toContain(`<rect x="0" y="0" width="100" height="120" fill="#ff0000"/>`);
-      expect(quarterly).toContain(
-        `<rect x="100" y="120" width="100" height="120" fill="#ff0000"/>`
-      );
-      expect(quarterly).toContain(`<rect x="100" y="0" width="100" height="120" fill="#ffffff"/>`);
-      expect(quarterly).toContain(`<rect x="0" y="120" width="100" height="120" fill="#ffffff"/>`);
+      // The quarters are ranked along the chief and then along the base, from
+      // dexter — the viewer's left — so the first and the fourth stand corner to
+      // corner and one tincture takes both.
+      expect(quarterly).toContain(`<path d="M 0 0 H 100 V 120 H 0 Z" fill="#ff0000"/>`);
+      expect(quarterly).toContain(`<path d="M 100 120 H 200 V 240 H 100 Z" fill="#ff0000"/>`);
+      expect(quarterly).toContain(`<path d="M 100 0 H 200 V 120 H 100 Z" fill="#ffffff"/>`);
+      expect(quarterly).toContain(`<path d="M 0 120 H 100 V 240 H 0 Z" fill="#ffffff"/>`);
     });
 
     test('gives the first tincture the triangles in chief and in base', () => {
       const perSaltire = drawer.draw({
         field: {
           type: FieldType.saltire,
-          firstTincture: Colours.gules,
-          secondTincture: Metals.argent,
+          parts: painted(FieldType.saltire, Colours.gules, Metals.argent),
         },
       });
-      // The diagonals meet in the middle, so all four triangles have a corner
-      // there: the first tincture takes the two standing on the top and bottom
-      // edges, the second the two standing on the flanks.
-      expect(perSaltire).toContain(`<polygon points="0,0 200,0 100,120" fill="#ff0000"/>`);
-      expect(perSaltire).toContain(`<polygon points="0,240 200,240 100,120" fill="#ff0000"/>`);
-      expect(perSaltire).toContain(`<polygon points="0,0 0,240 100,120" fill="#ffffff"/>`);
-      expect(perSaltire).toContain(`<polygon points="200,0 200,240 100,120" fill="#ffffff"/>`);
+      // Ranked in chief, at dexter, at senestre, in pointe — so the first and
+      // the fourth are the two standing on the top and bottom edges, and the
+      // pair between them are the flanks.
+      expect(perSaltire).toContain(`<path d="M 0 0 L 200 0 L 100 120 Z" fill="#ff0000"/>`);
+      expect(perSaltire).toContain(`<path d="M 0 240 L 200 240 L 100 120 Z" fill="#ff0000"/>`);
+      expect(perSaltire).toContain(`<path d="M 0 0 L 0 240 L 100 120 Z" fill="#ffffff"/>`);
+      expect(perSaltire).toContain(`<path d="M 200 0 L 200 240 L 100 120 Z" fill="#ffffff"/>`);
     });
 
     test('paints the same tincture on both sides when asked', () => {
       const svg = drawer.draw({
-        field: {
-          type: FieldType.fess,
-          firstTincture: Colours.sable,
-          secondTincture: Colours.sable,
-        },
+        field: { type: FieldType.fess, parts: [half(Colours.sable), half(Colours.sable)] },
       });
       expect(fills(svg)).toEqual(['#000000', '#000000']);
+    });
+  });
+
+  describe('a part cut into pieces of its own', () => {
+    const bendy = (pieces: number) => ({
+      field: {
+        type: FieldType.bendy as const,
+        firstTincture: Metals.or,
+        secondTincture: Colours.azure,
+        pieces,
+      },
+    });
+
+    const quartered = (pieces = 6) =>
+      drawer.draw({
+        field: {
+          type: FieldType.cross,
+          parts: [bendy(pieces), half(Colours.gules), half(Colours.gules), bendy(pieces)],
+        },
+      });
+
+    // The part is painted the first tincture by the painting that covers every
+    // part, and the pieces are laid over it in the second — which is how a whole
+    // field cut into pieces is painted, and is why the part needs no paint of
+    // its own.
+    test('lays the pieces over the part, in the second tincture', () => {
+      const svg = quartered();
+      const laid = fills(svg);
+      // Every part first, the cut ones in the first tincture of their own
+      // field; then nothing but the second tincture, which is every other piece
+      // of the two quarters that are cut.
+      expect(laid.slice(0, 4)).toEqual([
+        WikipediaColours[Metals.or],
+        WikipediaColours[Colours.gules],
+        WikipediaColours[Colours.gules],
+        WikipediaColours[Metals.or],
+      ]);
+      expect(laid.length).toBeGreaterThan(4);
+      expect(new Set(laid.slice(4))).toEqual(new Set([WikipediaColours[Colours.azure]]));
+      expect(svg).toContain(`<clipPath id="blason-part-1">`);
+      expect(svg).toContain(`<clipPath id="blason-part-4">`);
+    });
+
+    // Measured against the quarter, so the count a blazon gives is the count
+    // that shows there: a bandé of eight in a quarter is eight across the
+    // quarter and not eight across the shield.
+    test('cuts the part into as many pieces as the blazon counted', () => {
+      const pieces = (svg: string) => (svg.match(/<polygon/g) ?? []).length;
+      expect(pieces(quartered(6))).toBeLessThan(pieces(quartered(10)));
+    });
+
+    test('draws nothing of the kind where no part is cut', () => {
+      const svg = drawer.draw({
+        field: { type: FieldType.cross, parts: painted(FieldType.cross, Metals.or, Colours.gules) },
+      });
+      expect(svg).not.toContain('<clipPath id="blason-part');
+    });
+  });
+
+  describe('a half that carries something', () => {
+    const lilies = (type: DivisionType, count = 3) =>
+      drawer.draw({
+        field: {
+          type,
+          parts: [
+            {
+              field: { type: FieldType.plain, tincture: Colours.azure },
+              chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count }],
+            },
+            half(Colours.gules),
+          ],
+        },
+      });
+
+    test('draws what the half bears, over the two halves', () => {
+      const svg = lilies(FieldType.pale);
+      expect(paints(svg)).toEqual([
+        WikipediaColours[Colours.azure],
+        WikipediaColours[Colours.gules],
+        ...Array.from({ length: 3 }, () => WikipediaColours[Metals.or]),
+      ]);
+    });
+
+    test('cuts off at the line whatever the half carries', () => {
+      const svg = lilies(FieldType.pale);
+      expect(svg).toContain('<clipPath id="blason-part-1"><path d="M 0 0 H 100 V 240 H 0 Z"/>');
+      expect(svg).toContain('<g clip-path="url(#blason-part-1)">');
+    });
+
+    test('fits the figures into the half rather than into the field', () => {
+      // Two abreast and one below, as three charges always stand — but reckoned
+      // off the half, so they stand between the edge of the field and the line
+      // and are drawn small enough to leave room for each other there.
+      const spots = spotted(lilies(FieldType.pale), Metals.or);
+      expect(spots).toHaveLength(3);
+      for (const { x, size } of spots) {
+        expect(x).toBeGreaterThanOrEqual(0);
+        expect(x + size).toBeLessThanOrEqual(100);
+      }
+      // Smaller than the same three on a whole field, the half having half the room.
+      const whole = spotted(
+        drawer.draw({
+          field: { type: FieldType.plain, tincture: Colours.azure },
+          chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count: 3 }],
+        }),
+        Metals.or
+      );
+      expect(spots[0].size).toBeLessThan(whole[0].size);
+    });
+
+    test('puts the figures where the half is, and not where the other half is', () => {
+      // The half at dexter keeps them left of the line; the half in chief keeps
+      // them above it; and a half cut off by a diagonal keeps them in the
+      // quarter its triangle holds whole.
+      const dexter = spotted(lilies(FieldType.pale), Metals.or);
+      expect(Math.max(...dexter.map(({ x, size }) => x + size))).toBeLessThanOrEqual(100);
+      const inChief = spotted(lilies(FieldType.fess), Metals.or);
+      expect(Math.max(...inChief.map(({ y, size }) => y + size))).toBeLessThanOrEqual(120);
+      const beyondTheBend = spotted(lilies(FieldType.bend), Metals.or);
+      expect(Math.min(...beyondTheBend.map(({ x }) => x))).toBeGreaterThanOrEqual(100);
+      expect(Math.max(...beyondTheBend.map(({ y, size }) => y + size))).toBeLessThanOrEqual(120);
+    });
+
+    test('draws a band the half bears, cut off at the line', () => {
+      const svg = drawer.draw({
+        field: {
+          type: FieldType.fess,
+          parts: [
+            {
+              field: { type: FieldType.plain, tincture: Metals.or },
+              chargesOrOrdinaries: [{ type: OrdinaryType.fess, tincture: Colours.sable }],
+            },
+            half(Colours.gules),
+          ],
+        },
+      });
+      // Across the half it lies on, at that half's own waist and a third of its
+      // depth — which is a band of a whole field's width and a half field's
+      // height, drawn inside the half in chief.
+      expect(svg).toContain('<rect x="0" y="40" width="200" height="40" fill="#000000"/>');
+      expect(svg).toContain('<clipPath id="blason-part-1">');
+    });
+
+    test('sows a half with the lattice the whole field is sown in', () => {
+      // A semy is the field's own state rather than something borne, so it is
+      // laid in the field's lattice and cut off at the line: the figures run on
+      // to the line and stop there, in step with whatever is sown beyond it.
+      const sown = drawer.draw({
+        field: {
+          type: FieldType.pale,
+          parts: [
+            {
+              field: {
+                type: FieldType.plain,
+                tincture: Colours.azure,
+                semy: { type: ChargeType.billet, tincture: Metals.or },
+              },
+            },
+            half(Colours.gules),
+          ],
+        },
+      });
+      const whole = drawer.draw({
+        field: {
+          type: FieldType.plain,
+          tincture: Colours.azure,
+          semy: { type: ChargeType.billet, tincture: Metals.or },
+        },
+      });
+      const spots = (svg: string) => Array.from(svg.matchAll(/<rect x="(-?\d+)"/g), (m) => m[1]);
+      expect(spots(sown)).toEqual(spots(whole));
+      expect(sown).toContain('<clipPath id="blason-part-1">');
+    });
+  });
+
+  describe('a half the drawing cannot yet follow', () => {
+    // A band that follows its frame's own outline follows the part's box, which
+    // is the field's own edge on the sides the line did not cut and is not the
+    // field's edge anywhere else: a bordure borne on a half is drawn down the
+    // line as well, where heraldry ends it there — "hold-overs from the days of
+    // dimidiation still exist for Ordinaries like the bordure, orle and
+    // tressure, which do not surround the shield but end at the line of
+    // partition" — and it loses the curve of the base, which the part's box
+    // knows nothing of. Held here so that it changes on purpose.
+    test("follows the part's own box with a band that follows an outline", () => {
+      const svg = drawer.draw({
+        field: {
+          type: FieldType.pale,
+          parts: [
+            {
+              field: { type: FieldType.plain, tincture: Colours.azure },
+              chargesOrOrdinaries: [{ type: OrdinaryType.bordure, tincture: Metals.or }],
+            },
+            half(Colours.gules),
+          ],
+        },
+      });
+      expect(svg).toContain('<path d="M 0 0 H 100 V 240 H 0 Z" fill="none" stroke="#ffd700"');
+    });
+
+    // A half cut again is the one thing left undrawn: its second tincture is
+    // nowhere and neither is the line between them, and neither tongue reads
+    // such a half, so this says what the drawing does while it lags the model.
+    test('paints a half that is itself cut with the tincture it is laid on', () => {
+      const svg = drawer.draw({
+        field: {
+          type: FieldType.pale,
+          parts: [
+            {
+              field: {
+                type: FieldType.fess,
+                parts: [half(Colours.azure), half(Metals.argent)],
+              },
+            },
+            half(Colours.gules),
+          ],
+        },
+      });
+      expect(fills(svg)).toEqual([
+        WikipediaColours[Colours.azure],
+        WikipediaColours[Colours.gules],
+      ]);
+    });
+  });
+
+  describe('divided fields, hatched', () => {
+    // A hatched shield rules each of its tinctures in the defs and paints out of
+    // them, so a tincture missing from that list is a tincture drawn in nothing
+    // at all. The halves are asked rather than the field, each half being arms
+    // with a field of its own.
+    test('rules both halves of a hatched field', () => {
+      const svg = new SvgBlazonDrawer(HatchingColours).draw({
+        field: { type: FieldType.pale, parts: [half(Colours.azure), half(Colours.vert)] },
+      });
+      const defs = svg.slice(svg.indexOf('<defs>'), svg.indexOf('</defs>'));
+      expect(defs).toContain('hatch-azure');
+      expect(defs).toContain('hatch-vert');
     });
   });
 
@@ -193,11 +465,7 @@ describe('SvgBlazonDrawer', () => {
 
     test('lays an ordinary on a divided field over both halves', () => {
       const svg = drawer.draw({
-        field: {
-          type: FieldType.pale,
-          firstTincture: Colours.azure,
-          secondTincture: Metals.or,
-        },
+        field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
         chargesOrOrdinaries: [{ type: OrdinaryType.fess, tincture: Colours.gules }],
       });
       expect(fills(svg)).toEqual(['#0000ff', '#ffd700', '#ff0000']);
@@ -294,11 +562,7 @@ describe('painting with patterns rather than colours', () => {
 
   test('carries both patterns of a divided field', () => {
     const svg = hatched.draw({
-      field: {
-        type: FieldType.pale,
-        firstTincture: Colours.azure,
-        secondTincture: Colours.gules,
-      },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Colours.gules)] },
     });
     expect(defs(svg)).toContain('<pattern id="hatch-azure"');
     expect(defs(svg)).toContain('<pattern id="hatch-gules"');
@@ -306,11 +570,7 @@ describe('painting with patterns rather than colours', () => {
 
   test('carries a shared pattern once, not twice', () => {
     const svg = hatched.draw({
-      field: {
-        type: FieldType.fess,
-        firstTincture: Colours.sable,
-        secondTincture: Colours.sable,
-      },
+      field: { type: FieldType.fess, parts: [half(Colours.sable), half(Colours.sable)] },
     });
     expect(svg.split('<pattern id="hatch-sable"').length - 1).toBe(1);
   });

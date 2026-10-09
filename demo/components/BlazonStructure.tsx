@@ -66,18 +66,20 @@ interface TwigProps {
 
 /** One word, and whatever was said of it standing under it. */
 function Twig({ branch, depth, language, words, colours }: TwigProps) {
-  const word = words.get(`${branch.rank}/${branch.word}`);
+  // A branch that names no word of the vocabulary is a place in the shield
+  // rather than a term of it, and leads nowhere.
+  const word = branch.rank === undefined ? undefined : words.get(`${branch.rank}/${branch.word}`);
   /*
-   * Every word carries arms of its own: the blazon reduced to the one thing that
-   * word names, drawn by the drawer that drew the shields beside it and in the
-   * same paint, so the fur comes out a fur and the two answer to one colouring.
+   * Every branch carries arms of its own: the blazon reduced to the one thing it
+   * names, drawn by the drawer that drew the shields beside it and in the same
+   * paint, so the fur comes out a fur and the two answer to one colouring.
    *
    * Cut from this blazon and not from the vocabulary's own demonstration of the
    * word. The vocabulary shows its terms in gules and argent, and a parti shown
    * red and white beside a shield painted azure would be telling the reader
    * something the shield plainly contradicts.
    */
-  const painted = word === undefined ? undefined : branch.arms;
+  const painted = branch.arms;
 
   return (
     <li
@@ -87,10 +89,26 @@ function Twig({ branch, depth, language, words, colours }: TwigProps) {
     >
       <span className="structure__said">
         {word === undefined ? (
-          /* A word the vocabulary does not file under that rank leads nowhere
-             rather than leading wrong. Nothing should reach this: the writer
-             chose the word and the vocabulary is built from the same wording. */
-          <span lang={language}>{branch.word}</span>
+          /* Either a half of a divided field, which no word names, or a word the
+             vocabulary does not file under that rank — and neither is a way to
+             anywhere. The arms still stand: a half that cannot be named can at
+             least be shown. */
+          <>
+            {painted !== undefined && (
+              <BlazonShield
+                blazon={painted}
+                alt=""
+                colours={colours}
+                outline={OUTLINE}
+                width={32}
+              />
+            )}
+            {branch.word !== undefined && (
+              <span className="structure__word" lang={language}>
+                {branch.word}
+              </span>
+            )}
+          </>
         ) : (
           <PreviewedLink
             word={word}

@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { FieldType } from '../../src/domain/models/Field';
+import { FieldType, half } from '../../src/domain/models/Field';
 import { Languages } from '../../src/domain/models/Languages';
 import { OrdinaryType } from '../../src/domain/models/Ordinary';
 import { Colours, Metals } from '../../src/domain/models/Tinctures';
 import { Branch, structureIn } from './Structure';
+import { Rank } from './Vocabulary';
 import { readBlazon } from './Reading';
 
 /** The structure of a blazon typed as a reader would type it. */
@@ -15,24 +16,87 @@ const of = (text: string, language: Languages): readonly Branch[] => {
   return structureIn(language, read.blazon);
 };
 
-/** The shape alone, as indented lines, which is what the page draws. */
+/**
+ * The shape alone, as indented lines, which is what the page draws.
+ *
+ * A branch no word names — a half of a divided field, where the tongue does not
+ * rank its parts — stands as a bare step, which is how it reads on the page.
+ */
 const drawn = (branches: readonly Branch[], depth = 0): string =>
   branches
     .map(
       (branch) =>
-        `${'  '.repeat(depth)}${branch.word}${branch.count === undefined ? '' : ` ×${branch.count}`}\n` +
+        `${'  '.repeat(depth)}${branch.word ?? '·'}${branch.count === undefined ? '' : ` ×${branch.count}`}\n` +
         drawn(branch.children, depth + 1)
     )
     .join('');
 
-const ranks = (branches: readonly Branch[]): readonly string[] =>
+const ranks = (branches: readonly Branch[]): readonly (Rank | undefined)[] =>
   branches.flatMap((branch) => [branch.rank, ...ranks(branch.children)]);
+
+/** The branch a word names, wherever it stands in the tree. */
+const seek = (branches: readonly Branch[], word: string): Branch | undefined => {
+  for (const branch of branches) {
+    const found = branch.word === word ? branch : seek(branch.children, word);
+    if (found !== undefined) {
+      return found;
+    }
+  }
+  return undefined;
+};
+
+const found = (branches: readonly Branch[], word: string): Branch => {
+  const branch = seek(branches, word);
+  if (branch === undefined) {
+    throw new Error(`No branch for "${word}"`);
+  }
+  return branch;
+};
 
 describe('structureIn', () => {
   test('sets the tinctures of a divided field under the partition that took them', () => {
     expect(drawn(of("Parti d'azur et d'argent, à la bande de gueules", Languages.fr))).toBe(
       ['parti', '  azur', '  argent', 'bande', '  gueules', ''].join('\n')
     );
+  });
+
+  test('leaves a divided field its two tinctures where neither half bears anything', () => {
+    // The scaffolding a composed coat needs would be noise here: the blazon
+    // wrote two words and the tree shows the two words.
+    expect(drawn(of("Parti d'azur et d'or", Languages.fr))).toBe(
+      ['parti', '  azur', '  or', ''].join('\n')
+    );
+  });
+
+  test('gathers the halves of a composed coat, each under the part it is laid in', () => {
+    // Ungathered, the bend would stand beside the first half's tincture with
+    // nothing to say which half it was laid in — which is the one thing a
+    // divided field's structure exists to answer.
+    expect(drawn(of("Parti, au 1 d'azur, au 2 de gueules à la bande d'or", Languages.fr))).toBe(
+      [
+        'parti',
+        '  au premier',
+        '    azur',
+        '  au second',
+        '    gueules',
+        '    bande',
+        '      or',
+        '',
+      ].join('\n')
+    );
+  });
+
+  test('gives a half no rank of its own: it names a place in the shield, not a term', () => {
+    const read = of("Parti, au 1 d'azur, au 2 de gueules à la bande d'or", Languages.fr);
+    const [first, second] = found(read, 'parti').children;
+    expect(first.rank).toBeUndefined();
+    expect(second.rank).toBeUndefined();
+    // And each is shown by its own half, drawn whole.
+    expect(first.arms).toEqual(half(Colours.azure));
+    expect(second.arms).toEqual({
+      field: { type: FieldType.plain, tincture: Colours.gules },
+      chargesOrOrdinaries: [{ type: OrdinaryType.bend, tincture: Metals.or }],
+    });
   });
 
   test('says the same of the same blazon written in the other tongue', () => {
@@ -161,46 +225,20 @@ describe('structureIn', () => {
 });
 
 describe('the arms a word is shown by', () => {
-  const seek = (branches: readonly Branch[], word: string): Branch | undefined => {
-    for (const branch of branches) {
-      const found = branch.word === word ? branch : seek(branch.children, word);
-      if (found !== undefined) {
-        return found;
-      }
-    }
-    return undefined;
-  };
-
-  const found = (branches: readonly Branch[], word: string): Branch => {
-    const branch = seek(branches, word);
-    if (branch === undefined) {
-      throw new Error(`No branch for "${word}"`);
-    }
-    return branch;
-  };
-
   test('cuts them from this blazon and not from the vocabulary’s own showing of the word', () => {
     // The vocabulary demonstrates every term in gules and argent. Beside a
     // shield painted azure that would tell the reader the field was red, so the
     // arms come from the model the shield itself was drawn from.
     const read = of('Per pale azure and argent, a bend gules', Languages.en);
     expect(found(read, 'per pale').arms).toEqual({
-      field: {
-        type: FieldType.pale,
-        firstTincture: Colours.azure,
-        secondTincture: Metals.argent,
-      },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.argent)] },
     });
   });
 
   test('lays a band on the field it is actually laid on', () => {
     const read = of('Per pale azure and argent, a bend gules', Languages.en);
     expect(found(read, 'bend').arms).toEqual({
-      field: {
-        type: FieldType.pale,
-        firstTincture: Colours.azure,
-        secondTincture: Metals.argent,
-      },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.argent)] },
       chargesOrOrdinaries: [{ type: OrdinaryType.bend, tincture: Colours.gules }],
     });
   });

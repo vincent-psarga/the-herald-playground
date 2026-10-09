@@ -1,4 +1,4 @@
-import { alt, apply, kright, seq } from 'typescript-parsec';
+import { alt, apply, kright, list_sc, seq } from 'typescript-parsec';
 import { EnglishDivisionType } from '../../domain/translations/en/Divisions';
 import { EnglishFurType } from '../../domain/translations/en/Furs';
 import { EnglishVariationType, OF } from '../../domain/translations/en/Variations';
@@ -9,10 +9,11 @@ import { strewnTerms } from '../../domain/translations/Strewings';
 import { asSeveral, writtenAs } from '../../domain/translations/Translation';
 import { EnglishOrdinaryType } from '../../domain/translations/en/Ordinaries';
 import { EnglishNumbers } from '../../domain/translations/en/Numbers';
+import { EnglishRanks } from '../../domain/translations/en/Ranks';
 import { EnglishTinctures } from '../../domain/translations/en/Tinctures';
 import { BlazonGrammar } from '../parser/BlazonGrammar';
 import { anyKeyword, keyword, optional, spelledTerm, term } from '../parser/Combinators';
-import { asOrdinary, asDivision, asTincture } from '../parser/Failures';
+import { asOrdinary, asDivision, asRank, asTincture } from '../parser/Failures';
 import { NOT_IN_NUMBER, alone, bearings, modifiable, several } from '../parser/Borne';
 import { anyWriting, modifying } from '../parser/Modifiers';
 import { number } from '../parser/Numbers';
@@ -59,6 +60,17 @@ const TREATMENT = strewing(alt(NAMED_STREWING, SOWN_CHARGE), term(EnglishTinctur
 // where another would have been right.
 const MODIFIER = modifying(anyWriting(EnglishModifiers));
 
+/**
+ * The ranks one phrase of a divided field names: "first", "second and third",
+ * and the same ranks in figures.
+ *
+ * Nothing introduces them — English sets the ordinal bare where French writes
+ * "au" — so the list of what a part bears is told that a rank may stand where it
+ * is looking for a charge, and a bare ordinal is a rank rather than anything
+ * borne.
+ */
+const RANK = list_sc(number(EnglishRanks, asRank), AND);
+
 export const EnglishBlazonGrammar: BlazonGrammar = {
   tincture: term(EnglishTinctures, asTincture),
   division: term(EnglishDivisionType, asDivision),
@@ -77,4 +89,5 @@ export const EnglishBlazonGrammar: BlazonGrammar = {
     modifiable(several(BEARINGS, EnglishNumbers, asOrdinary, NOT_IN_NUMBER), () => MODIFIER)
   ),
   and: AND,
+  rank: RANK,
 };

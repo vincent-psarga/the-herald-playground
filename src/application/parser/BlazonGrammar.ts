@@ -7,10 +7,12 @@ import {
   betterError,
   combine,
   kleft,
+  kright,
   nil,
   resultOrError,
   rule,
   seq,
+  succ,
   tok,
 } from 'typescript-parsec';
 import { BlazonParseError } from '../../domain/errors/parsing/BlazonParseError';
@@ -28,21 +30,24 @@ import {
   PIECES,
   Variation,
   cutInPieces,
+  fillingOut,
+  partsOf,
   usualPieces,
 } from '../../domain/models/Field';
 import { Modifier } from '../../domain/models/Modifier';
+import { FIRST, ranksOf } from '../../domain/translations/Ranks';
 import { Tincture } from '../../domain/models/Tinctures';
 import { TokenKind } from '../lexer/Lexer';
 import { BorneTerm, bornUnder, carried } from './Borne';
-import { guard, optional, optionalUnlessBegun } from './Combinators';
-import { within } from './Failures';
+import { guard, optional, optionalUnlessBegun, unless } from './Combinators';
+import { asRank, asTincture, owedAtEnd, within } from './Failures';
 import { Treatment, isBare } from './Treatment';
 import { VariedField } from './Variations';
 
 /**
  * What one language contributes to reading a blazon. The shape of a blazon is
- * the same in every language — a field, plain or divided between two tinctures —
- * so only the words and whatever introduces them differ.
+ * the same in every language — a field, plain or divided between two halves — so
+ * only the words and whatever introduces them differ.
  */
 export interface BlazonGrammar {
   /** A tincture, with whatever article the language puts in front of it. */
@@ -85,6 +90,92 @@ export interface BlazonGrammar {
   readonly borne: Parser<TokenKind, BorneTerm>;
   /** The conjunction joining the halves of a divided field. */
   readonly and: Parser<TokenKind, unknown>;
+  /**
+   * The ranks one phrase of a divided field is introduced by, where the tongue
+   * ranks its parts: "au premier", "au 1", "au I", and "aux 1 et 4" where one
+   * phrase speaks for several. What comes back is which parts it names, counting
+   * from one.
+   *
+   * It is what lets either part carry arms of its own, the unranked form being
+   * able to charge the first alone — and it is the form the handbooks prescribe
+   * where a part carries anything: «on énonce d'abord la partition, puis les
+   * armoiries élémentaires se blasonnent les unes après les autres, dans l'ordre
+   * de la partition, en les faisant précéder de leur rang».
+   *
+   * A tongue that does not rank them leaves this off. English is one: it sets
+   * two whole coats side by side another way, naming the dexter first and saying
+   * "impaled with" between them — "It is necessary always to mention the dexter
+   * shield first and to say impaled with" — which is a phrase of its own and no
+   * rank at all. Where English does rank, it ranks quarters, and quartering is
+   * not read yet.
+   */
+  readonly rank?: Parser<TokenKind, readonly number[]>;
+}
+
+/** One phrase of a ranked division: the parts it names, and what they all carry. */
+type RankedPart = {
+  readonly ranks: readonly number[];
+  readonly arms: Blazon;
+};
+
+/**
+ * Why this phrase's ranks cannot be the next ones, and nothing where they can.
+ *
+ * Four things can be wrong and each is reported as itself, because each is a
+ * different mistake by whoever wrote the blazon: a rank the field has no part
+ * for, a part ranked twice, a phrase whose own ranks run backwards, and a phrase
+ * that begins somewhere other than where the order had got to.
+ *
+ * The order is the order the partition takes the parts — "dans l'ordre de la
+ * partition" — read of a phrase rather than of a single rank, so that a phrase
+ * speaking for several parts is in order when the first of them is the one owed.
+ * That is what lets "aux 1 et 4 ..., aux 2 et 3" stand while "aux 2 et 3 ...,
+ * aux 1 et 4" is refused: both name every part once, and only one of them starts
+ * where the blazon had got to.
+ */
+function misranked(
+  type: DivisionType,
+  taken: readonly number[],
+  ranks: readonly number[]
+): string | undefined {
+  const parts = partsOf(type);
+  const owed = ranksOf(parts).find((rank) => !taken.includes(rank));
+  const named = [...taken];
+  for (const [at, rank] of ranks.entries()) {
+    if (rank < FIRST || rank > parts) {
+      return `A field divided into ${parts} has no part ${rank}`;
+    }
+    if (named.includes(rank)) {
+      return `A divided field ranks each part once: part ${rank} is ranked twice`;
+    }
+    if (at === 0 && rank !== owed) {
+      return `A divided field names its parts in the order the partition takes them: part ${rank} stands where part ${owed} was owed`;
+    }
+    if (at > 0 && rank < ranks[at - 1]) {
+      return `A divided field names its parts in the order the partition takes them: part ${rank} stands after part ${ranks[at - 1]}`;
+    }
+    named.push(rank);
+  }
+  return undefined;
+}
+
+/**
+ * The parts in the order the partition takes them, each carrying what the phrase
+ * that ranked it gave it.
+ *
+ * The arms of a phrase naming several parts are laid in every one of them, which
+ * is what such a phrase says: "aux 1 et 4 d'azur au chevron d'or" puts the same
+ * coat in both quarters. They are the same object in each, nothing here ever
+ * changing one, and the drawing reads them apart by the part it is drawing.
+ */
+function inRankOrder(ranked: readonly RankedPart[]): readonly Blazon[] {
+  const parts: Blazon[] = [];
+  for (const { ranks, arms } of ranked) {
+    for (const rank of ranks) {
+      parts[rank - FIRST] = arms;
+    }
+  }
+  return parts;
 }
 
 /** The mark a blazon may set between the charges it lays on the field. */
@@ -116,100 +207,6 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
       : isBare(treatment)
         ? { field: { type: FieldType.plain, tincture }, bare: true }
         : { field: { type: FieldType.plain, tincture, semy: treatment.semy }, bare: false }
-  );
-
-  // Wrapped as a phrase so that a tincture which never arrives is reported as
-  // missing from the division that owed it, rather than from the blazon at large.
-  const dividedField = within(
-    apply(
-      seq(grammar.division, grammar.tincture, grammar.and, grammar.tincture),
-      ([type, firstTincture, , secondTincture]): Division => ({
-        type,
-        firstTincture,
-        secondTincture,
-      })
-    )
-  );
-
-  // A varied field is the same two tinctures cut along the same lines, over and
-  // over — so it is read as a division is, with a number of pieces around it.
-  //
-  // Where that number stands is the language's business: English counts before
-  // the tinctures, French after them, and either may leave it unsaid. What
-  // arrives is taken wherever it came from, and what never arrives is the number
-  // the term is understood to have — save for the pily, which is understood to
-  // have none and must therefore be counted.
-  const trailingPieces: Parser<TokenKind, number | undefined> =
-    grammar.pieces === undefined ? nil() : optional(grammar.pieces);
-
-  const variedField = within(
-    apply(
-      guard(
-        apply(
-          seq(grammar.variation, grammar.tincture, grammar.and, grammar.tincture, trailingPieces),
-          ([named, firstTincture, , secondTincture, counted]) => ({
-            named,
-            firstTincture,
-            secondTincture,
-            pieces: counted ?? named.pieces ?? usualPieces(named.type),
-          })
-        ),
-        ({ named, pieces }) => pieces !== undefined && cutInPieces(named.type, pieces),
-        ({ named, pieces }, position) =>
-          pieces === undefined
-            ? new MissingPieces(named.named, position)
-            : new BlazonParseError(
-                pieces < PIECES
-                  ? `A field is cut into pieces: ${pieces} is not more than one`
-                  : `A ${named.named} alternates its tinctures, so its pieces are even: ${pieces} is odd`,
-                position
-              )
-      ),
-      // Whatever reaches here was counted: the guard has refused every field
-      // whose pieces neither the blazon nor the term itself could say.
-      ({ named, firstTincture, secondTincture, pieces }): Variation => ({
-        type: named.type,
-        firstTincture,
-        secondTincture,
-        pieces: pieces as number,
-      })
-    )
-  );
-
-  // A furred field names the fur and the two tinctures it is cut from, and is
-  // read exactly as a division is: what differs is the vocabulary the first word
-  // belongs to, and that the pelt takes the whole field rather than half of it.
-  const furredField = within(
-    apply(
-      seq(grammar.fur, grammar.tincture, grammar.and, grammar.tincture),
-      ([type, firstTincture, , secondTincture]): Furred => ({
-        type,
-        firstTincture,
-        secondTincture,
-      })
-    )
-  );
-
-  // What follows a partition's name: the two tinctures it divides the field
-  // between. Reading it alone is how an unknown first word is told apart from a
-  // word that was never meant to be a partition at all.
-  const restOfDivision = seq(grammar.tincture, grammar.and, grammar.tincture);
-
-  // The varied reading is tried first of the three, because all three open on a
-  // word of their own vocabulary and all three complain about the same word when
-  // they fail: a tie between them is settled in favour of whichever was listed
-  // first, and only the varied one has anything to say beyond the name — that the
-  // pieces were never counted, or counted in a number no such field is cut into.
-  //
-  // None of the three is ever bare: only a field of one tincture is called
-  // plain, a divided one being no such thing whatever it bears.
-  const field = eitherReading(
-    plainField,
-    apply(alt(variedField, furredField, dividedField), (field): ReadField => ({
-      field,
-      bare: false,
-    })),
-    restOfDivision
   );
 
   // What the field bears is laid on it and carries a tincture of its own, however
@@ -262,41 +259,370 @@ export function blazonRule(grammar: BlazonGrammar): Parser<TokenKind, Blazon> {
     )
   );
 
-  // Everything the field bears, read in the order it was written, because that
+  // Everything a field bears, read in the order it was written, because that
   // order is what says which covers which: "D'or à trois bandes de sable ; à la
   // bordure de gueules" puts the bordure over the bends.
   //
   // A blazon may set a mark between the phrases — French writes the semicolon as
   // readily as the comma — or set none at all and let the article do the work,
   // so the mark is read and discarded rather than required.
-  const borne = rule<TokenKind, readonly ChargeOrOrdinary[]>();
-  borne.setPattern(
+  //
+  // What may stand in the list is handed in rather than fixed, because a part of
+  // a divided field ends where the next part's rank begins and the shield ends
+  // only where the blazon does.
+  const listOf = (
+    one: Parser<TokenKind, ChargeOrOrdinary>
+  ): Parser<TokenKind, readonly ChargeOrOrdinary[]> => {
+    const list = rule<TokenKind, readonly ChargeOrOrdinary[]>();
+    list.setPattern(
+      apply(optionalUnlessBegun(seq(one, list), SEPARATOR), (laid): readonly ChargeOrOrdinary[] =>
+        laid === undefined ? [] : [laid[0], ...laid[1]]
+      )
+    );
+    return list;
+  };
+
+  const borne = listOf(bearing);
+
+  /**
+   * A field and what was laid on it, which is arms: the whole shield's, or one
+   * half of a divided field's.
+   *
+   * The list is left off rather than set to an empty one where nothing was laid,
+   * so that a field bearing nothing reads back as the blazon it was before
+   * anything could be laid on one — and so that a half has one way to be written
+   * and not two.
+   */
+  const borneOn = (field: Field, laid: readonly ChargeOrOrdinary[]): Blazon =>
+    laid.length === 0 ? { field } : { field, chargesOrOrdinaries: laid };
+
+  /**
+   * A field, and what the blazon laid on it, which is arms: the whole shield's,
+   * or the first half of a divided field's. One rule reads both, a half being
+   * arms and there being nothing else it could be read by.
+   *
+   * A field the blazon called plain is held to it here, where what followed is
+   * known: "plain" promises a field that bears nothing, and the promise is kept
+   * or the blazon is refused. The bearings are read first and judged after, so
+   * the complaint lands on what was laid rather than on the word that forbade it.
+   */
+  const laidOn = (
+    reading: Parser<TokenKind, ReadField>,
+    laid: Parser<TokenKind, readonly ChargeOrOrdinary[]> = borne
+  ): Parser<TokenKind, Blazon> =>
+    combine(reading, ({ field, bare }) =>
+      apply(
+        bare
+          ? guard(
+              laid,
+              (borne) => borne.length === 0,
+              (borne, position) => new ChargedPlainField(borne.length, position)
+            )
+          : laid,
+        (borne): Blazon => borneOn(field, borne)
+      )
+    );
+
+  // The second of the two tinctures a varied or furred field is cut between, the
+  // conjunction and all: both read it, and both owe it once the first has been
+  // read. A blazon that stops there has named one tincture where the field it
+  // named takes two, and saying so is more use than pointing at the conjunction
+  // — which is the grammar's own plumbing, and names nothing a reader was trying
+  // to write.
+  const secondOfThePair = owedAtEnd(kright(grammar.and, grammar.tincture), asTincture);
+
+  // A varied field is the same two tinctures cut along the same lines, over and
+  // over — so it is read as a division is, with a number of pieces around it.
+  //
+  // Where that number stands is the language's business: English counts before
+  // the tinctures, French after them, and either may leave it unsaid. What
+  // arrives is taken wherever it came from, and what never arrives is the number
+  // the term is understood to have — save for the pily, which is understood to
+  // have none and must therefore be counted.
+  const trailingPieces: Parser<TokenKind, number | undefined> =
+    grammar.pieces === undefined ? nil() : optional(grammar.pieces);
+
+  const variedField = within(
     apply(
-      optionalUnlessBegun(seq(bearing, borne), SEPARATOR),
-      (laid): readonly ChargeOrOrdinary[] => (laid === undefined ? [] : [laid[0], ...laid[1]])
+      guard(
+        apply(
+          seq(grammar.variation, grammar.tincture, secondOfThePair, trailingPieces),
+          ([named, firstTincture, secondTincture, counted]) => ({
+            named,
+            firstTincture,
+            secondTincture,
+            pieces: counted ?? named.pieces ?? usualPieces(named.type),
+          })
+        ),
+        ({ named, pieces }) => pieces !== undefined && cutInPieces(named.type, pieces),
+        ({ named, pieces }, position) =>
+          pieces === undefined
+            ? new MissingPieces(named.named, position)
+            : new BlazonParseError(
+                pieces < PIECES
+                  ? `A field is cut into pieces: ${pieces} is not more than one`
+                  : `A ${named.named} alternates its tinctures, so its pieces are even: ${pieces} is odd`,
+                position
+              )
+      ),
+      // Whatever reaches here was counted: the guard has refused every field
+      // whose pieces neither the blazon nor the term itself could say.
+      ({ named, firstTincture, secondTincture, pieces }): Variation => ({
+        type: named.type,
+        firstTincture,
+        secondTincture,
+        pieces: pieces as number,
+      })
     )
   );
 
-  // The key is left off rather than set to an empty list when nothing is borne,
-  // so a plain field reads back as the blazon it was before anything could be
-  // laid on one.
+  /**
+   * What a part of a divided field may be, before anything is laid on it.
+   *
+   * A field of one tincture, or a field cut into pieces: heraldry quarters a
+   * bandé as readily as a plain coat, and the arms of Bourgogne are two of each
+   * — "écartelé : aux 1 et 4 bandé d'or et d'azur à la bordure de gueules ; aux
+   * 2 et 3 d'azur semé de fleurs de lys d'or". A part is arms, so what a part's
+   * field may be is what a shield's field may be, and the two are read by the
+   * same rules.
+   *
+   * Not every one of them yet. A part covered with a pelt and a part cut again
+   * are read by neither of these, and are left out because neither can be drawn
+   * rather than because a blazon does not say them.
+   *
+   * The plain reading is listed first, which settles what a reader is told when
+   * a word is neither: both fail at that very word, a tie goes to whichever was
+   * listed first, and "Unknown tincture" is the useful half of the truth — a
+   * part of one tincture being what nearly every part is.
+   */
+  const partField = alt(
+    plainField,
+    apply(variedField, (field): ReadField => ({ field, bare: false }))
+  );
+
+  // The other half of a divided field, which is a field and not a tincture: it
+  // carries whatever the tongue says of a field — that it is plain, what it is
+  // sown with, or that it is cut into pieces of its own — which is what the
+  // armorials write there: "et d'hermine plain", "et de sinople semé de larmes
+  // d'or". Being owed is the tincture's affair all the same, a half that never
+  // arrives having failed to name one.
   //
-  // A field the blazon called plain is held to it here, where what followed is
-  // known: "plain" promises a bare field, and the promise is kept or the blazon
-  // is refused. The bearings are read first and judged after, so the complaint
-  // lands on what was laid rather than on the word that forbade it.
-  const arms = combine(field, ({ field, bare }) =>
+  // A blazon may set its own mark before the conjunction — "à six macles
+  // d'argent, et d'hermine" — which says no more than the conjunction does, so it
+  // is read and discarded rather than required.
+  //
+  // It bears nothing: what follows it belongs to the shield.
+  const otherHalf = owedAtEnd(
+    kright(
+      seq(optional(SEPARATOR), grammar.and),
+      apply(partField, ({ field }): Blazon => ({ field }))
+    ),
+    asTincture
+  );
+
+  // Wrapped as a phrase so that a tincture which never arrives is reported as
+  // missing from the division that owed it, rather than from the blazon at large.
+  //
+  // Each half is a field, and the first of them may bear what a shield bears:
+  // "Parti d'azur à six macles d'argent, et d'hermine plain" charges the half at
+  // dexter and calls the other plain, which is how the armorial of the Round
+  // Table writes it. What a half bears stands between its tincture and the
+  // conjunction, and is read by the very rule that reads what the whole shield
+  // bears — a half being arms, there is nothing else it could be read by.
+  //
+  // This is the form the armorials write and not the one the handbooks
+  // prescribe. Where a half carries anything, the handbooks rank the halves
+  // instead — "parti, au premier ..., au second ..." — and Greaves has the
+  // tinctures follow the partition's name with nothing between: "If the field is
+  // parted, this is mentioned at the beginning, starting with the word Per
+  // followed by the name of the ordinary that goes the same way as the parting
+  // line, followed by the tinctures of the parts". So the English reading of this
+  // form is the French one lent to it, on no authority but the symmetry, and the
+  // ranked form — which is what will charge the second half — is not read yet.
+  //
+  // The second half bears nothing, and what follows it belongs to the shield:
+  // "Parti d'azur et d'or à la bordure de gueules" surrounds the whole shield
+  // with the bordure, which is what an armorial means by writing it there, and
+  // what both tongues mark outright where they mean it — "brochant sur le tout",
+  // "over all". Let the second half bear it instead and the blazon would have two
+  // readings and no way to choose between them.
+  //
+  // Two tinctures say a quartered field entire, however many parts its line
+  // leaves: the parts are filled from the pair rather than read one by one,
+  // which is what "écartelé d'argent et d'azur" means and is the only thing this
+  // form can say about four parts. A quarter that carries anything of its own
+  // has to be ranked.
+  const unrankedDivision = within(
     apply(
-      bare
-        ? guard(
-            borne,
-            (laid) => laid.length === 0,
-            (laid, position) => new ChargedPlainField(laid.length, position)
-          )
-        : borne,
-      (laid): Blazon => (laid.length === 0 ? { field } : { field, chargesOrOrdinaries: laid })
+      seq(grammar.division, laidOn(partField), otherHalf),
+      ([type, first, second]): Division => ({
+        type,
+        parts: fillingOut(type, first, second),
+      })
     )
   );
+
+  /**
+   * The same field with its parts ranked: "Parti, au premier d'azur à trois
+   * fleurs de lys d'or, au second d'hermine", "Écartelé : aux 1 et 4 d'azur au
+   * chevron d'or ; aux 2 et 3, d'azur à trois colombes d'argent".
+   *
+   * This is the form the handbooks prescribe where a part carries anything, and
+   * it is what the unranked form cannot do: any part may bear, the rank saying
+   * which part the arms after it are laid in, so nothing has to be guessed from
+   * where a phrase stands.
+   *
+   * One phrase may rank several parts, which is how a quartered field says that
+   * two of its quarters carry the same coat — and it is the commonest thing a
+   * quartered blazon says. The arms are read once and laid in every part the
+   * phrase named.
+   *
+   * How many phrases there are is not fixed: a quartered field is written in
+   * four of them or in two, and which it is cannot be known before they are
+   * read. So they are read until they stop and counted after — which is also
+   * what lets the complaint name the part that was owed rather than the shape of
+   * a phrase.
+   *
+   * The parts are named in the order the partition takes them — "dans l'ordre de
+   * la partition" — and a blazon that names them in any other order is refused
+   * rather than quietly sorted: the rank is the blazon's own claim about which
+   * part it is describing, and claims that contradict the order are not a blazon
+   * this can read. With several ranks to a phrase the order is the order the
+   * ranks are first named in, so "aux 1 et 4 ..., aux 2 et 3" is in order and
+   * "aux 2 et 3 ..., aux 1 et 4" is not.
+   *
+   * Whatever the tongue sets between the parts is read and dropped: the mark,
+   * the conjunction, or both, the armorials writing "au premier ..., au second"
+   * and "au premier ..., et au second" alike.
+   */
+  const rankedDivision = (
+    rank: Parser<TokenKind, readonly number[]>
+  ): Parser<TokenKind, Division> => {
+    // A rank ends whatever the part before it bears. French opens a bearing and
+    // a rank with the same word, so the list has to be told that a rank may
+    // stand where it is looking for a charge, or it would read "au second" as
+    // far as the article and then owe an explanation for what it found there.
+    const laid = listOf(unless(bearing, rank));
+
+    /**
+     * One phrase, read knowing which parts have already been ranked.
+     *
+     * Knowing that is what lets the complaint land on the rank that was wrong
+     * rather than on the partition's name, which is where a check made after
+     * every phrase had been read would have had to put it — and the position is
+     * what decides which complaint a reader is shown, the unranked reading
+     * having failed at a token of its own.
+     */
+    const phrase = (type: DivisionType, taken: readonly number[]) =>
+      apply(
+        seq(
+          guard(
+            rank,
+            (ranks) => misranked(type, taken, ranks) === undefined,
+            (ranks, position) =>
+              new BlazonParseError(misranked(type, taken, ranks) as string, position)
+          ),
+          laidOn(partField, laid)
+        ),
+        ([ranks, arms]): RankedPart => ({ ranks, arms })
+      );
+
+    /**
+     * The phrases from here on, which is however many it takes to rank every
+     * part the line left.
+     *
+     * A part still unranked is owed, so a blazon that stops early is told which
+     * part it stopped before rather than being quietly read as the arms of half
+     * a shield. What is owed differs at the start: a blazon that named the line
+     * and stopped has not yet chosen between the two forms, so what it owes is
+     * the tincture the unranked form would have taken.
+     */
+    const phrasesFrom = (
+      type: DivisionType,
+      taken: readonly number[]
+    ): Parser<TokenKind, readonly RankedPart[]> => {
+      if (taken.length === partsOf(type)) {
+        return succ<TokenKind, readonly RankedPart[]>([]);
+      }
+      const opening =
+        taken.length === 0
+          ? phrase(type, taken)
+          : kright(seq(optional(SEPARATOR), optional(grammar.and)), phrase(type, taken));
+      return combine(
+        owedAtEnd(opening, taken.length === 0 ? asTincture : asRank),
+        (read): Parser<TokenKind, readonly RankedPart[]> =>
+          apply(phrasesFrom(type, [...taken, ...read.ranks]), (more) => [read, ...more])
+      );
+    };
+
+    return within(
+      apply(
+        combine(kleft(grammar.division, optional(SEPARATOR)), (type) =>
+          apply(phrasesFrom(type, []), (ranked): Division => ({
+            type,
+            parts: inRankOrder(ranked),
+          }))
+        ),
+        (division) => division
+      )
+    );
+  };
+
+  // The ranked reading is offered only by a tongue that has the form, and the
+  // two never both parse: one owes a rank where the other owes a tincture.
+  //
+  // The unranked reading is listed first, which settles what a reader is told
+  // when a word is neither. Both readings then fail at that very word — English
+  // setting its ranks bare, there is no article to fail at sooner — and a tie is
+  // settled in favour of whichever was listed first. "Unknown tincture: fuchsia"
+  // is the useful half of the truth: the unranked form is what nearly every
+  // divided blazon is, so a word standing where it opens was meant to be a
+  // tincture. Where the word did name a rank the ranked reading gets further and
+  // its complaint wins on its own merits.
+  const dividedField =
+    grammar.rank === undefined
+      ? unrankedDivision
+      : alt(unrankedDivision, rankedDivision(grammar.rank));
+
+  // A furred field names the fur and the two tinctures it is cut from, and is
+  // read exactly as a division is: what differs is the vocabulary the first word
+  // belongs to, and that the pelt takes the whole field rather than half of it.
+  const furredField = within(
+    apply(
+      seq(grammar.fur, grammar.tincture, secondOfThePair),
+      ([type, firstTincture, secondTincture]): Furred => ({
+        type,
+        firstTincture,
+        secondTincture,
+      })
+    )
+  );
+
+  // What follows a partition's name: the two tinctures it divides the field
+  // between, and whatever the first half bears. Reading it alone is how an
+  // unknown first word is told apart from a word that was never meant to be a
+  // partition at all — so it has to recognise as much of a division as the
+  // division rule does, or a charged half would hide the partition from it.
+  const restOfDivision = seq(laidOn(partField), otherHalf);
+
+  // The varied reading is tried first of the three, because all three open on a
+  // word of their own vocabulary and all three complain about the same word when
+  // they fail: a tie between them is settled in favour of whichever was listed
+  // first, and only the varied one has anything to say beyond the name — that the
+  // pieces were never counted, or counted in a number no such field is cut into.
+  //
+  // None of the three is ever bare: only a field of one tincture is called
+  // plain, a divided one being no such thing whatever it bears.
+  const field = eitherReading(
+    plainField,
+    apply(alt(variedField, furredField, dividedField), (field): ReadField => ({
+      field,
+      bare: false,
+    })),
+    restOfDivision
+  );
+
+  const arms = laidOn(field);
 
   // A blazon is written as a sentence and closed with a full stop, but the stop
   // carries no meaning, so it is accepted and discarded rather than required. A
