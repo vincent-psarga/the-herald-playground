@@ -1,27 +1,37 @@
 import { EnglishBlazonWording } from '../../src/application/english/EnglishBlazonWording';
 import { FrenchBlazonWording } from '../../src/application/french/FrenchBlazonWording';
 import { BlazonWording } from '../../src/application/writer/BlazonWording';
-import { Blazon, ChargeOrOrdinary, isOrdinary } from '../../src/domain/models/Blazon';
+import { Attribute, Attributed } from '../../src/domain/models/Attributes';
+import { Blazon, ChargeOrOrdinary, isCharge, isOrdinary } from '../../src/domain/models/Blazon';
 import { Languages } from '../../src/domain/models/Languages';
 import { numberBorne } from '../../src/domain/models/Charge';
+import { isCompony } from '../../src/domain/models/Compony';
+import { isCounterchanged } from '../../src/domain/models/Counterchanged';
 import {
   Division,
   Field,
   FieldType,
+  Furred,
+  HALVES,
   Plain,
   Semy,
+  Variation,
   isDivision,
   isFurred,
   isPlain,
   isVariation,
+  saidInTwo,
 } from '../../src/domain/models/Field';
 import { borne } from '../../src/domain/models/Ordinary';
 import { Tincture } from '../../src/domain/models/Tinctures';
+import { EnglishOverAll } from '../../src/domain/translations/en/OverAll';
 import { SOWN as EnglishSown } from '../../src/domain/translations/en/Strewings';
+import { FrenchOverAll } from '../../src/domain/translations/fr/OverAll';
 import { SOWN as FrenchSown } from '../../src/domain/translations/fr/Strewings';
 import { strewnIn } from '../../src/domain/translations/Strewings';
 import { wordIn, wordOf, wordSaidOf } from '../../src/domain/translations/Translation';
 import { Word } from '../../src/domain/translations/Word';
+import { FIRST } from '../../src/domain/translations/Ranks';
 import { Rank } from './Vocabulary';
 
 /**
@@ -30,12 +40,19 @@ import { Rank } from './Vocabulary';
  * What a blazon holds is a field and the figures laid on it, each named by a
  * word and each carrying its own tincture; nesting says what was said of what.
  * So a branch is a word, and its children are the words that qualify it.
+ *
+ * All but one kind of branch is a word. A divided field holds two whole coats
+ * rather than two tinctures, and the part they are laid in is no term of
+ * heraldry: it says which half, and a tongue that ranks its parts says it in
+ * words of its own — "au premier" — while a tongue that does not has nothing to
+ * say there at all. Such a branch is a place in the shield rather than a word
+ * about it, so it carries no rank and leads nowhere.
  */
 export interface Branch {
-  /** The spelling the tongue writes it with, which is the one shown. */
-  readonly word: string;
-  /** The vocabulary it belongs to, which is how the way to it is found. */
-  readonly rank: Rank;
+  /** The spelling the tongue writes it with, where a word names this at all. */
+  readonly word?: string;
+  /** The vocabulary it belongs to, where it is a word of the vocabulary. */
+  readonly rank?: Rank;
   /** How many are borne, where more than one is. */
   readonly count?: number;
   /**
@@ -80,19 +97,23 @@ function bare(field: Field): Field {
  */
 export function structureIn(language: Languages, blazon: Blazon): readonly Branch[] {
   return language === Languages.fr
-    ? structureOf(FrenchBlazonWording, FrenchSown, blazon)
-    : structureOf(EnglishBlazonWording, EnglishSown[0], blazon);
+    ? structureOf(FrenchBlazonWording, FrenchSown, FrenchOverAll, blazon)
+    : structureOf(EnglishBlazonWording, EnglishSown[0], EnglishOverAll, blazon);
 }
 
 function structureOf<W extends Word>(
   wording: BlazonWording<W>,
   /** The word this tongue sows a figure it has no single word for by. */
   sown: Word,
+  /** The word this tongue lays a thing over everything else by. */
+  overAll: Word,
   blazon: Blazon
 ): readonly Branch[] {
   return [
-    fieldBranch(wording, sown, blazon.field),
-    ...(blazon.chargesOrOrdinaries ?? []).map((one) => borneBranch(wording, blazon.field, one)),
+    fieldBranch(wording, sown, overAll, blazon.field),
+    ...(blazon.chargesOrOrdinaries ?? []).map((one) =>
+      borneBranch(wording, overAll, blazon.field, one)
+    ),
   ];
 }
 
@@ -103,30 +124,102 @@ function structureOf<W extends Word>(
  * A plain field was cut by nothing and has no such word, so it is its tincture —
  * which is all a blazon says of it, and all there is to show.
  */
-function fieldBranch<W extends Word>(wording: BlazonWording<W>, sown: Word, field: Field): Branch {
+function fieldBranch<W extends Word>(
+  wording: BlazonWording<W>,
+  sown: Word,
+  overAll: Word,
+  field: Field
+): Branch {
   // The arms are the field as the blazon cut it — the very field on the shield
-  // beside it, nothing chosen here at all — and the two tinctures stand under it
-  // in the order the blazon named them.
-  const cut = (word: string, rank: Rank): Branch => ({
+  // beside it, nothing chosen here at all.
+  const cut = (word: string, rank: Rank, children: readonly Branch[]): Branch => ({
     word,
     rank,
     arms: { field },
-    children: [
-      tinctureBranch(wording, (field as Division).firstTincture),
-      tinctureBranch(wording, (field as Division).secondTincture),
-    ],
+    children,
   });
 
+  // A varied field and a fur alternate two tinctures and bear nothing, so the
+  // pair stands under the word in the order the blazon named them.
+  const pair = (between: Variation | Furred): readonly Branch[] => [
+    tinctureBranch(wording, between.firstTincture),
+    tinctureBranch(wording, between.secondTincture),
+  ];
+
   if (isVariation(field)) {
-    return cut(wordOf(wording.variations, field.type).value, 'variation');
+    return cut(wordOf(wording.variations, field.type).value, 'variation', pair(field));
   }
   if (isDivision(field)) {
-    return cut(wordOf(wording.divisions, field.type).value, 'division');
+    return cut(
+      wordOf(wording.divisions, field.type).value,
+      'division',
+      parts(wording, sown, overAll, field)
+    );
   }
   if (isFurred(field)) {
-    return cut(wordOf(wording.furs, field.type).value, 'furred field');
+    return cut(wordOf(wording.furs, field.type).value, 'furred field', pair(field));
   }
   return plainBranch(wording, sown, field);
+}
+
+/**
+ * The parts of a divided field, each a whole coat and each taken apart as one.
+ *
+ * Where no part bears anything the parts are their tinctures and nothing more,
+ * so they stand straight under the partition: a parti of azure and or reads as
+ * the two words the blazon wrote and wants no scaffolding between them.
+ *
+ * Where any part bears something they are gathered, each under the part it is
+ * laid in. Ungathered, a bend blazoned in the second half would stand beside the
+ * first half's tincture with nothing to say which half it belonged to — which is
+ * the one thing a divided field's structure exists to answer.
+ *
+ * That is the same question the writer asks before it writes: a blazon ranks its
+ * parts exactly when the short form could not say what they carry.
+ *
+ * A quartered field is gathered whenever its quarters are not the plain pair the
+ * short form fills out from, which is the same rule seen from the other side: a
+ * quarterly of two tinctures reads as those two words, and anything else has to
+ * say which quarter it means.
+ */
+function parts<W extends Word>(
+  wording: BlazonWording<W>,
+  sown: Word,
+  overAll: Word,
+  division: Division
+): readonly Branch[] {
+  const parts = division.parts;
+  if (!gathered(division)) {
+    return parts.slice(0, HALVES).flatMap((part) => structureOf(wording, sown, overAll, part));
+  }
+  return parts.map((part, at) => ({
+    // What the tongue ranks the part by, where it ranks them at all. It is no
+    // term of the vocabulary and leads nowhere: it names a place in the shield
+    // rather than anything borne there.
+    word: wording.rank?.([FIRST + at]),
+    arms: part,
+    children: structureOf(wording, sown, overAll, part),
+  }));
+}
+
+/**
+ * Whether the parts have to be shown one by one rather than as the pair the
+ * blazon wrote.
+ *
+ * Two reasons, and either is enough. A blazon the short form cannot say is
+ * written with its parts ranked, and the tree beside it says what it says — that
+ * is the model's question, and it is asked rather than answered again here. And
+ * a part that bears anything is gathered whatever form the blazon took, because
+ * ungathered, a bend blazoned in the second half would stand beside the first
+ * half's tincture with nothing to say which half it belonged to.
+ */
+function gathered(division: Division): boolean {
+  return !saidInTwo(division) || division.parts.some(bears);
+}
+
+/** Whether a part carries anything beyond the tincture of its field. */
+function bears(part: Blazon): boolean {
+  return (part.chargesOrOrdinaries ?? []).length !== 0;
 }
 
 /** A field of one tincture, with whatever it was sown with standing under it. */
@@ -200,14 +293,20 @@ function semyBranch<W extends Word>(
  */
 function borneBranch<W extends Word>(
   wording: BlazonWording<W>,
+  /** The word this tongue lays a thing over everything else by. */
+  overAll: Word,
   /** The field it is laid on, which is what it is shown laid on. */
   field: Field,
   one: ChargeOrOrdinary
 ): Branch {
   const band = isOrdinary(one);
+  // Asked for what was done to it as well as for its tincture, exactly as the
+  // writer asks it: the question is the same of a band and of a charge, and the
+  // day a tongue names a modified band in one word that word is what the blazon
+  // carries and so what this line of it should show.
   const word = band
-    ? wordIn(wording.ordinaries, one.type, one.tincture)
-    : wordIn(wording.charges, one.type, one.tincture, one.modifier);
+    ? wordIn(wording.ordinaries, one.type, one.tincture, one.modifier)
+    : wordIn(wording.charges, one.type, one.tincture, one.modifier, partsOf(one));
   const count = band ? borne(one) : numberBorne(one);
   return {
     word: word.value,
@@ -217,7 +316,7 @@ function borneBranch<W extends Word>(
     // blazon bears it and under whatever was done to it.
     arms: { field: bare(field), chargesOrOrdinaries: [one] },
     children: [
-      ...(band || one.modifier === undefined || word.means(one.modifier)
+      ...(one.modifier === undefined || word.means(one.modifier)
         ? []
         : [
             {
@@ -226,21 +325,157 @@ function borneBranch<W extends Word>(
               /*
                * The figure under it, borne once. A modifier is not a thing to be
                * drawn on its own — there is no picture of "voided" — so what it
-               * does to the very charge it was said of is the whole of what can
-               * be shown, and the count is left to the charge above.
+               * does to the very charge or band it was said of is the whole of
+               * what can be shown, and the count is left to the figure above.
+               *
+               * Painted as the blazon painted it, where it painted the line: the
+               * tincture is what the modifier was said in, so the arms under it
+               * are the ones that show it being said.
                */
               arms: {
                 field: bare(field),
                 chargesOrOrdinaries: [
-                  { type: one.type, tincture: one.tincture, modifier: one.modifier },
+                  {
+                    type: one.type,
+                    tincture: one.tincture,
+                    modifier: one.modifier,
+                    ...(band && one.modifierTincture !== undefined
+                      ? { modifierTincture: one.modifierTincture }
+                      : {}),
+                  },
                 ],
               },
-              children: [],
+              // The tincture the line was painted in hangs under the modifier
+              // and not under the band, which is what the sentence says: it is
+              // the line that carries it, and the band has one of its own.
+              children:
+                band && one.modifierTincture !== undefined
+                  ? [tinctureBranch(wording, one.modifierTincture)]
+                  : [],
             },
           ]),
-      ...tinctureSaid(wording, word, one.tincture),
+      ...(one.overAll === true
+        ? [
+            {
+              word: overAll.value,
+              rank: 'over all' as const,
+              /*
+               * No arms under it. What the word says is that this figure covers
+               * the others, and the others are branches of their own: a drawing
+               * of the one thing it was said of would show a figure on a field
+               * and say nothing whatever about what it is over.
+               */
+              children: [],
+            },
+          ]
+        : []),
+      ...paintedSaid(wording, field, word, one, count > 1),
+      ...painted(wording, field, one, word),
     ],
   };
+}
+
+/** The parts a charge had painted, which is none for a band. */
+function partsOf(one: ChargeOrOrdinary): readonly Attribute[] {
+  return isCharge(one) ? (one.attributes ?? []).map(({ attribute }) => attribute) : [];
+}
+
+/**
+ * The parts of the charge painted apart from the rest, each with its own
+ * tincture standing under it.
+ *
+ * After the tincture the charge itself carries, which is where the blazon writes
+ * them: "à l'anneau de gueules chatonné d'or" says the hoop is red and then that
+ * the stone is gold, and a tree that said the two in the other order would be
+ * showing a sentence nobody wrote.
+ *
+ * A part the name has already said and that carries no tincture is left off, by
+ * the same rule the tincture is: an anneau has a stone by being an anneau, the
+ * writer writes nothing after it, and a branch the blazon does not carry is one
+ * the reader would look for in the sentence and not find.
+ */
+function painted<W extends Word>(
+  wording: BlazonWording<W>,
+  field: Field,
+  one: ChargeOrOrdinary,
+  named: W
+): readonly Branch[] {
+  if (!isCharge(one) || one.attributes === undefined) {
+    return [];
+  }
+  return one.attributes.flatMap(({ attribute, tincture }: Attributed) => {
+    if (tincture === undefined && named.defaultAttribute === attribute) {
+      return [];
+    }
+    const said = wordSaidOf(wording.attributes, attribute, one.type);
+    return [
+      {
+        word: said.value,
+        rank: 'attribute' as const,
+        /*
+         * The charge with this one part painted, borne once. A word for a part
+         * is no more a thing to be drawn on its own than a modifier is, so what
+         * it paints on the very charge it was said of is the whole of what can
+         * be shown, and the count is left to the charge above.
+         */
+        arms: {
+          field: bare(field),
+          chargesOrOrdinaries: [
+            { type: one.type, tincture: one.tincture, attributes: [{ attribute, tincture }] },
+          ],
+        },
+        // The part's own tincture, said of the part and not of the charge —
+        // which is the whole of what an attribute carries that a modifier does
+        // not. Left off where the blazon named none, the part taking the
+        // charge's own.
+        children: tincture === undefined ? [] : [tinctureBranch(wording, tincture)],
+      },
+    ];
+  });
+}
+
+/**
+ * What the thing is painted with, standing under it: the tincture it names, the
+ * phrase that says it takes the field's own two, reversed, or the word that cuts
+ * it into compons, with the two tinctures it was handed.
+ *
+ * The phrase names neither of the two and cannot, so what stands under it is the
+ * field it takes them from, bare — which is the same rule the tincture follows,
+ * a branch being shown as the arms the word alone amounts to.
+ */
+function paintedSaid<W extends Word>(
+  wording: BlazonWording<W>,
+  field: Field,
+  word: W,
+  one: ChargeOrOrdinary,
+  several: boolean
+): readonly Branch[] {
+  const tincture = one.tincture;
+  if (isCompony(tincture)) {
+    // The word for compony, agreeing as it is written, with the two tinctures
+    // under it: the band itself, cut, on the field it is laid on is what the
+    // word does, and the tinctures are what it was handed.
+    const [first, second] = tincture.compony;
+    return [
+      {
+        word: wording.modify(word, wording.compony, several),
+        rank: 'compony',
+        arms: { field: bare(field), chargesOrOrdinaries: [{ ...one, count: undefined }] },
+        children: [tinctureBranch(wording, first), tinctureBranch(wording, second)],
+      },
+    ];
+  }
+  if (!isCounterchanged(tincture)) {
+    return tinctureSaid(wording, word, tincture);
+  }
+  return [
+    {
+      word: wording.counterchanged.value,
+      rank: 'counterchange',
+      arms: { field: bare(field) },
+      children: [],
+    },
+  ];
 }
 
 /**

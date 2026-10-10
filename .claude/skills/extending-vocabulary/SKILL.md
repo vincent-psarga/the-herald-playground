@@ -61,8 +61,14 @@ Before the first edit, state: the terms added, the modifiers each will take, the
 words each tongue spells them with, and the strewings. Anything a source shows
 but that is not going in — a modifier nobody asked for, a name for a figure that
 cannot be drawn apart from the plain one — is named out loud as left out rather
-than silently dropped. A modifier goes on a charge only when an armorial writes
-it **and** the drawing can be told from the plain figure.
+than silently dropped. A modifier goes on a charge only when a source writes it
+of that charge **and** the drawing can be told from the plain figure. A source is
+any armorial, roll or dictionary — not only the armorials this project carries:
+those say what to read first, not what heraldry allows.
+
+The minimum is the minimum of _new things_: terms, modifiers, words. It is never
+a reason to apply a new modifier to fewer of the existing figures than the
+sources allow — that is settled by step 4, item by item, and nowhere else.
 
 When the work is a grammar capability rather than a term, the vocabulary added is
 whatever proves the rule and nothing more: one charge, one modifier, one article.
@@ -87,9 +93,25 @@ is not repeated here; work it to zero.
 
 This is the step that gets skipped, and the reviewer's first question.
 
-- **A new modifier**: walk every existing charge and decide whether it takes it.
-  Each answer needs a source, and each refusal needs a reason in the comment —
-  the annulet is a roundel voided already, and voiding one again names no figure.
+- **A new modifier** — or anything said of a figure in its place, as compony is
+  said of a band where its tincture would be: walk **every** existing figure it
+  could be said of — every charge, every ordinary — and decide each one. The
+  default is yes: a figure takes it unless there is a reason it does not.
+  - A **yes** cites its source — an attested blazon, or a dictionary naming that
+    figure — and gets a drawing. A yes the drawing cannot show yet is not a no:
+    draw it.
+  - A **no** writes its reason in the comment at the figure's definition, where
+    the next reader looks: the annulet is a roundel voided already, and voiding
+    one again names no figure. "No armorial in the demo writes it" is not a
+    reason.
+  - Where the sources **disagree**, decide, say which way and why at the same
+    place, and quote both.
+  - Where a yes needs a number or a placement no source gives, choose one, and
+    say at the definition that it was chosen here.
+
+  List every figure and its answer before writing code, as a table: nothing is
+  left out by not being looked at.
+
 - **A new charge**: walk every existing modifier and ask the same of it.
 - **A new word of an existing term**: ask which charges it is written of, and
   whether it takes one off the word that had it.

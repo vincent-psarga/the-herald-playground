@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { FieldType } from '../../src/domain/models/Field';
+import { FieldType, half } from '../../src/domain/models/Field';
 import { Languages } from '../../src/domain/models/Languages';
 import { OrdinaryType } from '../../src/domain/models/Ordinary';
 import { Colours, Metals } from '../../src/domain/models/Tinctures';
 import { Branch, structureIn } from './Structure';
+import { Rank } from './Vocabulary';
 import { readBlazon } from './Reading';
 
 /** The structure of a blazon typed as a reader would type it. */
@@ -15,24 +16,87 @@ const of = (text: string, language: Languages): readonly Branch[] => {
   return structureIn(language, read.blazon);
 };
 
-/** The shape alone, as indented lines, which is what the page draws. */
+/**
+ * The shape alone, as indented lines, which is what the page draws.
+ *
+ * A branch no word names — a half of a divided field, where the tongue does not
+ * rank its parts — stands as a bare step, which is how it reads on the page.
+ */
 const drawn = (branches: readonly Branch[], depth = 0): string =>
   branches
     .map(
       (branch) =>
-        `${'  '.repeat(depth)}${branch.word}${branch.count === undefined ? '' : ` ×${branch.count}`}\n` +
+        `${'  '.repeat(depth)}${branch.word ?? '·'}${branch.count === undefined ? '' : ` ×${branch.count}`}\n` +
         drawn(branch.children, depth + 1)
     )
     .join('');
 
-const ranks = (branches: readonly Branch[]): readonly string[] =>
+const ranks = (branches: readonly Branch[]): readonly (Rank | undefined)[] =>
   branches.flatMap((branch) => [branch.rank, ...ranks(branch.children)]);
+
+/** The branch a word names, wherever it stands in the tree. */
+const seek = (branches: readonly Branch[], word: string): Branch | undefined => {
+  for (const branch of branches) {
+    const found = branch.word === word ? branch : seek(branch.children, word);
+    if (found !== undefined) {
+      return found;
+    }
+  }
+  return undefined;
+};
+
+const found = (branches: readonly Branch[], word: string): Branch => {
+  const branch = seek(branches, word);
+  if (branch === undefined) {
+    throw new Error(`No branch for "${word}"`);
+  }
+  return branch;
+};
 
 describe('structureIn', () => {
   test('sets the tinctures of a divided field under the partition that took them', () => {
     expect(drawn(of("Parti d'azur et d'argent, à la bande de gueules", Languages.fr))).toBe(
       ['parti', '  azur', '  argent', 'bande', '  gueules', ''].join('\n')
     );
+  });
+
+  test('leaves a divided field its two tinctures where neither half bears anything', () => {
+    // The scaffolding a composed coat needs would be noise here: the blazon
+    // wrote two words and the tree shows the two words.
+    expect(drawn(of("Parti d'azur et d'or", Languages.fr))).toBe(
+      ['parti', '  azur', '  or', ''].join('\n')
+    );
+  });
+
+  test('gathers the halves of a composed coat, each under the part it is laid in', () => {
+    // Ungathered, the bend would stand beside the first half's tincture with
+    // nothing to say which half it was laid in — which is the one thing a
+    // divided field's structure exists to answer.
+    expect(drawn(of("Parti, au 1 d'azur, au 2 de gueules à la bande d'or", Languages.fr))).toBe(
+      [
+        'parti',
+        '  au premier',
+        '    azur',
+        '  au second',
+        '    gueules',
+        '    bande',
+        '      or',
+        '',
+      ].join('\n')
+    );
+  });
+
+  test('gives a half no rank of its own: it names a place in the shield, not a term', () => {
+    const read = of("Parti, au 1 d'azur, au 2 de gueules à la bande d'or", Languages.fr);
+    const [first, second] = found(read, 'parti').children;
+    expect(first.rank).toBeUndefined();
+    expect(second.rank).toBeUndefined();
+    // And each is shown by its own half, drawn whole.
+    expect(first.arms).toEqual(half(Colours.azure));
+    expect(second.arms).toEqual({
+      field: { type: FieldType.plain, tincture: Colours.gules },
+      chargesOrOrdinaries: [{ type: OrdinaryType.bend, tincture: Metals.or }],
+    });
   });
 
   test('says the same of the same blazon written in the other tongue', () => {
@@ -95,6 +159,37 @@ describe('structureIn', () => {
     );
   });
 
+  test('sets a part painted apart after the tincture, with the part’s own under it', () => {
+    // The blazon says the hoop is red and then that the stone is gold, so the
+    // tree says it in that order — and the stone's tincture hangs off the word
+    // for the part rather than off the charge, which is what an attribute
+    // carries that a modifier does not.
+    expect(drawn(of("D'argent à l'annelet de gueules chatonné d'or", Languages.fr))).toBe(
+      ['argent', 'anneau', '  gueules', '  chatonné', '    or', ''].join('\n')
+    );
+    expect(ranks(of("D'argent à l'annelet de gueules chatonné d'or", Languages.fr))).toEqual([
+      'tincture',
+      'charge',
+      'tincture',
+      'attribute',
+      'tincture',
+    ]);
+  });
+
+  test('names the charge as the writer names it once a part is painted', () => {
+    expect(drawn(of('Argent a ring gules stoned or', Languages.en))).toBe(
+      ['argent', 'gem-ring', '  gules', '  stoned', '    or', ''].join('\n')
+    );
+  });
+
+  test('says nothing of a part the name has already said and no tincture was given', () => {
+    // A gem-ring has a stone by being a gem-ring, and the blazon names no colour
+    // for it — so nothing stands under the charge repeating what the name means.
+    expect(drawn(of('Argent a gem-ring gules', Languages.en))).toBe(
+      ['argent', 'gem-ring', '  gules', ''].join('\n')
+    );
+  });
+
   test('sets what a field was sown with under the field, under the word for the sowing', () => {
     expect(drawn(of('Argent billetty azure', Languages.en))).toBe(
       ['argent', '  billetty', '    azure', ''].join('\n')
@@ -152,6 +247,24 @@ describe('structureIn', () => {
     ]);
   });
 
+  test('sets the word for laying over all under what it was said of', () => {
+    expect(drawn(of("D'argent à la fasce de gueules brochant", Languages.fr))).toBe(
+      ['argent', 'fasce', '  brochant sur le tout', '  gueules', ''].join('\n')
+    );
+    expect(ranks(of('Argent over all a fess gules', Languages.en))).toEqual([
+      'tincture',
+      'ordinary',
+      'over all',
+      'tincture',
+    ]);
+  });
+
+  test('draws no arms under it, the word saying nothing a single figure can show', () => {
+    const laid = of('Argent over all a fess gules', Languages.en);
+    expect(laid[1].children[0].word).toBe('over all');
+    expect(laid[1].children[0].arms).toBeUndefined();
+  });
+
   test('keeps what a field bears in the order it was laid on', () => {
     // The order says which covers which, so the structure must not sort it.
     expect(drawn(of('Or a bend sable, a bordure gules', Languages.en))).toBe(
@@ -161,46 +274,20 @@ describe('structureIn', () => {
 });
 
 describe('the arms a word is shown by', () => {
-  const seek = (branches: readonly Branch[], word: string): Branch | undefined => {
-    for (const branch of branches) {
-      const found = branch.word === word ? branch : seek(branch.children, word);
-      if (found !== undefined) {
-        return found;
-      }
-    }
-    return undefined;
-  };
-
-  const found = (branches: readonly Branch[], word: string): Branch => {
-    const branch = seek(branches, word);
-    if (branch === undefined) {
-      throw new Error(`No branch for "${word}"`);
-    }
-    return branch;
-  };
-
   test('cuts them from this blazon and not from the vocabulary’s own showing of the word', () => {
     // The vocabulary demonstrates every term in gules and argent. Beside a
     // shield painted azure that would tell the reader the field was red, so the
     // arms come from the model the shield itself was drawn from.
     const read = of('Per pale azure and argent, a bend gules', Languages.en);
     expect(found(read, 'per pale').arms).toEqual({
-      field: {
-        type: FieldType.pale,
-        firstTincture: Colours.azure,
-        secondTincture: Metals.argent,
-      },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.argent)] },
     });
   });
 
   test('lays a band on the field it is actually laid on', () => {
     const read = of('Per pale azure and argent, a bend gules', Languages.en);
     expect(found(read, 'bend').arms).toEqual({
-      field: {
-        type: FieldType.pale,
-        firstTincture: Colours.azure,
-        secondTincture: Metals.argent,
-      },
+      field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.argent)] },
       chargesOrOrdinaries: [{ type: OrdinaryType.bend, tincture: Colours.gules }],
     });
   });
@@ -228,6 +315,46 @@ describe('the arms a word is shown by', () => {
     });
   });
 
+  test('sets a band’s modified line under the band, as a charge’s modifier is', () => {
+    // A band is said of exactly as a charge is, so the line it is drawn along is
+    // a word of the blazon and a line of its taking-apart.
+    expect(drawn(of("D'argent au chevron vivré de gueules", Languages.fr))).toBe(
+      ['argent', 'chevron', '  vivré', '  gueules', ''].join('\n')
+    );
+    expect(drawn(of('Argent a chevron vivré gules', Languages.en))).toBe(
+      ['argent', 'chevron', '  vivré', '  gules', ''].join('\n')
+    );
+    // The French word agrees with the band it is shown under, as it does in the
+    // sentence: three bandes are dentelées.
+    expect(drawn(of("D'argent à trois bandes dentelées de gueules", Languages.fr))).toBe(
+      ['argent', 'bande ×3', '  dentelé', '  gueules', ''].join('\n')
+    );
+  });
+
+  test('hangs a painted line’s tincture under the line and not under the band', () => {
+    // "D'or à la bande de gueules engrêlée de sable": the bande carries gueules
+    // and the engrêlée carries sable, so each tincture hangs under the word that
+    // said it. A branch the sentence has and the tree has not is a word the
+    // reader would look for and not find.
+    expect(drawn(of("D'or à la bande de gueules engrêlée de sable", Languages.fr))).toBe(
+      ['or', 'bande', '  engrêlé', '    sable', '  gueules', ''].join('\n')
+    );
+    expect(drawn(of('Or a bend gules engrailed sable', Languages.en))).toBe(
+      ['or', 'bend', '  engrailed', '    sable', '  gules', ''].join('\n')
+    );
+  });
+
+  test('shows a band’s line doing its work on the very band it was said of', () => {
+    const read = of('Argent three bends dancetty gules', Languages.en);
+    expect(found(read, 'dancetty').arms).toEqual({
+      field: { type: FieldType.plain, tincture: Metals.argent },
+      chargesOrOrdinaries: [
+        { type: OrdinaryType.bend, tincture: Colours.gules, modifier: 'Modifier.dancetty' },
+      ],
+    });
+    expect(found(read, 'bend').arms?.chargesOrOrdinaries?.[0]).toMatchObject({ count: 3 });
+  });
+
   test('shows a modifier doing its work on the very charge it was said of', () => {
     // There is no picture of "voided" on its own, so what it does to that charge
     // is the whole of what can be drawn — borne once, the count being the
@@ -240,5 +367,20 @@ describe('the arms a word is shown by', () => {
       ],
     });
     expect(found(read, 'billet').arms?.chargesOrOrdinaries?.[0]).toMatchObject({ count: 3 });
+  });
+
+  test('shows a part painted on the very charge it was said of', () => {
+    const read = of('Argent three gem-rings gules stoned or', Languages.en);
+    expect(found(read, 'stoned').arms).toEqual({
+      field: { type: FieldType.plain, tincture: Metals.argent },
+      chargesOrOrdinaries: [
+        {
+          type: 'Charge.annulet',
+          tincture: Colours.gules,
+          attributes: [{ attribute: 'Attribute.stoned', tincture: Metals.or }],
+        },
+      ],
+    });
+    expect(found(read, 'gem-ring').arms?.chargesOrOrdinaries?.[0]).toMatchObject({ count: 3 });
   });
 });

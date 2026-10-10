@@ -16,7 +16,24 @@ afterEach(cleanup);
 const FRENCH = vocabularyIn(Languages.fr);
 const ENGLISH = vocabularyIn(Languages.en);
 
-const ghost = (word: string) => screen.getByRole('link', { name: word });
+/**
+ * One word as the stack lists it, which is where a reader strikes one from.
+ *
+ * Looked for in the stack and not on the page at large: the struck word's own
+ * reading points at its siblings by name — an annulet at the ring and the
+ * gem-ring — so a word may stand twice over, once in the list and once in the
+ * reading of the word beside it.
+ */
+const ghost = (word: string | RegExp) =>
+  within(document.querySelector('.stack') as HTMLElement).getByRole('link', { name: word });
+/**
+ * A word as the stack names it: the spelling, and the rank after it where
+ * another word shares the spelling — "or" the tincture and "or" the liquid.
+ */
+const named = (entry: VocabularyEntry): [string, string | RegExp] =>
+  entry.qualified
+    ? [`${entry.word} (${entry.rank})`, new RegExp(`^${entry.word}\\s*${entry.rank}$`)]
+    : [entry.word, entry.word];
 const showing = () => document.querySelector('.showing') as HTMLElement;
 /** What scrolls inside the reading, where the reading is a pane of its own. */
 const leaf = () => document.querySelector('.showing__leaf') as HTMLElement;
@@ -90,14 +107,14 @@ describe('the vocabulary of one tongue', () => {
     expect(sift(`${FRENCH.length} words`)).toBeInTheDocument();
   });
 
-  test.each(FRENCH.map((entry) => entry.word))('keeps %s present in the stack', (word) => {
+  test.each(FRENCH.map(named))('keeps %s present in the stack', (_, name) => {
     mount(<VocabularyPage language={Languages.fr} />);
-    expect(ghost(word)).toBeInTheDocument();
+    expect(ghost(name)).toBeInTheDocument();
   });
 
-  test.each(ENGLISH.map((entry) => entry.word))('keeps %s present in English too', (word) => {
+  test.each(ENGLISH.map(named))('keeps %s present in English too', (_, name) => {
     mount(<VocabularyPage language={Languages.en} />);
-    expect(ghost(word)).toBeInTheDocument();
+    expect(ghost(name)).toBeInTheDocument();
   });
 
   test('holds the French words to the French page and the English to the English', () => {
@@ -468,7 +485,10 @@ describe('what one drawing cannot say', () => {
   test('says why an ordinary is borne but once, rather than bearing it twice', async () => {
     mount(<VocabularyPage language={Languages.en} />);
     await strike('bordure');
-    expect(showing().querySelectorAll('.showing__variant')).toHaveLength(0);
+    // Never borne twice, so nothing is shown of a count — and still shown under
+    // every line it may be drawn along, which is another question about it.
+    expect(labels('Modified')).toEqual(['Indented', 'Dancetty', 'Vivré', 'Engrailed']);
+    expect(() => section('Borne in number')).toThrow();
     expect(within(showing()).getByText(/shield has one edge/)).toBeInTheDocument();
   });
 });

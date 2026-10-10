@@ -1,28 +1,43 @@
-import { Parser, alt, apply, kleft, kright, seq, tok } from 'typescript-parsec';
+import { Parser, alt, apply, kleft, kright, list_sc, seq, tok } from 'typescript-parsec';
 import { FrenchDivisionType } from '../../domain/translations/fr/Divisions';
 import { FrenchFurType } from '../../domain/translations/fr/Furs';
 import { FrenchVariationType, PIECES } from '../../domain/translations/fr/Variations';
 import { FrenchChargeType } from '../../domain/translations/fr/Charges';
+import { FrenchCounterchanged } from '../../domain/translations/fr/Counterchanged';
 import { FrenchStrewings, SOWN } from '../../domain/translations/fr/Strewings';
 import { strewnTerms } from '../../domain/translations/Strewings';
 import { FrenchOrdinaryType } from '../../domain/translations/fr/Ordinaries';
+import { FrenchCompony } from '../../domain/translations/fr/Compony';
 import { FrenchWord } from '../../domain/translations/fr/FrenchWord';
 import { BlazonParseError } from '../../domain/errors/parsing/BlazonParseError';
 import { WrongOrdinaryArticle } from '../../domain/errors/parsing/WrongOrdinaryArticle';
 import { WrongTinctureArticle } from '../../domain/errors/parsing/WrongTinctureArticle';
+import { FrenchAttributes } from '../../domain/translations/fr/Attributes';
 import { FrenchModifiers } from '../../domain/translations/fr/Modifiers';
+import { FrenchOverAll } from '../../domain/translations/fr/OverAll';
 import { FrenchNumbers } from '../../domain/translations/fr/Numbers';
+import { FrenchRanks } from '../../domain/translations/fr/Ranks';
 import { FrenchTinctures } from '../../domain/translations/fr/Tinctures';
-import { Modifier } from '../../domain/models/Modifier';
-import { asSeveral, wordsOf, writtenAs } from '../../domain/translations/Translation';
+import { Translation, asSeveral, wordsOf, writtenAs } from '../../domain/translations/Translation';
 import { TokenKind } from '../lexer/Lexer';
 import { BlazonGrammar } from '../parser/BlazonGrammar';
-import { anyKeyword, guard, keyword, optional, spelledTerm, term } from '../parser/Combinators';
-import { asOrdinary, asDivision, asTincture } from '../parser/Failures';
-import { NOT_IN_NUMBER, alone, bearings, modifiable, several } from '../parser/Borne';
-import { ModifierForm, modifying } from '../parser/Modifiers';
+import {
+  anyKeyword,
+  anyPhrase,
+  guard,
+  keyword,
+  optional,
+  spelledTerm,
+  term,
+} from '../parser/Combinators';
+import { asOrdinary, asDivision, asRank, asTincture } from '../parser/Failures';
+import { NOT_IN_NUMBER, alone, bearings, qualifiable, several } from '../parser/Borne';
+import { ComponyForm, componying } from '../parser/Compony';
+import { QualifierForm, qualifying } from '../parser/Qualifiers';
 import { number } from '../parser/Numbers';
 import { BARE, strewing } from '../parser/Treatment';
+import { namedIn } from '../parser/Liquids';
+import { FrenchLiquids } from '../../domain/translations/fr/Liquids';
 import { varied } from '../parser/Variations';
 import {
   AND,
@@ -35,10 +50,9 @@ import {
   agreementsOf,
   bearing,
   everyBearing,
-  expectedArticle,
   sownIn,
-  withArticle,
 } from './FrenchGrammar';
+import { expectedArticle, withArticle } from '../Articles';
 
 // A tincture may be named bare ("or") or introduced by an article ("d'or"), so
 // the article is part of the grammar rather than part of the vocabulary.
@@ -59,6 +73,10 @@ const TINCTURE = apply(
   ),
   ({ term }) => term
 );
+
+// "Goutté de sang", "trois gouttes de poix": some authors name a drop by the
+// liquid it is a drop of, and are understood. The tincture is what comes back.
+const TINCTURE_OF = namedIn(TINCTURE, FrenchLiquids);
 
 // A band and a charge are borne by the same phrase and are read from one
 // vocabulary: "à la fasce" and "à la billette" differ in nothing a grammar can
@@ -86,20 +104,25 @@ const borneAs = (article: Parser<TokenKind, unknown>, written: (word: FrenchWord
   );
 
 /**
- * Every writing of every modifier, and which of them a phrase agreeing so many
- * ways will take.
+ * Every writing of every word of one vocabulary that qualifies a charge, and
+ * which of them a phrase agreeing so many ways will take.
  *
  * All four writings of a word are held, the ones that agree and the ones that do
  * not, because a blazon that wrote the wrong one wrote this vocabulary's word
  * all the same: "au losange évidée" is a mistake to be named, not a word to be
  * passed over. The first agreement given is the one a refusal asks for.
+ *
+ * The modifiers and the attributes are two vocabularies and one reading: both
+ * are participles, both stand after the charge, and both agree with it in gender
+ * and in number — "à la billette vidée", "à l'anneau chatonné".
  */
-function agreeingForms(
+function agreeingForms<T extends string>(
+  terms: Translation<T, FrenchWord>,
   accepted: readonly Agreement[]
-): ReadonlyMap<string, ModifierForm<FrenchWord>> {
-  const forms = new Map<string, ModifierForm<FrenchWord>>();
-  for (const term of Object.keys(FrenchModifiers) as Modifier[]) {
-    for (const word of wordsOf(FrenchModifiers, term)) {
+): ReadonlyMap<string, QualifierForm<T, FrenchWord>> {
+  const forms = new Map<string, QualifierForm<T, FrenchWord>>();
+  for (const term of Object.keys(terms) as T[]) {
+    for (const word of wordsOf(terms, term)) {
       const agreed = new Set(
         accepted.map(({ feminine, several }) => word.agreeing(feminine, several).toLowerCase())
       );
@@ -118,23 +141,62 @@ function agreeingForms(
   return forms;
 }
 
-// Built once per shape of phrase rather than once per blazon: which writings
-// agree is settled by the article and the number, and neither depends on what
-// was written after them.
-const AGREEING = new Map<string, ReadonlyMap<string, ModifierForm<FrenchWord>>>();
+/**
+ * The reading one vocabulary is given, under each shape of phrase that asks for
+ * it.
+ *
+ * Built once per shape rather than once per blazon: which writings agree is
+ * settled by the article and the number, and neither depends on what was written
+ * after them. Each vocabulary keeps its own, the two holding different words.
+ */
+function agreeingWith<T extends string>(terms: Translation<T, FrenchWord>) {
+  const known = new Map<string, ReadonlyMap<string, QualifierForm<T, FrenchWord>>>();
+  return (accepted: readonly Agreement[]) => {
+    const shape = accepted.map(({ feminine, several }) => `${feminine}/${several}`).join(' ');
+    const forms = known.get(shape) ?? agreeingForms(terms, accepted);
+    known.set(shape, forms);
+    return qualifying(forms);
+  };
+}
 
-const modifierAgreeing = (accepted: readonly Agreement[]) => {
-  const shape = accepted.map(({ feminine, several }) => `${feminine}/${several}`).join(' ');
-  const known = AGREEING.get(shape) ?? agreeingForms(accepted);
-  AGREEING.set(shape, known);
-  return modifying(known);
-};
+const modifierAgreeing = agreeingWith(FrenchModifiers);
+const attributeAgreeing = agreeingWith(FrenchAttributes);
+
+/**
+ * Every writing of the word for compony, and which of them a phrase agreeing so
+ * many ways will take — built as the modifiers' are, and for the same reason.
+ *
+ * Every spelling agrees by the one rule, "componné" as readily as "componé":
+ * the word's own spelling may be told otherwise, and the rest add "-e" and "-s"
+ * as a participle does.
+ */
+function componyAgreeing(accepted: readonly Agreement[]): ReadonlyMap<string, ComponyForm> {
+  const writings = (spelling: string) => (feminine: boolean, several: boolean) =>
+    spelling === FrenchCompony.value
+      ? FrenchCompony.agreeing(feminine, several)
+      : `${spelling}${feminine ? 'e' : ''}${several ? 's' : ''}`;
+  const forms = new Map<string, ComponyForm>();
+  for (const { value } of FrenchCompony.spellings) {
+    const written = writings(value);
+    const agreed = new Set(accepted.map(({ feminine, several }) => written(feminine, several)));
+    const expected = written(accepted[0].feminine, accepted[0].several);
+    for (const feminine of [false, true]) {
+      for (const several of [false, true]) {
+        const writing = written(feminine, several);
+        forms.set(writing, { agrees: agreed.has(writing), expected });
+      }
+    }
+  }
+  return forms;
+}
 
 // What the two gendered articles say of whatever follows the charge. The article
 // is the blazon's own word for the gender, so a blazon that has chosen one is
 // held to it: "au tourteau de gueules évidé", and never "évidée".
 const MASCULINE = modifierAgreeing([{ feminine: false, several: false }]);
 const FEMININE = modifierAgreeing([{ feminine: true, several: false }]);
+const MASCULINE_PART = attributeAgreeing([{ feminine: false, several: false }]);
+const FEMININE_PART = attributeAgreeing([{ feminine: true, several: false }]);
 
 // Where the phrase said nothing about gender — the article elided, or the count
 // having taken the article's place — the word's own gender governs, and a word
@@ -142,26 +204,72 @@ const FEMININE = modifierAgreeing([{ feminine: true, several: false }]);
 const asTheWordStands = (several: boolean) => (word: FrenchWord) =>
   modifierAgreeing(agreementsOf(word, several));
 
+const partAsTheWordStands = (several: boolean) => (word: FrenchWord) =>
+  attributeAgreeing(agreementsOf(word, several));
+
+// The word for compony, agreeing with the phrase as a modifier does: "à la
+// bordure componée", and under a count with the word's own gender, "à deux
+// bandes componées".
+const FEMININE_COMPONY = componying(componyAgreeing([{ feminine: true, several: false }]));
+const MASCULINE_COMPONY = componying(componyAgreeing([{ feminine: false, several: false }]));
+const componyAsTheWordStands = (several: boolean) => (word: FrenchWord) =>
+  componying(componyAgreeing(agreementsOf(word, several)));
+
 // Nothing borne is ever named bare: the article is what says the field bears it
 // rather than is divided by it. Three articles, the third being the two others
 // elided before a vowel — "à l'annelet", which says nothing about gender and is
 // therefore accepted for either.
 const ONE = alt(
-  modifiable(alone(borneAs(A_LA, (word) => `à la ${word.value}`)), () => FEMININE),
-  modifiable(alone(borneAs(AU, (word) => `au ${word.value}`)), () => MASCULINE),
-  modifiable(alone(borneAs(A_L, (word) => `à l'${word.value}`)), asTheWordStands(false))
+  qualifiable(
+    alone(borneAs(A_LA, (word) => `à la ${word.value}`)),
+    () => FEMININE,
+    () => FEMININE_PART,
+    () => FEMININE_COMPONY
+  ),
+  qualifiable(
+    alone(borneAs(AU, (word) => `au ${word.value}`)),
+    () => MASCULINE,
+    () => MASCULINE_PART,
+    () => MASCULINE_COMPONY
+  ),
+  qualifiable(
+    alone(borneAs(A_L, (word) => `à l'${word.value}`)),
+    asTheWordStands(false),
+    partAsTheWordStands(false),
+    componyAsTheWordStands(false)
+  )
 );
 
 // Several of one, named in the plural after the count: "à trois chevrons", "à
 // trois billettes". No gender is agreed with here, so unlike the singular there
 // is but one shape of the phrase to read — and what is said of the charge after
 // it agrees with the word rather than with anything the phrase supplied.
-const SEVERAL_BORNE = modifiable(
+const SEVERAL_BORNE = qualifiable(
   kright(BEFORE_SEVERAL, several(BEARINGS, FrenchNumbers, asOrdinary, NOT_IN_NUMBER)),
-  asTheWordStands(true)
+  asTheWordStands(true),
+  partAsTheWordStands(true),
+  componyAsTheWordStands(true)
 );
 
 const BORNE = alt(ONE, SEVERAL_BORNE);
+
+// "à trois bandes de gueules brochant", "au chef d'azur, brochant sur le tout":
+// French says it after the tincture and after whatever else was said of the
+// charge, which is the last place in the phrase there is.
+//
+// An armorial parts it from what it is said of with the same mark it parts one
+// bearing from the next, so the mark is read here as well. Read only by the
+// phrase that owns it: a mark with nothing but the participle after it never
+// opened a second bearing, and the one with a bearing after it is untouched.
+const BROCHANT = kright(optional(tok(TokenKind.Separator)), anyPhrase(writtenAs(FrenchOverAll)));
+
+// "à la bordure de l'un à l'autre": said where the tincture would be said, and
+// saying that there is none of its own. Every spelling the word answers to is
+// read — French writes "de l'un en l'autre" as readily — and all of them are
+// read off the word rather than written out again, half of each being articles
+// the lexer reads as articles: the phrases the vocabulary page shows a reader
+// are the phrases the parser answers to.
+const COUNTERCHANGED = anyPhrase(writtenAs(FrenchCounterchanged));
 
 // French counts the pieces of a varied field after naming the tinctures it
 // alternates — "bandé de gueules et d'argent de six pièces" — and an armorial
@@ -193,13 +301,35 @@ const SOWN_CHARGE = kright(
 
 // A field of one tincture may be called bare, or be said to have been sown, and
 // is never both: what "plain" promises is that nothing was sown on it either.
+/**
+ * The ranks one phrase of a divided field names: "au premier", "au second", and
+ * the same ranks in figures or in Roman numerals — "au 1", "au II" — which the
+ * armorials write as readily.
+ *
+ * One phrase may name several, which is how the armorials write a quartered
+ * field whose quarters repeat: "Écartelé : aux 1 et 4 d'azur au chevron d'or ;
+ * aux 2 et 3, d'azur à trois colombes d'argent". The article turns plural when
+ * it does, as it does before a count, and the ranks are joined by the same "et"
+ * that joins the halves of a field — so "aux" is read with a list behind it and
+ * "au" with a single rank, and a blazon that writes one article where it meant
+ * the other has said something neither form reads.
+ *
+ * The article is the one that stands before a charge, so a list of what a part
+ * bears has to be told that a rank may stand where it is looking for one.
+ */
+const RANK = alt(
+  apply(kright(AU, number(FrenchRanks, asRank)), (rank) => [rank]),
+  kright(keyword('aux'), list_sc(number(FrenchRanks, asRank), AND))
+);
+
 const TREATMENT = alt(
   apply(PLAIN, () => BARE),
-  strewing(alt(NAMED_STREWING, SOWN_CHARGE), TINCTURE)
+  strewing(alt(NAMED_STREWING, SOWN_CHARGE), (type) => TINCTURE_OF(type))
 );
 
 export const FrenchBlazonGrammar: BlazonGrammar = {
   tincture: TINCTURE,
+  tinctureOf: TINCTURE_OF,
   division: term(FrenchDivisionType, asDivision),
   // A furred field is named bare too, and nothing is counted after it: "Vairé
   // d'or et de gueules" is the whole of the phrase.
@@ -210,5 +340,8 @@ export const FrenchBlazonGrammar: BlazonGrammar = {
   pieces: HOW_MANY_PIECES,
   treatment: TREATMENT,
   borne: BORNE,
+  overAll: BROCHANT,
+  counterchanged: COUNTERCHANGED,
   and: AND,
+  rank: RANK,
 };

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { Blazon } from '../../domain/models/Blazon';
-import { DIVISIONS, DivisionType, FieldType } from '../../domain/models/Field';
+import { DIVISIONS, DivisionType, FieldType, half, painted } from '../../domain/models/Field';
 import { ChargeType } from '../../domain/models/Charge';
 import { OrdinaryType } from '../../domain/models/Ordinary';
 import { Colours, Furs, Metals, TINCTURES, Tincture } from '../../domain/models/Tinctures';
@@ -20,11 +20,7 @@ describe('FrenchBlazonWriter', () => {
   test('writes a divided field', () => {
     expect(
       writer.write({
-        field: {
-          type: FieldType.pale,
-          firstTincture: Colours.azure,
-          secondTincture: Metals.or,
-        },
+        field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
       })
     ).toBe("Parti d'azur et d'or.");
   });
@@ -37,9 +33,68 @@ describe('FrenchBlazonWriter', () => {
     [FieldType.saltire, 'Écartelé en sautoir'],
   ])('names %s in French', (type, name) => {
     const written = writer.write({
-      field: { type, firstTincture: Colours.gules, secondTincture: Metals.argent },
+      field: { type, parts: painted(type, Colours.gules, Metals.argent) },
     });
     expect(written).toBe(`${name} de gueules et d'argent.`);
+  });
+
+  // A half is arms, so it is written as arms are — the field, then whatever it
+  // bears — in the place a bare half writes its tincture. Nothing else about the
+  // phrase changes: the name of the line opens it and the conjunction stands
+  // between the halves, exactly as it does between two tinctures.
+  test('writes a half that bears a charge as the arms it is', () => {
+    expect(
+      writer.write({
+        field: {
+          type: FieldType.pale,
+          parts: [
+            {
+              field: { type: FieldType.plain, tincture: Colours.azure },
+              chargesOrOrdinaries: [{ type: ChargeType.fleurDeLis, tincture: Metals.or, count: 3 }],
+            },
+            half(Furs.ermine),
+          ],
+        },
+      })
+    ).toBe("Parti d'azur à trois fleurs de lys d'or et d'hermine.");
+  });
+
+  // Which half is sown is a thing a half can now say, a half being arms with a
+  // field of its own: the sowing belongs to that field and not to the division.
+  // The grammar has yet to read it, so the writer says more here than either
+  // tongue can read back.
+  test('writes a sown half, the sowing belonging to the half and not the field', () => {
+    expect(
+      writer.write({
+        field: {
+          type: FieldType.pale,
+          parts: [
+            {
+              field: {
+                type: FieldType.plain,
+                tincture: Colours.azure,
+                semy: { type: ChargeType.fleurDeLis, tincture: Metals.or },
+              },
+            },
+            half(Metals.argent),
+          ],
+        },
+      })
+    ).toBe("Parti d'azur semé de fleurs de lys d'or et d'argent.");
+  });
+
+  test('writes a bare half as its tincture and nothing more', () => {
+    // A half that bears nothing is arms that bear nothing, and arms that bear
+    // nothing are written as their field: so the commonest division in the
+    // armorials comes back out as the two tinctures it was written as.
+    expect(
+      writer.write({
+        field: {
+          type: FieldType.fess,
+          parts: [{ field: { type: FieldType.plain, tincture: Metals.or } }, half(Colours.sable)],
+        },
+      })
+    ).toBe("Coupé d'or et de sable.");
   });
 
   describe('a field bearing an ordinary', () => {
@@ -73,11 +128,7 @@ describe('FrenchBlazonWriter', () => {
     test('writes an ordinary laid on a divided field', () => {
       expect(
         writer.write({
-          field: {
-            type: FieldType.pale,
-            firstTincture: Colours.azure,
-            secondTincture: Metals.or,
-          },
+          field: { type: FieldType.pale, parts: [half(Colours.azure), half(Metals.or)] },
           chargesOrOrdinaries: [{ type: OrdinaryType.saltire, tincture: Colours.gules }],
         })
       ).toBe("Parti d'azur et d'or au sautoir de gueules.");
@@ -108,6 +159,25 @@ describe('FrenchBlazonWriter', () => {
 });
 
 describe('round trip', () => {
+  // The arms of Bourgogne: a quarter cut into pieces of its own, which the
+  // ranked form has to say — two tinctures cannot.
+  test('a quartered field whose quarters are cut into pieces survives the round trip', () => {
+    const bendy = {
+      field: {
+        type: FieldType.bendy as const,
+        firstTincture: Metals.or,
+        secondTincture: Colours.azure,
+        pieces: 6,
+      },
+    };
+    const blazon: Blazon = {
+      field: {
+        type: FieldType.cross,
+        parts: [bendy, half(Colours.gules), half(Colours.gules), bendy],
+      },
+    };
+    expect(roundTrip(blazon)).toEqual(blazon);
+  });
   const roundTrip = (blazon: Blazon) => parser.parse(writer.write(blazon));
 
   test.each(TINCTURES)('a plain field of %s survives being written and read back', (tincture) => {
@@ -117,7 +187,7 @@ describe('round trip', () => {
 
   test.each(DIVISIONS)('a field divided per %s survives the round trip', (type) => {
     const blazon: Blazon = {
-      field: { type, firstTincture: Colours.sable, secondTincture: Metals.or },
+      field: { type, parts: painted(type, Colours.sable, Metals.or) },
     };
     expect(roundTrip(blazon)).toEqual(blazon);
   });
@@ -140,11 +210,7 @@ describe('round trip', () => {
 
   test('a divided field bearing an ordinary survives the round trip', () => {
     const blazon: Blazon = {
-      field: {
-        type: FieldType.bend,
-        firstTincture: Colours.gules,
-        secondTincture: Metals.argent,
-      },
+      field: { type: FieldType.bend, parts: [half(Colours.gules), half(Metals.argent)] },
       chargesOrOrdinaries: [{ type: OrdinaryType.chevron, tincture: Colours.sable }],
     };
     expect(roundTrip(blazon)).toEqual(blazon);
@@ -167,7 +233,7 @@ describe('round trip', () => {
     ).toBe("D'azur à la bande d'or.");
     expect(
       writer.write({
-        field: { type: FieldType.bend, firstTincture: Colours.azure, secondTincture: Metals.or },
+        field: { type: FieldType.bend, parts: [half(Colours.azure), half(Metals.or)] },
       })
     ).toBe("Tranché d'azur et d'or.");
   });

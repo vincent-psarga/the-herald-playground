@@ -1,4 +1,7 @@
-import { Blazon } from '../../../domain/models/Blazon';
+import { paintedIn } from '../../../domain/models/Attributes';
+import { Blazon, isCharge } from '../../../domain/models/Blazon';
+import { isCompony } from '../../../domain/models/Compony';
+import { isCounterchanged } from '../../../domain/models/Counterchanged';
 import { isDivision, isFurred, isVariation } from '../../../domain/models/Field';
 import { Tincture } from '../../../domain/models/Tinctures';
 import { ColorModel, DrawOptions, IBlazonDrawer } from '../../../domain/services/IBlazonDrawer';
@@ -38,17 +41,46 @@ export class SvgBlazonDrawer implements IBlazonDrawer {
 
 /**
  * Every tincture the drawing will ask for, so that whatever each is painted with
- * is defined beside it. What a field is sown with counts among them: a semy is
- * painted with a tincture like anything else, and a hatched one needs its ruling
- * placed or it is drawn in nothing at all.
+ * is defined beside it. What a field is sown with counts among them, and so does
+ * a part of a charge painted apart from the rest: each is painted with a tincture
+ * like anything else, and a hatched one needs its ruling placed or it is drawn
+ * in nothing at all.
+ *
+ * A divided field is asked of its parts rather than of itself, each part being
+ * arms with a field and bearings of its own: the tinctures of a part are the
+ * part's, however many parts there are and however deep they go.
+ *
+ * A figure painted out of the field names none of its own and adds none here:
+ * what it is painted with is the field's two, which are already among these. A
+ * band cut into compons adds both of its own.
  */
 function tincturesOf(blazon: Blazon): readonly Tincture[] {
   const painted = blazon.field;
-  const field =
-    isDivision(painted) || isVariation(painted) || isFurred(painted)
+  const field = isDivision(painted)
+    ? painted.parts.flatMap(tincturesOf)
+    : isVariation(painted) || isFurred(painted)
       ? [painted.firstTincture, painted.secondTincture]
       : [painted.tincture, ...(painted.semy === undefined ? [] : [painted.semy.tincture])];
-  return [...field, ...(blazon.chargesOrOrdinaries ?? []).map(({ tincture }) => tincture)];
+  return [
+    ...field,
+    ...(blazon.chargesOrOrdinaries ?? []).flatMap((one) => {
+      const tincture = one.tincture;
+      if (isCounterchanged(tincture)) {
+        return [];
+      }
+      if (isCompony(tincture)) {
+        return tincture.compony;
+      }
+      return [
+        tincture,
+        ...(isCharge(one)
+          ? (one.attributes ?? [])
+              .map((painted) => paintedIn(painted, tincture))
+              .filter((tincture) => tincture !== undefined)
+          : []),
+      ];
+    }),
+  ];
 }
 
 /** The pelt a furred field is covered with, where the field is furred at all. */

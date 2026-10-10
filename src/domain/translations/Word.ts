@@ -1,7 +1,10 @@
-import { ChargeType } from '../models/Charge';
+import { Attribute } from '../models/Attributes';
+import { BorneType } from '../models/Blazon';
 import { Languages } from '../models/Languages';
-import { Source } from '../models/Source';
+import { isCompony } from '../models/Compony';
+import { Tinctured, isCounterchanged } from '../models/Counterchanged';
 import { Modifier } from '../models/Modifier';
+import { Source } from '../models/Source';
 import { TINCTURES, Tincture } from '../models/Tinctures';
 
 /** One way a word is written, and how that writing counts more than one of it. */
@@ -37,10 +40,14 @@ export interface WordOptions {
   readonly alternateWording?: AlternateWording;
   readonly allowedTinctures?: readonly Tincture[];
   readonly defaultTincture?: Tincture;
-  /** The charges this word alone is said of, for a word that qualifies rather than names. */
-  readonly saidOf?: readonly ChargeType[];
+  /** What this word alone is said of, for a word that qualifies rather than names. */
+  readonly saidOf?: readonly BorneType[];
   /** What the word already says was done to the charge, for a name that says it. */
   readonly defaultModifier?: Modifier;
+  /** The part the word already says the figure has, for a name that says it. */
+  readonly defaultAttribute?: Attribute;
+  /** Whether "de" contracts to "d'" before the word, where the first letter is wrong. */
+  readonly needsElision?: boolean;
 }
 
 /**
@@ -85,11 +92,12 @@ const UNGLOSSED: Description<Languages.en> = { lang: Languages.en, value: '', so
  * that the vocabulary holds one entry where heraldry has one word and the parser
  * still answers to every spelling of it.
  *
- * A word may also carry the charges it is said of, which is the same question
- * asked of a word that qualifies instead of naming. A tongue may hold two words
- * for the one thing and give each its own charges — French voids the star with
- * évidé and everything else with vidé — and which is which is no more the term's
- * business than the difference between a besant and a tourteau is.
+ * A word may also carry what it is said of, which is the same question asked of
+ * a word that qualifies instead of naming. A tongue may hold two words for the
+ * one thing and give each its own — French voids the star with évidé and
+ * everything else with vidé — and which is which is no more the term's business
+ * than the difference between a besant and a tourteau is. It is asked of a band
+ * as readily as of a charge, both being things a blazon may say something of.
  *
  * A word may also carry what was done to the figure. Heraldry gives some of the
  * modified charges a name of their own — a lozenge voided is a mascle and a
@@ -97,6 +105,12 @@ const UNGLOSSED: Description<Languages.en> = { lang: Languages.en, value: '', so
  * written, exactly as a besant says gold by being written. It is the same charge
  * and the same drawing either way, so it is a word of the term and not a term of
  * its own: the model holds one lozenge, voided or not.
+ *
+ * A word may also carry a part of the figure, which is the ring's doing. A
+ * gem-ring is a ring with a stone in it, and the name says the stone by being
+ * written where "annulet" says none. What it does not say is the stone's
+ * tincture, so unlike a modifier the part is still owed something after the
+ * name.
  *
  * A word may also carry the tincture, which is the roundel's doing. Heraldry
  * names that charge after the coin, the disc or the cake it is the picture of,
@@ -136,17 +150,48 @@ export class Word {
   public readonly defaultTincture?: Tincture;
 
   /**
+   * Whether the word says anything at all about what the figure is painted with.
+   *
+   * Most words name a figure and nothing more, and this is false of them. The
+   * roundel's names are why there is a question: a besant is gold, a torteau is
+   * red, and the French besant is any metal — each of those says something the
+   * blazon then need not, and each is therefore a claim the blazon can
+   * contradict.
+   *
+   * Read off whether the word was told anything rather than off what it ended up
+   * allowing, so that a word told nothing claims nothing however the defaults
+   * fill it in.
+   */
+  public readonly namesATincture: boolean;
+
+  /**
+   * What this word alone is said of, where the armorials keep it for some of the
+   * things a field bears and not for others.
+   * Whether the French "de" contracts to "d'" before the word: "d'or", but "de
+   * gueules".
+   *
+   * Asked of every word a blazon introduces with that article, which is every
+   * French word and the French words English borrows too — Parker's "gutté
+   * d'eau" elides as French does. Elision can usually be read off the first
+   * letter, but not always: a French h is either mute, when the word behaves as
+   * though it began with the vowel behind it, or aspirated, when it does not —
+   * "d'hermine", but "de hérisson". So it is declared where the letter is wrong.
+   * A word nothing introduces with "de" is never asked.
+   */
+  public readonly needsElision: boolean;
+
+  /**
    * The charges this word alone is said of, where the armorials keep it for
    * some and not for others.
    *
    * Left unsaid by every word that is said of whatever will take it, which is
    * every word that names something and most of the words that qualify one: the
-   * list is a claim on particular charges and not a licence, so a word making no
+   * list is a claim on particular terms and not a licence, so a word making no
    * claim is the general one and is written wherever no other word has claimed
-   * the charge. Every word is read of every charge either way — this settles
-   * which comes back, and never what may be said.
+   * what it is said of. Every word is read of everything either way — this
+   * settles which comes back, and never what may be said.
    */
-  public readonly saidOf?: readonly ChargeType[];
+  public readonly saidOf?: readonly BorneType[];
 
   /**
    * What the word already says was done to the charge, where the word says it.
@@ -159,6 +204,16 @@ export class Word {
    * borne or is.
    */
   public readonly defaultModifier?: Modifier;
+
+  /**
+   * The part the word already says the figure has, where the word says one.
+   *
+   * Left unsaid by every word that names the figure and nothing more. A gem-ring
+   * is a ring with a stone in it and says so by being the word it is, so the
+   * blazon need write nothing to give it one — and what it does write after such
+   * a name is the stone's tincture, which the name never said.
+   */
+  public readonly defaultAttribute?: Attribute;
 
   /**
    * What the word means, in as many sentences as it takes, and who says so.
@@ -185,20 +240,43 @@ export class Word {
       })),
     ];
     this.defaultTincture = options?.defaultTincture;
+    this.namesATincture =
+      options?.defaultTincture !== undefined || options?.allowedTinctures !== undefined;
     this.saidOf = options?.saidOf;
     this.defaultModifier = options?.defaultModifier;
+    this.defaultAttribute = options?.defaultAttribute;
+    this.needsElision = options?.needsElision ?? /^[aeiouyàâäéèêëîïôöùûü]/.test(value);
     this.allowedTinctures =
       options?.allowedTinctures ??
       (this.defaultTincture === undefined ? TINCTURES : [this.defaultTincture]);
   }
 
-  /** Whether the word may be borne in a tincture. */
-  accepts(tincture: Tincture): boolean {
-    return this.allowedTinctures.includes(tincture);
+  /**
+   * Whether the word may be borne painted this way: in a tincture it names, or
+   * out of the field it is laid on.
+   *
+   * Only a word that claims no tincture may take the field. A name chosen for a
+   * tincture — or for a rank of them — says what the figure is painted with, and
+   * a figure painted out of a divided field is painted two things at once and
+   * neither of them the word's: a besant counterchanged would be saying gold of
+   * a disc that is half gold and half whatever the other half of the field is.
+   * So what answers is the word that named no tincture to begin with, which is
+   * the same word a blazon naming a fur falls back on — "a roundel", where
+   * French, having no such word for the disc, has nothing to fall back on and
+   * refuses the blazon.
+   *
+   * A band cut into compons is painted two things at once as well, both of them
+   * named, and answers the same way: no name chosen for one tincture is said of
+   * a band in two.
+   */
+  accepts(tinctured: Tinctured): boolean {
+    return isCounterchanged(tinctured) || isCompony(tinctured)
+      ? !this.namesATincture
+      : this.allowedTinctures.includes(tinctured);
   }
 
-  /** Whether the word claims a charge as one of its own. */
-  claims(type: ChargeType): boolean {
+  /** Whether the word claims a band or a charge as one of its own. */
+  claims(type: BorneType): boolean {
     return this.saidOf?.includes(type) ?? false;
   }
 
@@ -224,5 +302,20 @@ export class Word {
    */
   takes(modifier: Modifier): boolean {
     return this.defaultModifier === undefined || this.defaultModifier === modifier;
+  }
+
+  /**
+   * Whether the word is the one for a figure with exactly these parts painted.
+   *
+   * Asked when a blazon is written rather than read. A name that says a part is
+   * the word for a charge that has it — "a gem-ring or stoned azure" — and a
+   * name that says none is the word for a charge with nothing painted apart. The
+   * part still comes back with its own tincture written after the name: the
+   * gem-ring says there is a stone and never what colour it is.
+   */
+  shows(attributes: readonly Attribute[]): boolean {
+    return this.defaultAttribute === undefined
+      ? attributes.length === 0
+      : attributes.includes(this.defaultAttribute);
   }
 }

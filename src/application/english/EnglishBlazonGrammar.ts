@@ -1,22 +1,30 @@
-import { alt, apply, kright, seq } from 'typescript-parsec';
+import { alt, apply, kright, list_sc, seq } from 'typescript-parsec';
+import { EnglishCompony } from '../../domain/translations/en/Compony';
+import { anyComponyWriting, componying } from '../parser/Compony';
 import { EnglishDivisionType } from '../../domain/translations/en/Divisions';
 import { EnglishFurType } from '../../domain/translations/en/Furs';
 import { EnglishVariationType, OF } from '../../domain/translations/en/Variations';
+import { EnglishAttributes } from '../../domain/translations/en/Attributes';
 import { EnglishChargeType } from '../../domain/translations/en/Charges';
+import { EnglishCounterchanged } from '../../domain/translations/en/Counterchanged';
 import { EnglishModifiers } from '../../domain/translations/en/Modifiers';
+import { EnglishOverAll } from '../../domain/translations/en/OverAll';
 import { EnglishStrewings, OF as SOWN_OF, SOWN } from '../../domain/translations/en/Strewings';
 import { strewnTerms } from '../../domain/translations/Strewings';
 import { asSeveral, writtenAs } from '../../domain/translations/Translation';
 import { EnglishOrdinaryType } from '../../domain/translations/en/Ordinaries';
 import { EnglishNumbers } from '../../domain/translations/en/Numbers';
+import { EnglishRanks } from '../../domain/translations/en/Ranks';
 import { EnglishTinctures } from '../../domain/translations/en/Tinctures';
 import { BlazonGrammar } from '../parser/BlazonGrammar';
-import { anyKeyword, keyword, optional, spelledTerm, term } from '../parser/Combinators';
-import { asOrdinary, asDivision, asTincture } from '../parser/Failures';
-import { NOT_IN_NUMBER, alone, bearings, modifiable, several } from '../parser/Borne';
-import { anyWriting, modifying } from '../parser/Modifiers';
+import { anyKeyword, anyPhrase, keyword, optional, spelledTerm, term } from '../parser/Combinators';
+import { asOrdinary, asDivision, asRank, asTincture } from '../parser/Failures';
+import { NOT_IN_NUMBER, alone, bearings, laidOver, qualifiable, several } from '../parser/Borne';
+import { anyWriting, qualifying } from '../parser/Qualifiers';
 import { number } from '../parser/Numbers';
 import { strewing } from '../parser/Treatment';
+import { namedIn } from '../parser/Liquids';
+import { EnglishLiquids } from '../../domain/translations/en/Liquids';
 import { VariedField, varied } from '../parser/Variations';
 import { ARTICLE, AND } from './EnglishGrammar';
 
@@ -31,6 +39,12 @@ const VARIATION = apply(
   ),
   ([named, counted]): VariedField => (counted === undefined ? named : { ...named, pieces: counted })
 );
+
+const TINCTURE = term(EnglishTinctures, asTincture);
+
+// "Gutté de sang", "three gouttes d'eau": a drop is named by the liquid it is a
+// drop of wherever English has one, and by its tincture otherwise.
+const TINCTURE_OF = namedIn(TINCTURE, EnglishLiquids);
 
 // A band and a charge are borne by the same phrase and are read from one
 // vocabulary: "a fess" and "a billet" differ in nothing a grammar can see.
@@ -51,16 +65,49 @@ const SOWN_CHARGE = kright(
 // where French writes "plain". Parker's "plain" is a band drawn with a straight
 // line rather than a field with nothing on it, and borrowing it here would be
 // inventing heraldry rather than reading it.
-const TREATMENT = strewing(alt(NAMED_STREWING, SOWN_CHARGE), term(EnglishTinctures, asTincture));
+const TREATMENT = strewing(alt(NAMED_STREWING, SOWN_CHARGE), (type) => TINCTURE_OF(type));
 
 // What a blazon may say of a charge after its tincture. English agrees with
 // nothing: "voided" stands after one lozenge and after three of them unchanged,
 // so the one rule serves every phrase and no writing of the word is ever wrong
 // where another would have been right.
-const MODIFIER = modifying(anyWriting(EnglishModifiers));
+const MODIFIER = qualifying(anyWriting(EnglishModifiers));
+
+// What a blazon may say was painted apart from the rest of the charge, which
+// English agrees with no better than it agrees a modifier: "a gem-ring or stoned
+// azure", "three gem-rings argent stoned azure".
+const ATTRIBUTE = qualifying(anyWriting(EnglishAttributes));
+
+/**
+ * The ranks one phrase of a divided field names: "first", "second and third",
+ * and the same ranks in figures.
+ *
+ * Nothing introduces them — English sets the ordinal bare where French writes
+ * "au" — so the list of what a part bears is told that a rank may stand where it
+ * is looking for a charge, and a bare ordinal is a rank rather than anything
+ * borne.
+ */
+const RANK = list_sc(number(EnglishRanks, asRank), AND);
+
+// "Over all a bend gules": English says it before what it is said of, where
+// French says its own word after the tincture. Standing in front of the article
+// and in front of the count alike, it is read once for either shape of phrase.
+const OVER_ALL = anyPhrase(writtenAs(EnglishOverAll));
+
+// "a bordure compony gules and argent": said where the tincture would be, and
+// agreeing with nothing, as "voided" agrees with nothing.
+const COMPONY = componying(anyComponyWriting(EnglishCompony));
+
+// "a bordure counterchanged": said where the tincture would be said, and saying
+// that there is none of its own. One word where French has a phrase it spells
+// two ways, and read by the same rule for that reason — the writings the
+// vocabulary page shows a reader are the writings the parser answers to, however
+// many of them a tongue turns out to have.
+const COUNTERCHANGED = anyPhrase(writtenAs(EnglishCounterchanged));
 
 export const EnglishBlazonGrammar: BlazonGrammar = {
-  tincture: term(EnglishTinctures, asTincture),
+  tincture: TINCTURE,
+  tinctureOf: TINCTURE_OF,
   division: term(EnglishDivisionType, asDivision),
   // Nothing stands between a furred field and its tinctures, and nothing is
   // counted: "Vairy or and gules" is the whole of the phrase.
@@ -72,9 +119,24 @@ export const EnglishBlazonGrammar: BlazonGrammar = {
   // business rather than the grammar's. Where several are borne the count says
   // it instead, and English puts nothing before the count: "Or three chevrons
   // gules".
-  borne: alt(
-    modifiable(alone(kright(ARTICLE, spelledTerm(BEARINGS, asOrdinary))), () => MODIFIER),
-    modifiable(several(BEARINGS, EnglishNumbers, asOrdinary, NOT_IN_NUMBER), () => MODIFIER)
+  borne: laidOver(
+    OVER_ALL,
+    alt(
+      qualifiable(
+        alone(kright(ARTICLE, spelledTerm(BEARINGS, asOrdinary))),
+        () => MODIFIER,
+        () => ATTRIBUTE,
+        () => COMPONY
+      ),
+      qualifiable(
+        several(BEARINGS, EnglishNumbers, asOrdinary, NOT_IN_NUMBER),
+        () => MODIFIER,
+        () => ATTRIBUTE,
+        () => COMPONY
+      )
+    )
   ),
+  counterchanged: COUNTERCHANGED,
   and: AND,
+  rank: RANK,
 };

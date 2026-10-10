@@ -2,6 +2,8 @@ import { describe, expect, test } from 'vitest';
 import { EnglishBlazonWriter } from '../../src/application/writer/EnglishBlazonWriter';
 import { FrenchBlazonWriter } from '../../src/application/writer/FrenchBlazonWriter';
 import { Languages, TONGUES } from '../../src/domain/models/Languages';
+import { isCompony } from '../../src/domain/models/Compony';
+import { isCounterchanged } from '../../src/domain/models/Counterchanged';
 import { isFur } from '../../src/domain/models/Tinctures';
 import { IBlazonWriter } from '../../src/domain/services/IBlazonWriter';
 import { anchorOf, folded } from './Anchors';
@@ -52,6 +54,42 @@ describe('what the vocabulary holds', () => {
     expect(spellings).toContain(language === Languages.fr ? 'gueules' : 'gules');
     expect(spellings).toContain(language === Languages.fr ? 'croisette' : 'cross couped');
     expect(spellings).toContain(language === Languages.fr ? 'billeté' : 'billetty');
+  });
+
+  test('holds the word each tongue counterchanges a band with', () => {
+    expect(spelled(french)).toContain("de l'un à l'autre");
+    expect(spelled(english)).toContain('counterchanged');
+  });
+
+  test('stands both French phrases under the one heading, the written one first', () => {
+    // Two spellings of one phrase and not two phrases: the dictionaries divide
+    // them and disagree about which way round, so the page shows a reader that
+    // either is read and says which comes back.
+    expect(word(french, "de l'un en l'autre").spellings).toEqual([
+      "de l'un à l'autre",
+      "de l'un en l'autre",
+    ]);
+    expect(word(french, "de l'un en l'autre").word).toBe("de l'un à l'autre");
+  });
+
+  test('shows it on a band laid across the line it is counterchanged across', () => {
+    // A fess on a field parted per pale, so the drawing shows the band cut by
+    // the partition rather than merely standing to one side of it.
+    expect(word(french, "de l'un à l'autre").typed).toBe(
+      "Parti d'argent et de gueules à la fasce de l'un à l'autre."
+    );
+    expect(word(english, 'counterchanged').typed).toBe(
+      'Per pale argent and gules a fess counterchanged.'
+    );
+  });
+
+  test('leads across to the one word the other tongue says it with', () => {
+    expect(word(french, "de l'un à l'autre").otherTongue.map((seen) => seen.word)).toEqual([
+      'counterchanged',
+    ]);
+    expect(word(english, 'counterchanged').otherTongue.map((seen) => seen.word)).toEqual([
+      "de l'un à l'autre",
+    ]);
   });
 
   test('holds the two words that say what a field is rather than what it bears', () => {
@@ -131,6 +169,13 @@ describe('what a word means', () => {
     expect(word(english, 'cross humetty').description).toMatch(/four equal arms/);
     expect(word(english, 'border').description).toMatch(/whole edge of the shield/);
     expect(word(english, 'pily counter pily').description).toMatch(/long triangles/);
+    // The three saw-toothed lines are told apart by the size and the point of
+    // the tooth, and each of them says its own: "the same teeth" sends a reader
+    // to a word they have not read.
+    expect(word(english, 'dancetty').description).toMatch(/great teeth/);
+    expect(word(english, 'vivré').description).toMatch(/great teeth whose points are right angles/);
+    expect(word(french, 'denché').description).toMatch(/great teeth/);
+    expect(word(french, 'vivré').description).toMatch(/great teeth whose points are right angles/);
   });
 });
 
@@ -262,7 +307,15 @@ describe('the arms a word is shown in', () => {
     for (const entry of vocabularyIn(language)) {
       const borne = entry.blazon.chargesOrOrdinaries ?? [];
       for (const one of borne) {
-        expect(isFur(one.tincture) && entry.rank !== 'tincture', entry.word).toBe(false);
+        // A band that takes the field's own tinctures names none of its own, so
+        // there is no fur here to have been chosen; a band cut into compons names
+        // two, and neither may be one.
+        const chosen = isCounterchanged(one.tincture)
+          ? []
+          : isCompony(one.tincture)
+            ? one.tincture.compony
+            : [one.tincture];
+        expect(chosen.some(isFur) && entry.rank !== 'tincture', entry.word).toBe(false);
       }
     }
   });
@@ -335,8 +388,11 @@ describe('the words that say more than one drawing can', () => {
   });
 
   test('says why an ordinary is borne but once, where it is', () => {
-    expect(word(english, 'chief').otherwise).toEqual([]);
+    // The chief is asked nothing about number, being borne but once — and is
+    // still asked what line it may be drawn along, which is another question.
+    expect(asked(word(english, 'chief'))).toEqual(['Modified']);
     expect(word(english, 'chief').note).toMatch(/shield has one top/);
+    expect(asked(word(english, 'cross'))).toEqual([]);
   });
 
   test("says why without naming the band, the reason being the shield's", () => {
@@ -352,9 +408,50 @@ describe('the words that say more than one drawing can', () => {
     // the other two.
     expect(asked(word(french, 'croisette'))).toEqual(['Borne in number', 'Sown']);
     expect(asked(word(french, 'billette'))).toEqual(['Borne in number', 'Sown', 'Modified']);
-    expect(asked(word(english, 'chevron'))).toEqual(['Borne in number']);
+    expect(asked(word(english, 'chevron'))).toEqual(['Borne in number', 'Modified']);
     expect(asked(word(english, 'barry'))).toEqual(['Cut otherwise']);
     expect(asked(word(english, 'voided'))).toEqual(['Said of']);
+    expect(asked(word(english, 'indented'))).toEqual(['Said of']);
+  });
+
+  test('shows a band under every line it may be drawn along', () => {
+    expect(labelled(word(english, 'fess'), 'Modified')).toEqual([
+      'Indented',
+      'Dancetty',
+      'Vivré',
+      'Engrailed',
+    ]);
+    expect(blazoned(word(english, 'fess'), 'Modified')).toEqual([
+      'Argent a fess indented gules.',
+      'Argent a fess dancetty gules.',
+      'Argent a fess vivré gules.',
+      'Argent a fess engrailed gules.',
+    ]);
+    expect(blazoned(word(french, 'fasce'), 'Modified')).toEqual([
+      "D'argent à la fasce dentelée de gueules.",
+      "D'argent à la fasce denchée de gueules.",
+      "D'argent à la fasce vivrée de gueules.",
+      "D'argent à la fasce engrêlée de gueules.",
+    ]);
+    // A band the model gives no modified line is asked nothing about one.
+    expect(asked(word(english, 'cross'))).toEqual([]);
+  });
+
+  test('shows a modifier on the bands as readily as on the charges', () => {
+    // Indented is said of no charge at all, so a page that asked only about the
+    // charges would show the word doing its work on nothing.
+    expect(labelled(word(english, 'indented'), 'Said of')).toEqual([
+      'Chief',
+      'Pale',
+      'Fess',
+      'Bend',
+      'Bend sinister',
+      'Chevron',
+      'Bordure',
+    ]);
+    expect(blazoned(word(french, 'dentelé'), 'Said of')[0]).toBe(
+      "D'argent au chef dentelé de gueules."
+    );
   });
 
   test('bears a charge in number and sows it, every charge being both', () => {
@@ -395,6 +492,40 @@ describe('the words that say more than one drawing can', () => {
     expect(leadingTo(word(french, 'losange'), 'Modified')).toEqual(['vidé', 'percé']);
     // Nothing else leads anywhere: a charge borne twice is the same word again.
     expect(leadingTo(word(french, 'billette'), 'Borne in number')).toEqual([undefined, undefined]);
+  });
+
+  test('shows what is laid over all doing the one thing the order cannot', () => {
+    // The arms above show the word where the armorials write it, which is of the
+    // band named last — and there it says what the order says anyway. So the
+    // pair beneath shows the band named first, once with the word and once
+    // without, which is the whole of what the word buys.
+    expect(word(french, 'brochant sur le tout').typed).toBe(
+      "D'argent à trois billettes de sable, à la fasce de gueules brochant sur le tout."
+    );
+    expect(word(english, 'over all').typed).toBe(
+      'Argent three billets sable, over all a fess gules.'
+    );
+    expect(asked(word(french, 'brochant sur le tout'))).toEqual(['Laid otherwise']);
+    expect(labelled(word(english, 'over all'), 'Laid otherwise')).toEqual([
+      'Over what follows it',
+      'Without it',
+    ]);
+    expect(blazoned(word(french, 'brochant sur le tout'), 'Laid otherwise')).toEqual([
+      "D'argent à la fasce de gueules brochant sur le tout, à trois billettes de sable.",
+      "D'argent à la fasce de gueules, à trois billettes de sable.",
+    ]);
+  });
+
+  test('sends the word for laying over all to the other tongue\u2019s own', () => {
+    expect(word(french, 'brochant sur le tout').otherTongue.map(({ word }) => word)).toEqual([
+      'over all',
+    ]);
+    expect(word(english, 'over all').otherTongue.map(({ word }) => word)).toEqual([
+      'brochant sur le tout',
+    ]);
+    // The participle alone is a writing of the phrase and not a word of its own,
+    // so a reader who met it in an armorial is shown the one entry.
+    expect(word(french, 'brochant').word).toBe('brochant sur le tout');
   });
 
   test('shows a modifier on the charges that take it, having no figure of its own', () => {
@@ -449,7 +580,11 @@ describe('the words that say more than one drawing can', () => {
     // blazon, said once on the conventions page for both tongues — repeating it
     // under every English modifier would be filling the page with what the word
     // itself does not say.
-    expect(word(french, 'percé').note).toMatch(/agrees with the charge in gender and in number/);
+    expect(word(french, 'percé').note).toMatch(
+      /agrees with what it is said of in gender and in number/
+    );
+    // And says the same of the word said of a band, the rule being one rule.
+    expect(word(french, 'dentelé').note).toMatch(/Said of a band or a charge/);
     expect(word(english, 'pierced').note).toBeUndefined();
     expect(word(english, 'voided').note).toBeUndefined();
   });
@@ -488,7 +623,7 @@ describe('the words that say more than one drawing can', () => {
   });
 
   test('says nothing of a charge that will take nothing', () => {
-    expect(asked(word(english, 'annulet'))).toEqual(['Borne in number', 'Sown']);
+    expect(asked(word(english, 'crescent'))).toEqual(['Borne in number', 'Sown']);
   });
 
   test('tells each tongue its own rule about counting the pieces', () => {

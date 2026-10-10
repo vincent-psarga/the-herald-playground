@@ -1,3 +1,4 @@
+import { Attribute } from '../../../../../domain/models/Attributes';
 import { Modifier } from '../../../../../domain/models/Modifier';
 import { Shape } from '../../shapes/Shape';
 import { ChargeFigure } from '../Figures';
@@ -18,17 +19,39 @@ import { Spot, spots, strewing } from './disposition';
  * take is the model's to say; what one leaves of the figure can only be drawn
  * here, figure by figure, there being no way to take the middle out of a shape
  * that has already forgotten what shape it was.
+ *
+ * A part takes nothing away and is drawn over the whole figure in a paint of its
+ * own, so it is another drawing at the same spot and is built the same way
+ * again: what sets it apart from a modifier is that both are laid, one over the
+ * other, where a modifier's drawing stands in the plain one's place.
+ *
+ * The marks a figure is modelled by are laid the same way, and are neither: they
+ * answer to nothing the blazon says and are painted in no tincture, so they are
+ * kept apart from both and only where a figure has any.
  */
 export function charge(
   at: (spot: Spot) => Shape,
-  modified: Readonly<Partial<Record<Modifier, (spot: Spot) => Shape>>> = {}
+  said: {
+    readonly modified?: Readonly<Partial<Record<Modifier, (spot: Spot) => Shape>>>;
+    readonly parts?: Readonly<Partial<Record<Attribute, (spot: Spot) => Shape>>>;
+    readonly modelling?: (spot: Spot) => Shape;
+  } = {}
 ): ChargeFigure {
   return {
     at,
     shapes: (frame, count) => spots(frame, count).map(at),
     strewn: (frame) => strewing(frame).map(at),
     modified: Object.fromEntries(
-      Object.entries(modified).map(([modifier, drawn]) => [modifier, charge(drawn)])
+      Object.entries(said.modified ?? {}).map(([modifier, drawn]) => [modifier, charge(drawn)])
     ) as ChargeFigure['modified'],
+    parts: Object.fromEntries(
+      Object.entries(said.parts ?? {}).map(([attribute, drawn]) => [attribute, charge(drawn)])
+    ) as ChargeFigure['parts'],
+    ...(said.modelling === undefined
+      ? {}
+      : {
+          modelling: (frame, count) =>
+            spots(frame, count).map(said.modelling as (spot: Spot) => Shape),
+        }),
   };
 }

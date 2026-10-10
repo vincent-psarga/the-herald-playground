@@ -12,6 +12,7 @@
   "include": [
     "src/**/*.ts",
     "demo/**/*.ts",
+    "demo/**/*.mts",
     "demo/**/*.tsx",
     "scripts/**/*.ts",
     "scripts/**/*.d.mts",

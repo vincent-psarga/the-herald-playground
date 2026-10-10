@@ -1,10 +1,10 @@
-import { rectangle } from '../../../shapes/rectangle';
+import { boxed } from '../../../shapes/room';
 import { DivisionFigure } from '../../Figures';
 
 /** The field cut straight down the middle: the half at dexter first. */
 export const pale: DivisionFigure = {
-  halves: ({ width, height }) => [
-    rectangle(0, 0, width / 2, height),
-    rectangle(width / 2, 0, width / 2, height),
-  ],
+  parts: (frame) => {
+    const half = frame.width / 2;
+    return [boxed(frame, [0, 0, half, frame.height]), boxed(frame, [half, 0, half, frame.height])];
+  },
 };

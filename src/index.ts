@@ -16,7 +16,7 @@ export { FrenchBlazonWriter } from './application/writer/FrenchBlazonWriter';
 
 export { Languages, TONGUES } from './domain/models/Languages';
 export { isCharge, isOrdinary } from './domain/models/Blazon';
-export type { Blazon, ChargeOrOrdinary } from './domain/models/Blazon';
+export type { Blazon, BorneType, ChargeOrOrdinary } from './domain/models/Blazon';
 export type { Armorial, ArmorialEntry } from './domain/models/Armorial';
 export type { Source } from './domain/models/Source';
 export { readArmorial } from './application/armorial/ArmorialReading';
@@ -25,6 +25,10 @@ export type {
   ReadEntry,
   UnknownWords,
 } from './application/armorial/ArmorialReading';
+export { COUNTERCHANGED, isCounterchanged } from './domain/models/Counterchanged';
+export type { Counterchanged, Tinctured } from './domain/models/Counterchanged';
+export { isCompony } from './domain/models/Compony';
+export type { Compony } from './domain/models/Compony';
 export {
   DIVISIONS,
   FURS,
@@ -35,6 +39,8 @@ export {
   PIECES,
   VARIATIONS,
   cutInPieces,
+  half,
+  isCounterchangeable,
   isDivision,
   isFurred,
   isPlain,
@@ -58,20 +64,26 @@ export {
   OrdinaryDefinitions,
   OrdinaryType,
   SEVERAL,
+  admitsModifier,
   borne,
   isOrdinaryType,
+  modifiersOn,
 } from './domain/models/Ordinary';
 export {
   ChargeDefinition,
   ChargeDefinitions,
   ChargeType,
+  allowsAttribute,
   allowsModifier,
+  attributesOf,
   isChargeType,
   modifiersOf,
   numberBorne,
 } from './domain/models/Charge';
 export type { Charge } from './domain/models/Charge';
-export { Modifier } from './domain/models/Modifier';
+export { LINES, Modifier, takesTincture } from './domain/models/Modifier';
+export { Attribute, namesPart, paintedIn } from './domain/models/Attributes';
+export type { Attributed } from './domain/models/Attributes';
 
 export { BlazonParseError } from './domain/errors/parsing/BlazonParseError';
 export type { TextPosition } from './domain/errors/parsing/BlazonParseError';
@@ -84,9 +96,13 @@ export { MissingPieces } from './domain/errors/parsing/MissingPieces';
 export { MissingTincture } from './domain/errors/parsing/MissingTincture';
 export { MissingOrdinary } from './domain/errors/parsing/MissingOrdinary';
 export { ChargedPlainField } from './domain/errors/parsing/ChargedPlainField';
+export { UndividedField } from './domain/errors/parsing/UndividedField';
 export { WrongTinctureArticle } from './domain/errors/parsing/WrongTinctureArticle';
 export { WrongOrdinaryArticle } from './domain/errors/parsing/WrongOrdinaryArticle';
 export { WrongModifier } from './domain/errors/parsing/WrongModifier';
+export { WrongAttribute } from './domain/errors/parsing/WrongAttribute';
+export { RepeatedAttribute } from './domain/errors/parsing/RepeatedAttribute';
+export { UntincturedModifier } from './domain/errors/parsing/UntincturedModifier';
 export { WrongAgreement } from './domain/errors/parsing/WrongAgreement';
 export type { Ordinary } from './domain/models/Ordinary';
 export {
@@ -117,8 +133,12 @@ export {
 export type { Spelled, TermWord, Translation } from './domain/translations/Translation';
 export { counted, numberWord } from './domain/translations/Numbers';
 export type { NumberWords } from './domain/translations/Numbers';
+export { FIRST, ranksOf } from './domain/translations/Ranks';
+export type { RankWords } from './domain/translations/Ranks';
 export { strewnIn, strewnTerms } from './domain/translations/Strewings';
 export type { Strewings } from './domain/translations/Strewings';
+export { pouredAs, pouredIn } from './domain/translations/Liquids';
+export type { Liquids } from './domain/translations/Liquids';
 export { Word } from './domain/translations/Word';
 export type {
   AlternateWording,
@@ -138,7 +158,9 @@ export { EnglishNumbers } from './domain/translations/en/Numbers';
 export { EnglishOrdinaryType } from './domain/translations/en/Ordinaries';
 export { EnglishChargeType } from './domain/translations/en/Charges';
 export { EnglishModifiers } from './domain/translations/en/Modifiers';
+export { EnglishAttributes } from './domain/translations/en/Attributes';
 export { EnglishStrewings } from './domain/translations/en/Strewings';
+export { EnglishLiquids } from './domain/translations/en/Liquids';
 export {
   EnglishColours,
   EnglishMetals,
@@ -148,10 +170,13 @@ export { FrenchDivisionType } from './domain/translations/fr/Divisions';
 export { FrenchFurType } from './domain/translations/fr/Furs';
 export { FrenchVariationType } from './domain/translations/fr/Variations';
 export { FrenchNumbers } from './domain/translations/fr/Numbers';
+export { FrenchRanks } from './domain/translations/fr/Ranks';
 export { FrenchOrdinaryType } from './domain/translations/fr/Ordinaries';
 export { FrenchChargeType } from './domain/translations/fr/Charges';
 export { FrenchModifiers } from './domain/translations/fr/Modifiers';
+export { FrenchAttributes } from './domain/translations/fr/Attributes';
 export { FrenchStrewings } from './domain/translations/fr/Strewings';
+export { FrenchLiquids } from './domain/translations/fr/Liquids';
 export {
   FrenchColours,
   FrenchFurs,
@@ -167,8 +192,8 @@ export {
   cutIn,
   everyBearing,
   sownIn,
-  withArticle,
 } from './application/french/FrenchGrammar';
+export { expectedArticle, withArticle } from './application/Articles';
 export type { Agreement } from './application/french/FrenchGrammar';
 export { bearing as englishBearing, indefiniteArticle } from './application/english/EnglishGrammar';
 

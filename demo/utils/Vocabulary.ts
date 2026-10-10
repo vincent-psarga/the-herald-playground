@@ -1,9 +1,20 @@
 import { EnglishBlazonWording } from '../../src/application/english/EnglishBlazonWording';
 import { FrenchBlazonWording } from '../../src/application/french/FrenchBlazonWording';
 import { sownIn } from '../../src/application/french/FrenchGrammar';
+import { withArticle } from '../../src/application/Articles';
 import { BlazonWording, writeBlazon } from '../../src/application/writer/BlazonWording';
-import { Blazon, ChargeOrOrdinary } from '../../src/domain/models/Blazon';
-import { ChargeType, allowsModifier, modifiersOf } from '../../src/domain/models/Charge';
+import { Blazon, BorneType, ChargeOrOrdinary } from '../../src/domain/models/Blazon';
+import { Attribute, Attributed } from '../../src/domain/models/Attributes';
+import {
+  ChargeType,
+  allowsAttribute,
+  allowsModifier,
+  attributesOf,
+  isChargeType,
+  modifiersOf,
+} from '../../src/domain/models/Charge';
+import { Compony } from '../../src/domain/models/Compony';
+import { COUNTERCHANGED, Counterchanged } from '../../src/domain/models/Counterchanged';
 import { Modifier } from '../../src/domain/models/Modifier';
 import {
   DivisionType,
@@ -11,19 +22,32 @@ import {
   FurType,
   Plain,
   VariationType,
+  painted,
   usualPieces,
 } from '../../src/domain/models/Field';
-import { OrdinaryDefinitions, OrdinaryType } from '../../src/domain/models/Ordinary';
+import {
+  OrdinaryDefinitions,
+  OrdinaryType,
+  admitsModifier,
+  isOrdinaryType,
+  modifiersOn,
+} from '../../src/domain/models/Ordinary';
 import { COLOURS, Colours, Metals, Tincture, isFur } from '../../src/domain/models/Tinctures';
 import { counted } from '../../src/domain/translations/Numbers';
 import { EnglishNumbers } from '../../src/domain/translations/en/Numbers';
+import { EnglishOverAll } from '../../src/domain/translations/en/OverAll';
 import { OF, SOWN as EnglishSown } from '../../src/domain/translations/en/Strewings';
 import { FrenchWord } from '../../src/domain/translations/fr/FrenchWord';
+import { FrenchOverAll } from '../../src/domain/translations/fr/OverAll';
 import { FrenchPlain } from '../../src/domain/translations/fr/Plain';
 import { SOWN as FrenchSown } from '../../src/domain/translations/fr/Strewings';
 import { Strewings } from '../../src/domain/translations/Strewings';
+import { Liquids } from '../../src/domain/translations/Liquids';
+import { EnglishLiquids } from '../../src/domain/translations/en/Liquids';
+import { FrenchLiquids } from '../../src/domain/translations/fr/Liquids';
 import {
   Translation,
+  wordIn,
   wordOf,
   wordSaidOf,
   wordsOf,
@@ -54,6 +78,21 @@ import { readBlazon } from './Reading';
  * is written as its tincture and nothing else — and "plain" and "semé" say what
  * a field carries rather than how it is cut. So the two are named here and
  * nowhere else.
+ *
+ * The word for what is laid over all names no term either, and for a different
+ * reason: there is nothing for it to name. What it says is which of two things
+ * already blazoned is on top, which the model holds as a fact about one of them
+ * rather than as a term of its own. It is a word a reader meets in the armorials
+ * all the same, so it is ranked here and shown with the rest.
+ *
+ * Counterchanging is a rank of its own for all that it holds one term, because
+ * it is none of the others: it stands where a tincture stands and is no
+ * tincture, and it is said of a band without being one. A rank with one term in
+ * it is what a page shows when a tongue has one word for a thing.
+ *
+ * Compony is a rank of its own for the same reason: it stands where a tincture
+ * stands and names two of them, and the model holds it as a pair of tinctures
+ * rather than as a term, so the page names the one it shows here.
  */
 export type Ranked =
   | { readonly rank: 'tincture'; readonly term: Tincture }
@@ -63,7 +102,12 @@ export type Ranked =
   | { readonly rank: 'ordinary'; readonly term: OrdinaryType }
   | { readonly rank: 'charge'; readonly term: ChargeType }
   | { readonly rank: 'modifier'; readonly term: Modifier }
+  | { readonly rank: 'attribute'; readonly term: Attribute }
   | { readonly rank: 'strewing'; readonly term: ChargeType }
+  | { readonly rank: 'over all'; readonly term: typeof OVER_ALL_TERM }
+  | { readonly rank: 'counterchange'; readonly term: Counterchanged }
+  | { readonly rank: 'liquid'; readonly term: Tincture }
+  | { readonly rank: 'compony'; readonly term: typeof COMPONY_TERM }
   | { readonly rank: 'field'; readonly term: typeof PLAIN_TERM | typeof SOWN_TERM };
 
 /**
@@ -158,6 +202,12 @@ export interface VocabularyEntry {
 const METAL = Metals.argent;
 const COLOUR = Colours.gules;
 
+// A part of a charge is shown in a third tincture, being neither the charge's
+// own nor the field's: a gem-ring's stone rests on the hoop and stands proud of
+// it, so it lies partly on the charge and partly on the field and must be told
+// apart from both.
+const PART = Colours.azure;
+
 // The number of pieces a varied field is drawn in where its term is understood
 // to have none.
 const PIECES = 8;
@@ -168,34 +218,92 @@ const SOWN_FIGURE = ChargeType.annulet;
 
 const PLAIN_TERM = 'Field.plain';
 const SOWN_TERM = 'Field.sown';
+const OVER_ALL_TERM = 'Borne.overAll';
+
+// The one word whose arms have to show three things at once: the field, what is
+// borne on it, and what is laid over that. Two tinctures cannot tell three
+// things apart, so what is covered is given a third — the word being said of
+// the thing doing the covering, which is shown in the colour every other word
+// on these pages is shown in.
+const COVERED = Colours.sable;
+
+// What the covering is shown as, and what it is shown covering. A band over
+// charges, which is how the armorials write it oftenest: a fasce brochant sur
+// le tout, over all a fess.
+const COVERING = OrdinaryType.fess;
+const UNDERNEATH = ChargeType.billet;
+
+const COMPONY_TERM = 'Compony';
+
+// The arms that show counterchanging: a band laid across the line it is
+// counterchanged across, so that the drawing shows the figure cut by the
+// partition rather than merely standing on one side of it.
+const COUNTERCHANGED_ON = FieldType.pale;
+const COUNTERCHANGED_BAND = OrdinaryType.fess;
+
+// And the charge it is shown on beside the band: two of them, standing one in
+// each half of a field parted per pale, which is the other half of what the
+// phrase does — each takes the tincture of the half it did not fall on.
+const COUNTERCHANGED_CHARGE = ChargeType.lozenge;
+
+// The arms that show compony: the bordure of Burgundy, which is the best known
+// band of the kind, on a field of neither of its two tinctures.
+const COMPONY_BAND = OrdinaryType.bordure;
+const COMPONY_ON = Colours.azure;
+const COMPONY: Compony = { compony: [COLOUR, METAL] };
+
+// The bands that may be cut into compons, read off the model.
+const COMPONY_BANDS = Object.values(OrdinaryType).filter(
+  (type) => OrdinaryDefinitions[type].compons !== undefined
+);
 
 const CHARGE_TYPES = Object.values(ChargeType);
+const ORDINARY_TYPES = Object.values(OrdinaryType);
 
 /**
- * The charges a modifier may be borne on, in the order the model declares them.
+ * What a modifier may be said of, in the order the model declares them: the
+ * charges first, then the bands.
  *
  * A modifier is not a thing to be drawn on its own — there is no picture of
- * "voided" — so it is shown doing what it does to something, and the first
- * charge that will take it is what it is shown on. Which charges those are is
- * asked of the model rather than written down here, so a charge that stops
- * taking a modifier stops being shown under it.
+ * "voided" — so it is shown doing what it does to something, and the first thing
+ * that will take it is what it is shown on. Both vocabularies are asked, neither
+ * holding the other's modifiers: a charge is voided and a band is indented, and
+ * a page that asked only about the charges would show the indenting on nothing
+ * at all.
+ *
+ * Which they are is asked of the model rather than written down here, so
+ * anything that stops taking a modifier stops being shown under it.
  */
-function bearingModifier(modifier: Modifier): readonly ChargeType[] {
-  return CHARGE_TYPES.filter((type) => allowsModifier(type, modifier));
+function bearingModifier(modifier: Modifier): readonly BorneType[] {
+  return [
+    ...CHARGE_TYPES.filter((type) => allowsModifier(type, modifier)),
+    ...ORDINARY_TYPES.filter((type) => admitsModifier(type, modifier)),
+  ];
 }
 
 /**
- * The charges one word of a modifier is shown on: those that take the modifier
+ * The charges an attribute may be painted on, in the order the model declares
+ * them.
+ *
+ * Asked of the model as a modifier's charges are, and for the same reason: a
+ * charge that stops having the part stops being shown under the word for it.
+ */
+function bearingAttribute(attribute: Attribute): readonly ChargeType[] {
+  return CHARGE_TYPES.filter((type) => allowsAttribute(type, attribute));
+}
+
+/**
+ * What one word of a modifier is shown on: the figures that take the modifier
  * and that this very word is what the writer says it with.
  *
  * A tongue may hold two words for the one modifier and keep each for its own
- * charges — French voids the star with évidé and the rest with vidé — so a page
+ * figures — French voids the star with évidé and the rest with vidé — so a page
  * showing every voidable charge under both words would be showing a reader a
- * blazon neither word ever comes back in. Which word wins which charge is asked
- * of the writer rather than written down here, so the page cannot come to
- * disagree with what the library answers.
+ * blazon neither word ever comes back in. Which word wins which is asked of the
+ * writer rather than written down here, so the page cannot come to disagree with
+ * what the library answers.
  *
- * Where a word wins nothing, the charges that take the modifier are shown all
+ * Where a word wins nothing, the figures that take the modifier are shown all
  * the same: the word is still read of every one of them, and a page with no arms
  * on it teaches nothing.
  */
@@ -203,10 +311,59 @@ function saidBy<W extends Word>(
   wording: BlazonWording<W>,
   modifier: Modifier,
   word: W
-): readonly ChargeType[] {
+): readonly BorneType[] {
   const borne = bearingModifier(modifier);
   const won = borne.filter((type) => wordSaidOf(wording.modifiers, modifier, type) === word);
   return won.length === 0 ? borne : won;
+}
+
+/**
+ * The charge word a blazon that paints a part comes back in.
+ *
+ * Heraldry names some of the figures with a part painted outright — a ring with
+ * a stone in it is a gem-ring — so the arms that show the part say that name and
+ * not the plain one, and a label reading otherwise would be naming a word the
+ * blazon beneath it never writes.
+ */
+function namedWith<W extends Word>(
+  wording: BlazonWording<W>,
+  type: ChargeType,
+  attribute: Attribute
+): W {
+  const plain = wordOf(wording.charges, type);
+  return wordIn(wording.charges, type, borneIn(plain), undefined, [attribute]);
+}
+
+/** The same question asked of a word that names a part rather than a modifier. */
+function paintedBy<W extends Word>(
+  wording: BlazonWording<W>,
+  attribute: Attribute,
+  word: W
+): readonly ChargeType[] {
+  const borne = bearingAttribute(attribute);
+  const won = borne.filter((type) => wordSaidOf(wording.attributes, attribute, type) === word);
+  return won.length === 0 ? borne : won;
+}
+
+/**
+ * The word a tongue names something borne with, asked of the vocabulary the term
+ * belongs to — which is the only thing a band and a charge differ in here.
+ */
+function borneWord<W extends Word>(wording: BlazonWording<W>, type: BorneType): W {
+  return isOrdinaryType(type) ? wordOf(wording.ordinaries, type) : wordOf(wording.charges, type);
+}
+
+/** The rank a term belongs to, which is what a way to its page is asked under. */
+function rankOf(type: BorneType): Rank {
+  return isOrdinaryType(type) ? 'ordinary' : 'charge';
+}
+
+/**
+ * One thing borne, under a modifier. Written out either way rather than in one
+ * line, the two shapes being two types for all that they are spelled alike.
+ */
+function under(type: BorneType, tincture: Tincture, modifier: Modifier): ChargeOrOrdinary {
+  return isOrdinaryType(type) ? { type, tincture, modifier } : { type, tincture, modifier };
 }
 
 /**
@@ -238,6 +395,14 @@ interface Tongue<W extends Word = Word> {
   readonly sown: readonly W[];
   /** How this tongue sows a figure under a given spelling of that word. */
   readonly sowing: (spelling: string) => (word: W) => string;
+  /** The word for what is laid over everything else the field bears. */
+  readonly overAll: W;
+  /**
+   * The liquids the tongue names a drop's tincture by. Kept beside the wording
+   * rather than read off it, because a tongue may read them and never write
+   * them — French does — and the page lists what is read.
+   */
+  readonly liquids: Liquids<W>;
 }
 
 const FRENCH: Tongue<FrenchWord> = {
@@ -246,6 +411,8 @@ const FRENCH: Tongue<FrenchWord> = {
   plain: FrenchPlain,
   sown: [FrenchSown],
   sowing: (spelling) => (word) => `${spelling} ${sownIn(word)}`,
+  overAll: FrenchOverAll,
+  liquids: FrenchLiquids,
 };
 
 const ENGLISH: Tongue = {
@@ -253,6 +420,8 @@ const ENGLISH: Tongue = {
   wording: EnglishBlazonWording,
   sown: EnglishSown,
   sowing: (spelling) => (word) => `${spelling} ${OF} ${word.plural}`,
+  overAll: EnglishOverAll,
+  liquids: EnglishLiquids,
 };
 
 /** Every word one tongue knows, in the order its vocabulary declares them. */
@@ -266,7 +435,16 @@ function sensesOf<W extends Word>(tongue: Tongue<W>): readonly Sense<W>[] {
     ...spelled('ordinary', wording.ordinaries),
     ...spelled('charge', wording.charges),
     ...spelled('modifier', wording.modifiers),
+    ...spelled('attribute', wording.attributes),
     ...strewn(wording.strewings),
+    { rank: 'over all', term: OVER_ALL_TERM, words: [tongue.overAll] } satisfies Sense<W>,
+    {
+      rank: 'counterchange',
+      term: COUNTERCHANGED,
+      words: [wording.counterchanged],
+    } satisfies Sense<W>,
+    ...poured(tongue.liquids),
+    { rank: 'compony', term: COMPONY_TERM, words: [wording.compony] } satisfies Sense<W>,
     ...(tongue.plain === undefined
       ? []
       : [{ rank: 'field', term: PLAIN_TERM, words: [tongue.plain] } satisfies Sense<W>]),
@@ -305,6 +483,22 @@ function strewn<W extends Word>(strewings: Strewings<W>): readonly Sense<W>[] {
     .filter((sense) => sense.words.length !== 0);
 }
 
+/** The liquids a tongue names, which is never every tincture. */
+function poured<W extends Word>(liquids: Liquids<W>): readonly Sense<W>[] {
+  return (Object.keys(liquids) as Tincture[])
+    .map((term) => {
+      const named = liquids[term];
+      const words = named === undefined ? [] : Array.isArray(named) ? named : [named];
+      return { rank: 'liquid' as const, term, words };
+    })
+    .filter((sense) => sense.words.length !== 0);
+}
+
+/** The figure a liquid is shown poured as: the first it is said of. */
+function pouredAsFigure(word: Word): ChargeType {
+  return word.saidOf?.find(isChargeType) ?? ChargeType.goutte;
+}
+
 /**
  * The tincture a word is shown in.
  *
@@ -335,6 +529,20 @@ function modified(word: Word): { modifier?: Modifier } {
   return word.defaultModifier === undefined ? {} : { modifier: word.defaultModifier };
 }
 
+/**
+ * The part the word says the figure has, where it says one, with no tincture of
+ * its own.
+ *
+ * A gem-ring has a stone by being a gem-ring and says nothing of its colour, so
+ * the arms that show the word show a stone in the hoop's own tincture — which is
+ * the blazon a reader would type, "a gem-ring gules" and nothing after it.
+ */
+function borneWith(word: Word): { attributes?: readonly Attributed[] } {
+  return word.defaultAttribute === undefined
+    ? {}
+    : { attributes: [{ attribute: word.defaultAttribute }] };
+}
+
 /** The field a tincture is shown against: metal on colour, colour on metal. */
 function against(tincture: Tincture): Tincture {
   return (COLOURS as readonly Tincture[]).includes(tincture) ? METAL : COLOUR;
@@ -346,13 +554,13 @@ function armsOf<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W): Bl
   switch (sense.rank) {
     case 'tincture':
       return { field: { type: FieldType.plain, tincture: sense.term } };
-    // A division and a furred field are written the same way and are kept apart
-    // because the model declares their terms under different kinds: it asks
-    // which of the two a field is by the term it carries, and answering with
-    // either would be answering with neither.
+    // A division and a furred field are blazoned the same way — the name, then
+    // two tinctures — and are built apart because the model declares their terms
+    // under different kinds: a division divides the field between two halves,
+    // where a pelt covers it entire and has no halves for anything to be laid on.
     case 'division':
       return {
-        field: { type: sense.term, firstTincture: METAL, secondTincture: COLOUR },
+        field: { type: sense.term, parts: painted(sense.term, METAL, COLOUR) },
       };
     case 'furred field':
       return {
@@ -367,8 +575,9 @@ function armsOf<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W): Bl
           pieces: usualPieces(sense.term) ?? PIECES,
         },
       };
-    // A band is the plain figure and nothing else: the model holds nothing that
-    // may be said of one, so there is nothing for a word to mean beyond it.
+    // The plain band, whatever lines it may also be drawn along: a band's name
+    // means the band and never the line, so no word here has a modifier to show
+    // in the arms that stand for it. What it may be drawn along is shown below.
     case 'ordinary':
       return {
         field: { type: FieldType.plain, tincture: against(borne) },
@@ -381,19 +590,37 @@ function armsOf<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W): Bl
     case 'charge':
       return {
         field: { type: FieldType.plain, tincture: against(borne) },
-        chargesOrOrdinaries: [{ type: sense.term, tincture: borne, ...modified(word) }],
+        chargesOrOrdinaries: [
+          { type: sense.term, tincture: borne, ...modified(word), ...borneWith(word) },
+        ],
       };
     case 'modifier': {
-      // Shown on the first charge that will take it, and in whatever tincture
-      // that charge's own word allows — a modifier means no tincture and names
-      // no figure, so everything about the arms but the modifier comes from the
-      // charge it is shown doing its work on.
+      // Shown on the first thing that will take it, and in whatever tincture that
+      // figure's own word allows — a modifier means no tincture and names no
+      // figure, so everything about the arms but the modifier comes from what it
+      // is shown doing its work on. A band as readily as a charge: the indenting
+      // is said of no charge at all.
       const modifier = sense.term;
       const type = saidBy(tongue.wording, modifier, word)[0] ?? CHARGE_TYPES[0];
-      const shown = borneIn(wordOf(tongue.wording.charges, type));
+      const shown = borneIn(borneWord(tongue.wording, type));
       return {
         field: { type: FieldType.plain, tincture: against(shown) },
-        chargesOrOrdinaries: [{ type, tincture: shown, modifier }],
+        chargesOrOrdinaries: [under(type, shown, modifier)],
+      };
+    }
+    case 'attribute': {
+      // Shown on the first charge that has the part, painted in a tincture of
+      // its own: a word for a part names no figure and no tincture, so
+      // everything about the arms but the part comes from the charge it is shown
+      // on.
+      const attribute = sense.term;
+      const type = paintedBy(tongue.wording, attribute, word)[0] ?? CHARGE_TYPES[0];
+      const shown = borneIn(namedWith(tongue.wording, type, attribute));
+      return {
+        field: { type: FieldType.plain, tincture: against(shown) },
+        chargesOrOrdinaries: [
+          { type, tincture: shown, attributes: [{ attribute, tincture: PART }] },
+        ],
       };
     }
     case 'strewing':
@@ -403,6 +630,43 @@ function armsOf<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W): Bl
           tincture: against(borne),
           semy: { type: sense.term, tincture: borne },
         },
+      };
+    // Shown as the armorials write it: the charges first, then the band laid
+    // over them, which is the place the word is oftenest met in. What it buys
+    // over the bare order is the arms under "Laid otherwise" below, where the
+    // band is named first and covers the charges all the same.
+    case 'over all':
+      return {
+        field: { type: FieldType.plain, tincture: against(borne) },
+        chargesOrOrdinaries: [
+          { type: UNDERNEATH, tincture: COVERED, count: 3 },
+          { type: COVERING, tincture: borne, overAll: true },
+        ],
+      };
+    // Shown on a band crossing the line it is counterchanged across, which is
+    // the case the word is hardest to picture in: a fess on a field parted per
+    // pale comes out one tincture to dexter and the other to sinister, and a
+    // reader can see in one drawing both what it does and that it does it to
+    // the parts of a figure rather than to the whole of one.
+    case 'counterchange':
+      return {
+        field: { type: COUNTERCHANGED_ON, parts: painted(COUNTERCHANGED_ON, METAL, COLOUR) },
+        chargesOrOrdinaries: [{ type: COUNTERCHANGED_BAND, tincture: sense.term }],
+      };
+    // A liquid is a tincture, and shown as one: the field sown with the drop it
+    // is poured as, in the tincture it names.
+    case 'liquid':
+      return {
+        field: {
+          type: FieldType.plain,
+          tincture: against(sense.term),
+          semy: { type: pouredAsFigure(word), tincture: sense.term },
+        },
+      };
+    case 'compony':
+      return {
+        field: { type: FieldType.plain, tincture: COMPONY_ON },
+        chargesOrOrdinaries: [{ type: COMPONY_BAND, tincture: COMPONY }],
       };
     case 'field':
       return sense.term === PLAIN_TERM
@@ -445,8 +709,28 @@ function insisting<W extends Word>(tongue: Tongue<W>, sense: Sense<W>, word: W):
       return { ...wording, charges: { ...wording.charges, ...only } };
     case 'modifier':
       return { ...wording, modifiers: { ...wording.modifiers, ...only } };
+    case 'attribute':
+      return { ...wording, attributes: { ...wording.attributes, ...only } };
     case 'strewing':
       return { ...wording, strewings: { ...wording.strewings, ...only } };
+    // The tongue holds one word for it and the writer has no choice to narrow:
+    // there is no vocabulary keyed on a term here, the word naming none. One
+    // word to a tongue for the counterchange as well, and nothing to narrow.
+    case 'over all':
+    case 'counterchange':
+    case 'compony':
+      return wording;
+    // Poured with this word whatever the tongue writes, French included: its
+    // writer pours nothing, and a page showing the tincture under the liquid's
+    // heading would be showing a blazon that never says it.
+    case 'liquid': {
+      const tincture = sense.term;
+      return {
+        ...wording,
+        pour: (type, of) =>
+          of === tincture && word.claims(type) ? withArticle(word) : wording.pour?.(type, of),
+      };
+    }
     case 'field':
       return sense.term === SOWN_TERM ? { ...wording, strew: tongue.sowing(word.value) } : wording;
   }
@@ -521,7 +805,7 @@ function counting(type: VariationType, language: Languages): string {
  *
  * French asks something and English asks nothing. A French participle agrees
  * with what it qualifies, in gender and in number, and with what the blazon
- * called the charge rather than with what the charge is — a rule a reader has to
+ * called the figure rather than with what the figure is — a rule a reader has to
  * be told. An English one agrees with nothing and stands where every modifier
  * stands, which is a rule about blazon rather than about English: it is said
  * once on the conventions page for both tongues, and a note repeating it here
@@ -529,7 +813,22 @@ function counting(type: VariationType, language: Languages): string {
  */
 const MODIFIER_NOTE: Partial<Record<Languages, (word: Word) => string>> = {
   [Languages.fr]: (word) =>
-    `Said of a charge after its tincture, and never on its own: it names no figure and no tincture, only what was done to one. It agrees with the charge in gender and in number — ${writings(word)} — and agrees with what the blazon called the charge, so a losange borne “au” is said masculine and borne “à la” feminine. Written back, it agrees with the gender the charge itself is written in. A charge that will not take it refuses it by name.`,
+    `Said of a band or a charge after its tincture, and never on its own: it names no figure and no tincture, only what was done to one. It agrees with what it is said of in gender and in number — ${writings(word)} — and agrees with what the blazon called that figure, so a losange borne “au” is said masculine and borne “à la” feminine. Written back, it agrees with the gender the figure itself is written in. Anything that will not take it refuses it by name.`,
+};
+
+/**
+ * What a tongue asks of a word that names a part, beyond what the word says.
+ *
+ * The agreement French asks of a modifier, asked here for the same reason and in
+ * the same words — both are participles standing after the charge. What differs
+ * is the tincture, which every such word is owed in either tongue, so that half
+ * is said to both readers.
+ */
+const ATTRIBUTE_NOTE: Record<Languages, (word: Word) => string> = {
+  [Languages.fr]: (word) =>
+    `Said of a charge after its tincture, and owed a tincture of its own: it names the part rather than the colour. It agrees with the charge in gender and in number — ${writings(word)} — and agrees with what the blazon called the charge. A charge that has no such part refuses it by name.`,
+  [Languages.en]: () =>
+    'Said of a charge after its tincture, and owed a tincture of its own: it names the part rather than the colour. A charge that has no such part refuses it by name.',
 };
 
 /**
@@ -546,6 +845,27 @@ function writings(word: Word): string {
     : word.value;
 }
 
+/**
+ * Where in the sentence each tongue puts the word, which is the one thing the
+ * two disagree about and the thing a reader of either has to be told.
+ *
+ * French says it after what it is said of and English says it before, so neither
+ * note would serve the other page. What the word means is the same in both and
+ * is said on the word itself; this is only where to write it.
+ */
+const OVER_ALL_NOTE: Record<Languages, string> = {
+  [Languages.fr]:
+    'Said after the band or charge and after its tincture, last of all, and parted from it by a comma as readily as not: au chef d’azur, brochant sur le tout. It agrees with nothing — the locution is invariable, and stands unchanged after one band and after three. The participle alone is read and the whole phrase is written.',
+  [Languages.en]:
+    'Said before the band or charge it is said of, where French says its own word after: over all a bend gules. It agrees with nothing and stands unchanged before one band and before three.',
+};
+
+const COUNTERCHANGE_NOTE =
+  'Said of a band or a charge, and of several at once, over a field divided between two tinctures — a quartering among them, its two pairs of quarters standing for the two halves. A varied field is cut from two tinctures as well and is refused all the same, being cut into a row rather than by a line. Nothing follows the phrase: it stands where the tincture would stand and is the whole of what the figure is painted with — so a name that already means a tincture refuses it, a besant being gold and a counterchanged one being nothing.';
+
+const COMPONY_NOTE =
+  'Said of a band, never of a charge or a field, and only of the bands shown below. The band is cut into as many compons as it is understood to have, no blazon read here counting them.';
+
 const FURRED_NOTE =
   'Named where the fur itself is not. A fur is a tincture and carries its pair with it, so naming it is the whole of what a blazon says; a furred field is owed the two tinctures its figures are cut from.';
 
@@ -559,6 +879,14 @@ function noteOn<W extends Word>(sense: Sense<W>, word: W, language: Languages): 
       return FURRED_NOTE;
     case 'modifier':
       return MODIFIER_NOTE[language]?.(word);
+    case 'attribute':
+      return ATTRIBUTE_NOTE[language](word);
+    case 'over all':
+      return OVER_ALL_NOTE[language];
+    case 'counterchange':
+      return COUNTERCHANGE_NOTE;
+    case 'compony':
+      return COMPONY_NOTE;
     default:
       return undefined;
   }
@@ -609,26 +937,59 @@ function otherwise<W extends Word>(
     ),
   });
 
-  if (sense.rank === 'ordinary' && OrdinaryDefinitions[sense.term].canBeBorneInNumbers) {
-    return [inNumber({ type: sense.term, tincture: borne })];
+  // What may be said of something, shown as it is drawn rather than only named: a
+  // reader who has never met the word learns more from the teeth on the band
+  // than from being told there are some. Which modifiers those are is the word's
+  // affair as well as the term's — a mascle is a lozenge voided already, so the
+  // voiding is what it answers to and the piercing is a thing it refuses.
+  const underModifiers = (type: BorneType, modifiers: readonly Modifier[]): readonly Variants[] =>
+    modifiers.length === 0
+      ? []
+      : [
+          {
+            heading: 'Modified',
+            entries: modifiers.map((modifier) => {
+              // Named as the blazon beneath it names it, agreement and all: a
+              // billette is vidée and a tourteau is vidé, and a label that said
+              // otherwise would be teaching the reader the wrong word. Which word
+              // that is, is the figure's own affair as well as the tongue's — the
+              // étoile is évidée where everything else is vidé.
+              const said = wordSaidOf(tongue.wording.modifiers, modifier, type);
+              return say(
+                { field, chargesOrOrdinaries: [under(type, borne, modifier)] },
+                capitalise(tongue.wording.modify(word, said, false)),
+                whereabouts('modifier', said)
+              );
+            }),
+          },
+        ];
+
+  if (sense.rank === 'ordinary') {
+    const type = sense.term;
+    // A band takes no modifier its own name already means — neither tongue has
+    // named an indented band in one word — so what the word will take is what the
+    // band will take.
+    const modifiers = modifiersOn(type).filter((modifier) => word.takes(modifier));
+    return [
+      ...(OrdinaryDefinitions[type].canBeBorneInNumbers
+        ? [inNumber({ type, tincture: borne })]
+        : []),
+      ...underModifiers(type, modifiers),
+    ];
   }
 
   if (sense.rank === 'charge') {
     const type = sense.term;
-    // What may be said of it is shown as it is drawn rather than only named: a
-    // reader who has never met the word learns more from the hole in the figure
-    // than from being told there is one. Which modifiers those are is the word's
-    // affair as well as the charge's — a mascle is a lozenge voided already, so
-    // the voiding is what it answers to and the piercing is a thing it refuses.
     const modifiers = modifiersOf(type).filter((modifier) => word.takes(modifier));
     // A word that already says what was done cannot be sown: a field is sown
     // with a charge and not with a charge under a modifier, so a semy of mascles
     // is a blazon the model cannot hold, and a page that wrote it would be
     // drawing plain lozenges under the word for the voided one.
     const said = modified(word).modifier;
+    const has = borneWith(word).attributes;
     return [
-      inNumber({ type, tincture: borne, ...modified(word) }),
-      ...(said === undefined
+      inNumber({ type, tincture: borne, ...modified(word), ...borneWith(word) }),
+      ...(said === undefined && has === undefined
         ? [
             {
               heading: 'Sown',
@@ -638,22 +999,26 @@ function otherwise<W extends Word>(
             },
           ]
         : []),
-      ...(modifiers.length === 0
+      ...underModifiers(type, modifiers),
+      // Each part of the figure the blazon may paint on its own, painted: a
+      // reader who has never met the word learns more from the stone standing on
+      // the hoop than from being told there is one.
+      ...(attributesOf(type).length === 0
         ? []
         : [
             {
-              heading: 'Modified',
-              entries: modifiers.map((modifier) => {
-                // Named as the blazon beneath it names it, agreement and all: a
-                // billette is vidée and a tourteau is vidé, and a label that
-                // said otherwise would be teaching the reader the wrong word.
-                // Which word that is, is the charge's own affair as well as the
-                // tongue's — the étoile is évidée where everything else is vidé.
-                const said = wordSaidOf(tongue.wording.modifiers, modifier, type);
+              heading: 'Painted apart',
+              entries: attributesOf(type).map((attribute) => {
+                const said = wordSaidOf(tongue.wording.attributes, attribute, type);
                 return say(
-                  { field, chargesOrOrdinaries: [{ type, tincture: borne, modifier }] },
-                  capitalise(tongue.wording.modify(word, said, false)),
-                  whereabouts('modifier', said)
+                  {
+                    field,
+                    chargesOrOrdinaries: [
+                      { type, tincture: borne, attributes: [{ attribute, tincture: PART }] },
+                    ],
+                  },
+                  capitalise(tongue.wording.paint(word, said, false)),
+                  whereabouts('attribute', said)
                 );
               }),
             },
@@ -661,31 +1026,151 @@ function otherwise<W extends Word>(
     ];
   }
 
+  if (sense.rank === 'attribute') {
+    // Every charge the part is painted on, drawn with it: a word for a part is
+    // not a thing to be drawn on its own, so what it paints is the whole of what
+    // a page can show.
+    const attribute = sense.term;
+    const charges = paintedBy(tongue.wording, attribute, word);
+    return charges.length === 0
+      ? []
+      : [
+          {
+            heading: 'Said of',
+            entries: charges.map((type) => {
+              const named = namedWith(tongue.wording, type, attribute);
+              const shown = borneIn(named);
+              return say(
+                {
+                  field: { type: FieldType.plain, tincture: against(shown) },
+                  chargesOrOrdinaries: [
+                    { type, tincture: shown, attributes: [{ attribute, tincture: PART }] },
+                  ],
+                },
+                capitalise(named.value),
+                whereabouts('charge', named)
+              );
+            }),
+          },
+        ];
+  }
+
   if (sense.rank === 'modifier') {
-    // Every charge it is written of, drawn under it: a modifier is not a thing
-    // to be drawn on its own, so what it does is the whole of what a page can
-    // show. The first of them is the arms above as well, the word having to be
-    // shown doing its work somewhere before the reader reaches this.
+    // Everything it is written of, drawn under it: a modifier is not a thing to
+    // be drawn on its own, so what it does is the whole of what a page can show.
+    // The first of them is the arms above as well, the word having to be shown
+    // doing its work somewhere before the reader reaches this.
     const modifier = sense.term;
-    const charges = saidBy(tongue.wording, modifier, word);
-    if (charges.length === 0) {
+    const said = saidBy(tongue.wording, modifier, word);
+    if (said.length === 0) {
       return [];
     }
     return [
       {
         heading: 'Said of',
-        entries: charges.map((type) => {
-          const named = wordOf(tongue.wording.charges, type);
+        entries: said.map((type) => {
+          const named = borneWord(tongue.wording, type);
           const shown = borneIn(named);
           return say(
             {
               field: { type: FieldType.plain, tincture: against(shown) },
-              chargesOrOrdinaries: [{ type, tincture: shown, modifier }],
+              chargesOrOrdinaries: [under(type, shown, modifier)],
             },
             capitalise(named.value),
-            whereabouts('charge', named)
+            whereabouts(rankOf(type), named)
           );
         }),
+      },
+    ];
+  }
+
+  if (sense.rank === 'over all') {
+    // What the word is for, which the arms above cannot show on their own: the
+    // band named before the charges it covers, and the same band named there
+    // with the word left out. The order alone would put the charges on top; the
+    // word overrules it, and the pair says so without a sentence of prose.
+    const over: ChargeOrOrdinary = { type: COVERING, tincture: borne };
+    const under: ChargeOrOrdinary = { type: UNDERNEATH, tincture: COVERED, count: 3 };
+    return [
+      {
+        heading: 'Laid otherwise',
+        entries: [
+          say(
+            { field, chargesOrOrdinaries: [{ ...over, overAll: true }, under] },
+            'Over what follows it'
+          ),
+          say({ field, chargesOrOrdinaries: [over, under] }, 'Without it'),
+        ],
+      },
+    ];
+  }
+
+  if (sense.rank === 'counterchange') {
+    // A band and a charge under the one phrase, because the phrase is said of
+    // both and the two drawings answer different halves of the question: a band
+    // crossing the line shows the figure cut by it, and charges standing either
+    // side of it show each taking the half it did not fall on.
+    return [
+      {
+        heading: 'Said of',
+        entries: [
+          say(
+            {
+              field: { type: COUNTERCHANGED_ON, parts: painted(COUNTERCHANGED_ON, METAL, COLOUR) },
+              chargesOrOrdinaries: [{ type: COUNTERCHANGED_BAND, tincture: COUNTERCHANGED }],
+            },
+            'A band'
+          ),
+          say(
+            {
+              field: { type: COUNTERCHANGED_ON, parts: painted(COUNTERCHANGED_ON, METAL, COLOUR) },
+              chargesOrOrdinaries: [
+                { type: COUNTERCHANGED_CHARGE, tincture: COUNTERCHANGED, count: 2 },
+              ],
+            },
+            'Two charges'
+          ),
+        ],
+      },
+    ];
+  }
+
+  if (sense.rank === 'liquid') {
+    // The same liquid stands after the drop borne as after the field sown with
+    // it: "gouttes de sang" as well as "gutté de sang".
+    const type = pouredAsFigure(word);
+    const tincture = sense.term;
+    return [
+      {
+        heading: 'Borne in number',
+        entries: COUNTS.map(([label, count]) =>
+          say(
+            {
+              field: { type: FieldType.plain, tincture: against(tincture) },
+              chargesOrOrdinaries: [{ type, tincture, count }],
+            },
+            label
+          )
+        ),
+      },
+    ];
+  }
+
+  if (sense.rank === 'compony') {
+    // Every band the model lets be cut so, each on the one field: which bands
+    // they are is the model's to say, and the page counts them off it.
+    return [
+      {
+        heading: 'Said of',
+        entries: COMPONY_BANDS.map((type) =>
+          say(
+            {
+              field: { type: FieldType.plain, tincture: COMPONY_ON },
+              chargesOrOrdinaries: [{ type, tincture: COMPONY }],
+            },
+            capitalise(wordOf(tongue.wording.ordinaries, type).value)
+          )
+        ),
       },
     ];
   }
@@ -729,12 +1214,21 @@ function otherwise<W extends Word>(
  * macle, and neither is the losange. Where the other tongue named no such figure
  * the plain names answer instead — English has no word for the pierced star, so
  * the molette leads to the mullet, which is as near as English comes.
+ *
+ * A part the name says is settled the same way and at the same time: a gem-ring
+ * is an anneau and an annulet is an annelet, neither reaching the other.
  */
 function covering(word: Word, candidates: readonly Word[]): readonly Word[] {
-  const meaning = candidates.filter((candidate) => candidate.means(word.defaultModifier));
+  const parts = word.defaultAttribute === undefined ? [] : [word.defaultAttribute];
+  const meaning = candidates.filter(
+    (candidate) => candidate.means(word.defaultModifier) && candidate.shows(parts)
+  );
   const saying =
     meaning.length === 0
-      ? candidates.filter((candidate) => candidate.defaultModifier === undefined)
+      ? candidates.filter(
+          (candidate) =>
+            candidate.defaultModifier === undefined && candidate.defaultAttribute === undefined
+        )
       : meaning;
   const chosen = new Set<Word>();
   const led =

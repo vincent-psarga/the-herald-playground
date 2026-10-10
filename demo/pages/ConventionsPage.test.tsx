@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
+import { isCompony } from '../../src/domain/models/Compony';
+import { isCounterchanged } from '../../src/domain/models/Counterchanged';
 import { isDivision, isFurred, isPlain, isVariation } from '../../src/domain/models/Field';
 import { Languages } from '../../src/domain/models/Languages';
 import { METALS, Tincture, isFur } from '../../src/domain/models/Tinctures';
@@ -48,12 +50,20 @@ const HEADINGS = [
   'A name that means a tincture is written without one',
   'A tincture that has a name of its own is written by it',
   'A name that means what was done to the charge is written without saying it',
+  'A name that means a part of the figure is written, and the part keeps its tincture',
+  'Two parts of one colour are written once, and the colour said last',
   'A strewing is named where heraldry names it',
+  'English names a drop by its liquid, French by its tincture',
   'A word that says nothing is read and never written',
-  'A modifier stands after the charge and before its tincture',
+  'A tongue with no word of its own is written in the word it borrowed',
+  'A modifier stands after what it qualifies and before its tincture',
   'A French modifier agrees with the charge the blazon named',
-  'A modifier is said only of a charge that can show it',
+  'A modifier is said only of what can show it',
   'A word the armorials keep for one charge is written of that charge alone',
+  'A painted line puts the band’s tincture first',
+  'What a blazon laid over all is written again, where that tongue puts it',
+  'Counterchanging is one thing, whatever French calls it',
+  'Compony is written componé and compony, however it was spelled',
   'The smaller settlements',
 ];
 
@@ -107,6 +117,20 @@ describe('what each rule shows', () => {
     mount(<ConventionsPage />);
     expect(shown('Argent a border gules').written).toContain('Argent a bordure gules.');
     expect(shown('Azure a bezant').written).toContain('Azure a besant.');
+    expect(shown('Azure a fess dancetté or').written).toContain('Azure a fess dancetty or.');
+    expect(shown('Azure a fess ingrailed or').written).toContain('Azure a fess engrailed or.');
+  });
+
+  test('puts the band’s tincture before the modifier where the line carries one', () => {
+    mount(<ConventionsPage />);
+    expect(shown("D'or à la bande de gueules engrêlée de sable").written).toContain(
+      "D'or à la bande de gueules engrêlée de sable."
+    );
+    expect(shown('Or a bend gules engrailed sable').written).toContain(
+      'Or a bend gules engrailed sable.'
+    );
+    // A line given no tincture is untouched: the modifier stays where it was.
+    expect(shown('Or a bend engrailed gules').written).toContain('Or a bend engrailed gules.');
     expect(shown('Pily counter pily of four or and azure').written).toContain(
       'Pily of four or and azure.'
     );
@@ -116,6 +140,21 @@ describe('what each rule shows', () => {
     expect(shown("D'or aux trois tourteaux de gueules").written).toContain(
       "D'or à trois tourteaux de gueules."
     );
+  });
+
+  test('writes the borrowed word where the tongue never named the thing', () => {
+    mount(<ConventionsPage />);
+    // English has no word of its own for the squared line, so the French one is
+    // what comes back — and the arms Parker cites it with come back in it.
+    expect(shown('Azure a fess vivré or').written).toEqual([
+      "D'azur à la fasce vivrée d'or.",
+      'Azure a fess vivré or.',
+    ]);
+    expect(shown("D'or à la bande vivrée d'azur").written).toContain('Or a bend vivré azure.');
+    // The nearest English word is another line and is not written for it.
+    expect(shown('Azure a fess dancetty or').written).toContain('Azure a fess dancetty or.');
+    // And where English does have a word of its own, the borrowed one gives way.
+    expect(shown('Vairé azure and or').written).toContain('Vairy azure and or.');
   });
 
   test('counts the pieces in English and keeps quiet about the usual number in French', () => {
@@ -141,6 +180,90 @@ describe('what each rule shows', () => {
   test('keeps the tincture where the name means no single one', () => {
     mount(<ConventionsPage />);
     expect(shown("D'or au tourteau de gueules").written).toContain("D'or au tourteau de gueules.");
+  });
+
+  test('writes counterchanging in the one phrase each tongue keeps for it', () => {
+    mount(<ConventionsPage />);
+    // Both French phrases are read and the one comes back, which is the same
+    // settling every other spelling on this page is under.
+    expect(shown("Parti d'or et de sable à la bordure de l'un en l'autre").written).toEqual([
+      "Parti d'or et de sable à la bordure de l'un à l'autre.",
+      'Per pale or and sable a bordure counterchanged.',
+    ]);
+    expect(shown("Parti d'or et de sable à la bordure de l'un à l'autre").written).toEqual([
+      "Parti d'or et de sable à la bordure de l'un à l'autre.",
+      'Per pale or and sable a bordure counterchanged.',
+    ]);
+    expect(shown('Per pale argent and sable a fess counterchanged').written).toEqual([
+      "Parti d'argent et de sable à la fasce de l'un à l'autre.",
+      'Per pale argent and sable a fess counterchanged.',
+    ]);
+  });
+
+  test('refuses counterchanging where there is nothing to counterchange, and draws no arms', () => {
+    mount(<ConventionsPage />);
+    const refused = shown('Or a bordure counterchanged');
+    expect(refused.refused).toBe(
+      'Nothing to counterchange: the field is not divided between two tinctures'
+    );
+    expect(refused.written).toEqual([]);
+    expect(refused.arms).toBe(0);
+  });
+
+  test('counterchanges a charge, and several, and one under a modifier', () => {
+    mount(<ConventionsPage />);
+    expect(shown("Coupé d'or et de sable à deux losanges de l'un à l'autre").written).toEqual([
+      "Coupé d'or et de sable à deux losanges de l'un à l'autre.",
+      'Per fess or and sable two lozenges counterchanged.',
+    ]);
+    // A lozenge voided is a mascle, and the name says the voiding by being
+    // written: the phrase follows it and nothing stands between.
+    expect(shown('Per pale argent and sable three lozenges voided counterchanged').written).toEqual(
+      [
+        "Parti d'argent et de sable à trois macles de l'un à l'autre.",
+        'Per pale argent and sable three mascles counterchanged.',
+      ]
+    );
+  });
+
+  test('writes compony as componé and compony, whichever spelling was read', () => {
+    mount(<ConventionsPage />);
+    expect(shown("D'or à la bande componnée d'azur et d'argent").written).toEqual([
+      "D'or à la bande componée d'azur et d'argent.",
+      'Or a bend compony azure and argent.',
+    ]);
+    expect(shown('Or a bordure gobony azure and argent').written).toEqual([
+      "D'or à la bordure componée d'azur et d'argent.",
+      'Or a bordure compony azure and argent.',
+    ]);
+    expect(shown('Or a bend componée sable and argent').written).toEqual([
+      "D'or à la bande componée de sable et d'argent.",
+      'Or a bend compony sable and argent.',
+    ]);
+  });
+
+  test('agrees compony with the band in French, and refuses it of a band never cut so', () => {
+    mount(<ConventionsPage />);
+    expect(shown("D'argent à deux bandes componées de gueules et d'or").written).toContain(
+      "D'argent à deux bandes componées de gueules et d'or."
+    );
+    expect(shown("D'or à la bordure componé de gueules et d'argent").refused).toBe(
+      'Wrong agreement: expected "componée"'
+    );
+    const refused = shown("D'or à la jumelle componée de gueules et d'argent");
+    expect(refused.refused).toBe('Wrong modifier: jumelle is never componée');
+    expect(refused.arms).toBe(0);
+  });
+
+  test('refuses a name that has already said what the figure is painted with', () => {
+    mount(<ConventionsPage />);
+    // The plain name takes it and the name that means gold does not.
+    expect(shown('Per pale or and sable a roundel counterchanged').written).toContain(
+      'Per pale or and sable a roundel counterchanged.'
+    );
+    const refused = shown('Per pale or and sable a besant counterchanged');
+    expect(refused.refused).toBe('Wrong tincture: besant is never counterchanged');
+    expect(refused.arms).toBe(0);
   });
 
   test('refuses a tincture the name cannot mean, and draws no arms for it', () => {
@@ -176,6 +299,21 @@ describe('what each rule shows', () => {
     mount(<ConventionsPage />);
     expect(shown('Azure semy of roundels argent').written).toContain('Azure semy of plates.');
     expect(shown("D'azur semé d'annelets d'or").written).toContain("D'azur semé d'annelets d'or.");
+  });
+
+  test('pours a drop in English, and writes its tincture in French', () => {
+    mount(<ConventionsPage />);
+    expect(shown('Azure gutty argent').written).toEqual([
+      "D'azur goutté d'argent.",
+      "Azure gutté d'eau.",
+    ]);
+    expect(shown('Or three gouttes gules').written).toContain('Or three gouttes de sang.');
+    expect(shown("Argent gutté d'olive").written).toContain("Argent gutté d'huile.");
+    expect(shown('Or gutty purpure').written).toContain('Or gutté purpure.');
+    expect(shown("D'or goutté de sang").written).toContain("D'or goutté de gueules.");
+    expect(shown("D'azur à trois gouttes d'eau").written).toContain(
+      "D'azur à trois gouttes d'argent."
+    );
   });
 
   test('never writes "plain" back, the blazon saying it by stopping', () => {
@@ -225,12 +363,96 @@ describe('what each rule shows', () => {
     ]);
   });
 
+  test('writes the name heraldry gave the figure with a part painted, and keeps the tincture', () => {
+    mount(<ConventionsPage />);
+    expect(shown('Azure a ring or stoned argent').written).toEqual([
+      "D'azur à l'anneau d'or chatonné d'argent.",
+      'Azure a gem-ring or stoned argent.',
+    ]);
+    expect(shown('Azure an annulet or stoned argent').written).toEqual(
+      shown('Azure a ring or stoned argent').written
+    );
+    // The name says there is a stone and never its colour, so a blazon that
+    // named none gets none back.
+    expect(shown('Azure a gem-ring or').written).toEqual([
+      "D'azur à l'anneau d'or.",
+      'Azure a gem-ring or.',
+    ]);
+  });
+
+  test('says the colour once where two parts share it, and twice where they do not', () => {
+    mount(<ConventionsPage />);
+    expect(shown("D'argent au lion de sable armé et lampassé de gueules").written).toEqual([
+      "D'argent au lion de sable armé et lampassé de gueules.",
+      'Argent a lion sable armed and langued gules.',
+    ]);
+    // Written with the mark instead, and answered with the conjunction.
+    expect(shown("D'argent au lion de sable, armé, lampassé de gueules").written).toEqual(
+      shown("D'argent au lion de sable armé et lampassé de gueules").written
+    );
+    expect(shown('Argent a lion sable armed gules langued azure').written).toEqual([
+      "D'argent au lion de sable armé de gueules, lampassé d'azur.",
+      'Argent a lion sable armed gules, langued azure.',
+    ]);
+  });
+
+  test('says a run of three as a list, and a run of two with the conjunction alone', () => {
+    mount(<ConventionsPage />);
+    expect(
+      shown("D'argent au lion de sable, armé, lampassé et couronné de gueules").written
+    ).toEqual([
+      "D'argent au lion de sable armé, lampassé et couronné de gueules.",
+      'Argent a lion sable armed, langued and crowned gules.',
+    ]);
+    expect(shown("D'argent au lion de sable armé et lampassé de gueules").written).toContain(
+      'Argent a lion sable armed and langued gules.'
+    );
+  });
+
+  test('agrees every word of the run with the charge, in number as in gender', () => {
+    mount(<ConventionsPage />);
+    expect(shown('Argent three lions sable armed and langued gules').written).toContain(
+      "D'argent à trois lions de sable armés et lampassés de gueules."
+    );
+  });
+
+  test('refuses a part of a figure the charge has not got', () => {
+    mount(<ConventionsPage />);
+    const refused = shown('Azure a billet or stoned argent');
+    expect(refused.refused).toBe('Wrong attribute: billet is never stoned');
+    expect(refused.arms).toBe(0);
+  });
+
   test('never writes a pierced charge as a voided one, the two being two things', () => {
     mount(<ConventionsPage />);
     expect(shown("D'azur à la billette percée d'or").written).toEqual([
       "D'azur à la billette percée d'or.",
       'Azure a billet pierced or.',
     ]);
+  });
+
+  test('writes a band’s modified line where it writes a charge’s modifier', () => {
+    mount(<ConventionsPage />);
+    expect(shown('Azure a fess indented or').written).toEqual([
+      "D'azur à la fasce dentelée d'or.",
+      'Azure a fess indented or.',
+    ]);
+    expect(shown("D'or à trois bandes dentelées de sable").written).toContain(
+      'Or three bends indented sable.'
+    );
+    // The French participle agrees with the band it stands after, as it agrees
+    // with a charge: le chef is masculine where la fasce is feminine.
+    expect(shown("D'azur au chef dentelé d'or").written).toContain("D'azur au chef dentelé d'or.");
+  });
+
+  test('keeps the two lists apart, a band having no middle and a charge no line', () => {
+    mount(<ConventionsPage />);
+    const band = shown('Azure a fess voided or');
+    expect(band.refused).toBe('Wrong modifier: fess is never voided');
+    expect(band.arms).toBe(0);
+    const charge = shown('Azure a lozenge indented or');
+    expect(charge.refused).toBe('Wrong modifier: lozenge is never indented');
+    expect(charge.arms).toBe(0);
   });
 
   test('reads it after the tincture too, and answers in the settled order', () => {
@@ -297,6 +519,30 @@ describe('what each rule shows', () => {
     expect(refused.arms).toBe(0);
   });
 
+  test('writes the whole French phrase where the bare participle was read', () => {
+    mount(<ConventionsPage />);
+    expect(
+      shown("D'argent à trois billettes de sable, à la fasce de gueules brochant").written
+    ).toContain("D'argent à trois billettes de sable, à la fasce de gueules brochant sur le tout.");
+  });
+
+  test('writes it after the band in French and in front of it in English', () => {
+    mount(<ConventionsPage />);
+    const said = shown('Argent over all a fess gules').written;
+    expect(said).toContain('Argent over all a fess gules.');
+    expect(said).toContain("D'argent à la fasce de gueules brochant sur le tout.");
+  });
+
+  test('says it again though the order had already said it', () => {
+    // The chief is the only thing borne, so nothing could cover it either way.
+    // The words are written back all the same: the model holds that the blazon
+    // said them.
+    mount(<ConventionsPage />);
+    expect(shown("D'or au chef d'azur, brochant sur le tout").written).toContain(
+      "D'or au chef d'azur brochant sur le tout."
+    );
+  });
+
   test('parts one charge from the next, and writes the blazon as a sentence', () => {
     mount(<ConventionsPage />);
     expect(shown('or a chief gules a bordure azure').written).toContain(
@@ -350,11 +596,29 @@ describe('the rule of tincture, which every example must keep', () => {
         ...(blazon.chargesOrOrdinaries ?? []),
       ];
       for (const one of over) {
-        const laid = rank(one.tincture);
-        expect(
-          ground === 'fur' || laid === 'fur' || ground !== laid,
-          `«${typed}» lays ${laid} on ${ground}`
-        ).toBe(true);
+        // A band that takes the field's own tinctures reversed keeps the rule by
+        // being what it is — metal falls on colour and colour on metal because
+        // that is the whole of what the phrase says — and it names no tincture
+        // for this to weigh.
+        if (isCounterchanged(one.tincture)) {
+          continue;
+        }
+        // A band cut into compons of a metal and a colour is exempt, as any
+        // charge composed of both is: "The rule of tincture does not apply when
+        // a charge is composed of both a colour and metal" (Wikipedia, Rule of
+        // tincture). Two of a kind are weighed, each of them.
+        const laying = isCompony(one.tincture) ? one.tincture.compony : [one.tincture];
+        const kinds = new Set(laying.map(rank));
+        if (kinds.size > 1 && !kinds.has('fur')) {
+          continue;
+        }
+        for (const tincture of laying) {
+          const laid = rank(tincture);
+          expect(
+            ground === 'fur' || laid === 'fur' || ground !== laid,
+            `«${typed}» lays ${laid} on ${ground}`
+          ).toBe(true);
+        }
       }
     }
   });
@@ -371,6 +635,8 @@ describe('the authorities the decisions rest on', () => {
     ['https://blason-armoiries.org/heraldique/e/evide.htm'],
     ['https://blason-armoiries.org/heraldique/v/vide.htm'],
     ['https://en.wikipedia.org/wiki/Blazon'],
+    ['https://www.heraldsnet.org/saitou/parker/Jpglossg.htm#Gouttes'],
+    ['https://blason-armoiries.org/heraldique/g/goutte.htm'],
   ])('cites %s', (href) => {
     mount(<ConventionsPage />);
     expect(document.querySelector(`.cited a[href="${href}"]`)).toBeInTheDocument();

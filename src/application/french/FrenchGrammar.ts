@@ -3,7 +3,8 @@ import { FrenchWord } from '../../domain/translations/fr/FrenchWord';
 import { FrenchPlain } from '../../domain/translations/fr/Plain';
 import { PIECES } from '../../domain/translations/fr/Variations';
 import { TokenKind } from '../lexer/Lexer';
-import { writtenAs } from '../../domain/translations/Translation';
+import { nameOf, writtenAs } from '../../domain/translations/Translation';
+import { FrenchRanks } from '../../domain/translations/fr/Ranks';
 import { anyKeyword, keyword } from '../parser/Combinators';
 
 // French plumbing, not heraldry: the articles and conjunctions that hold a
@@ -11,15 +12,6 @@ import { anyKeyword, keyword } from '../parser/Combinators';
 // itself comes from domain/translations, and each word there carries the gender
 // and the elision its article has to agree with, so nothing here keeps a list of
 // which words are which.
-
-export function expectedArticle(word: FrenchWord): TokenKind.Elision | TokenKind.Article {
-  return word.needsElision ? TokenKind.Elision : TokenKind.Article;
-}
-
-/** Renders a term as it is spoken in a blazon: "d'or", "de gueules". */
-export function withArticle(word: FrenchWord): string {
-  return word.needsElision ? `d'${word.value}` : `de ${word.value}`;
-}
 
 /**
  * Every way a blazon may say the field bears a word, the one it is written back
@@ -56,6 +48,29 @@ export function everyBearing(word: FrenchWord): readonly string[] {
  */
 export function bearing(word: FrenchWord, count?: string): string {
   return count === undefined ? everyBearing(word)[0] : `à ${count} ${word.plural}`;
+}
+
+/**
+ * How French names the rank of one part of a divided field, or of several parts
+ * that carry the same arms: "au premier", "au second", "aux 1 et 4".
+ *
+ * The article is the one that stands before a charge, the armorials ranking a
+ * part exactly as they bear a thing on it — and it takes the plural where more
+ * than one rank follows, exactly as it does before a count: "aux 2 et 3". Which
+ * ordinal is written is the vocabulary's affair, and the shorter of the two
+ * French has — "second" against "deuxième" — is the one written back.
+ *
+ * Several ranks are written in figures rather than in words. Au blason des
+ * armoiries writes them both ways in one breath — "aux premier et quatrième
+ * quartier d'or ... ; aux 2 et 3 d'azur" — and the figures are what the rolls
+ * here write throughout: "Écartelé : aux 1 et 4 d'azur au chevron d'or ; aux 2
+ * et 3, d'azur à trois colombes d'argent".
+ */
+export function ranked(ranks: readonly number[]): string {
+  const named = ranks.map((rank) =>
+    ranks.length === 1 ? nameOf(FrenchRanks, `${rank}`) : `${rank}`
+  );
+  return `${ranks.length === 1 ? 'au' : 'aux'} ${named.join(` ${CONJUNCTION} `)}`;
 }
 
 /**

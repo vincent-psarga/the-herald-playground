@@ -1,14 +1,21 @@
+import { EnglishCompony } from '../../domain/translations/en/Compony';
 import { EnglishDivisionType } from '../../domain/translations/en/Divisions';
 import { EnglishFurType } from '../../domain/translations/en/Furs';
+import { EnglishAttributes } from '../../domain/translations/en/Attributes';
 import { EnglishChargeType } from '../../domain/translations/en/Charges';
+import { EnglishCounterchanged } from '../../domain/translations/en/Counterchanged';
 import { EnglishModifiers } from '../../domain/translations/en/Modifiers';
 import { EnglishStrewings, OF as SOWN_OF, SOWN } from '../../domain/translations/en/Strewings';
 import { EnglishNumbers } from '../../domain/translations/en/Numbers';
 import { EnglishOrdinaryType } from '../../domain/translations/en/Ordinaries';
+import { EnglishOverAll } from '../../domain/translations/en/OverAll';
 import { EnglishTinctures } from '../../domain/translations/en/Tinctures';
 import { EnglishVariationType, OF } from '../../domain/translations/en/Variations';
 import { BlazonWording } from '../writer/BlazonWording';
-import { CONJUNCTION, bearing } from './EnglishGrammar';
+import { EnglishLiquids } from '../../domain/translations/en/Liquids';
+import { pouredIn } from '../../domain/translations/Liquids';
+import { withArticle } from '../Articles';
+import { CONJUNCTION, bearing, ranked } from './EnglishGrammar';
 
 export const EnglishBlazonWording: BlazonWording = {
   tinctures: EnglishTinctures,
@@ -18,10 +25,22 @@ export const EnglishBlazonWording: BlazonWording = {
   ordinaries: EnglishOrdinaryType,
   charges: EnglishChargeType,
   modifiers: EnglishModifiers,
+  attributes: EnglishAttributes,
+  // "a bordure counterchanged": one word where French writes a phrase, and one
+  // word for both of the cases French tries to tell apart.
+  counterchanged: EnglishCounterchanged,
+  // "a bordure compony gules and argent", unchanged after any number of bands.
+  compony: EnglishCompony,
   strewings: EnglishStrewings,
   numbers: EnglishNumbers,
   // English names a tincture bare: "Azure.", "Per pale azure and or."
   introduce: (word) => word.value,
+  // "gutté de sang", "three gouttes d'eau": Parker gives a distinct term for each
+  // tincture of a drop, and they are French and keep their French article.
+  pour: (type, tincture) => {
+    const liquid = pouredIn(EnglishLiquids, type, tincture);
+    return liquid === undefined ? undefined : withArticle(liquid);
+  },
   bear: bearing,
   // English counts the pieces of a varied field wherever it can: Greaves' Guide
   // to Blazonry, published by the Royal Heraldry Society of Canada, uses "terms
@@ -32,8 +51,19 @@ export const EnglishBlazonWording: BlazonWording = {
   // "a lozenge or voided", "three billets sable voided": English agrees the word
   // with nothing, so it is written as it stands wherever it stands.
   modify: (_, modifier) => modifier.value,
+  // "a gem-ring or stoned azure": the same word wherever it stands, the tincture
+  // of the part following it bare as any other English tincture does.
+  paint: (_, attribute) => attribute.value,
   // "semy of billets": the English spelling of the participle, though both it
   // and the French one are read.
   strew: (word) => `${SOWN[0].value} ${SOWN_OF} ${word.plural}`,
+  // Parker ranks the quarters of a quartered field and English has no other way
+  // to say what they carry, so the rank is written wherever the unranked form
+  // could not have said it — which for a field of four parts is wherever they are
+  // more than the two tinctures it fills them out from.
+  rank: ranked,
+  // "over all a bend gules": English says it in front of what it is said of,
+  // where French says its own word after. Parker writes it exactly so.
+  overAll: (bearing) => `${EnglishOverAll.value} ${bearing}`,
   conjunction: CONJUNCTION,
 };

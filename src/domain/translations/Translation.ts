@@ -1,6 +1,7 @@
-import { ChargeType } from '../models/Charge';
+import { Attribute } from '../models/Attributes';
+import { BorneType } from '../models/Blazon';
+import { Tinctured } from '../models/Counterchanged';
 import { Modifier } from '../models/Modifier';
-import { Tincture } from '../models/Tinctures';
 import { Spelling, Word } from './Word';
 
 /**
@@ -61,19 +62,32 @@ export function wordOf<T extends string, W extends Word>(
  * answered wrongly: every word is considered again, the plain name wins, and the
  * modifier is written after it in the ordinary way.
  *
- * The two questions do not cross today, no charge having both a name per
- * tincture and a name per modifier. Asked in this order they could: the tincture
- * is chosen among the words that mean what was done, which is the way round that
+ * Which parts were painted is asked alongside it, and answered the same way:
+ * heraldry names the ring with a stone in it outright — a gem-ring, the French
+ * anneau — where the plain word names the ring with none, so a charge whose
+ * stone was painted comes back under the name that says there is one. The
+ * tincture written after such a name is the stone's, the name having said only
+ * that there is a stone.
+ *
+ * The questions do not cross today, no charge having both a name per tincture
+ * and a name per modifier or part. Asked in this order they could: the tincture
+ * is chosen among the words that mean what was said, which is the way round that
  * keeps a name meaning what it says.
+ *
+ * A figure painted out of the field rather than in a tincture is asked the same
+ * question and answered by the same rule: no word is that by default and only a
+ * word claiming no tincture will take it, so what comes back is the plain name —
+ * "a roundel counterchanged", never "a besant counterchanged".
  */
 export function wordIn<T extends string, W extends Word>(
   translation: Translation<T, W>,
   term: T,
-  tincture: Tincture,
-  modifier?: Modifier
+  tincture: Tinctured,
+  modifier?: Modifier,
+  attributes: readonly Attribute[] = []
 ): W {
   const words = wordsOf(translation, term);
-  const meaning = words.filter((word) => word.means(modifier));
+  const meaning = words.filter((word) => word.means(modifier) && word.shows(attributes));
   const among = meaning.length === 0 ? words : meaning;
   return (
     among.find((word) => word.defaultTincture === tincture) ??
@@ -83,24 +97,27 @@ export function wordIn<T extends string, W extends Word>(
 }
 
 /**
- * The word a term is written with when it is said of a given charge.
+ * The word a term is written with when it is said of a given band or charge.
  *
  * The tincture's question asked of a word that qualifies rather than names, and
  * answered the same way. A tongue may hold two words for the one term and keep
- * each for its own charges: French voids the star with évidé and the lozenge,
- * the roundel and the billet with vidé, exactly as English names the gold
- * roundel a besant and the red one a torteau. The term is one, the drawing is
- * one, and the word that comes back is the one the armorials write of that
- * charge.
+ * each for its own: French voids the star with évidé and the lozenge, the
+ * roundel and the billet with vidé, exactly as English names the gold roundel a
+ * besant and the red one a torteau. The term is one, the drawing is one, and the
+ * word that comes back is the one the armorials write of that figure.
  *
- * The word that claims the charge, then the word that claims none and is
+ * It is asked of a band as readily as of a charge, a band having modifiers of
+ * its own: nothing here is about what the figure is, only about which of a
+ * tongue's words is written of it.
+ *
+ * The word that claims the figure, then the word that claims none and is
  * therefore the general one, then the canonical word — which will be the wrong
- * word for the charge but is at least the term that was asked for.
+ * word for the figure but is at least the term that was asked for.
  */
 export function wordSaidOf<T extends string, W extends Word>(
   translation: Translation<T, W>,
   term: T,
-  type: ChargeType
+  type: BorneType
 ): W {
   const words = wordsOf(translation, term);
   return (

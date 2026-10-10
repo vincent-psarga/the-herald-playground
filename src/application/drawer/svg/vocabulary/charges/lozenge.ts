@@ -33,13 +33,15 @@ export const lozenge: ChargeFigure = charge(
     return diamond(x, y, across, tall);
   },
   {
-    [Modifier.voided]: ({ x, y, size }) => {
-      const { across, tall } = spread(size);
-      return hollowDiamond(x, y, across, tall, Math.round(size * WIDE * BAND));
-    },
-    [Modifier.pierced]: ({ x, y, size }) => {
-      const { across, tall } = spread(size);
-      return piercedDiamond(x, y, across, tall, Math.round(roomInDiamond(across, tall) * HOLE));
+    modified: {
+      [Modifier.voided]: ({ x, y, size }) => {
+        const { across, tall } = spread(size);
+        return hollowDiamond(x, y, across, tall, Math.round(size * WIDE * BAND));
+      },
+      [Modifier.pierced]: ({ x, y, size }) => {
+        const { across, tall } = spread(size);
+        return piercedDiamond(x, y, across, tall, Math.round(roomInDiamond(across, tall) * HOLE));
+      },
     },
   }
 );

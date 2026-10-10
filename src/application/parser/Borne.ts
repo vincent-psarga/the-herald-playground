@@ -10,12 +10,20 @@ import {
 import { BlazonParseError, TextPosition } from '../../domain/errors/parsing/BlazonParseError';
 import { InvalidTincture } from '../../domain/errors/parsing/InvalidTincture';
 import { RepeatedOrdinary } from '../../domain/errors/parsing/RepeatedOrdinary';
-import { ChargeType, allowsModifier, isChargeType } from '../../domain/models/Charge';
+import { Attribute } from '../../domain/models/Attributes';
+import { BorneType } from '../../domain/models/Blazon';
+import {
+  ChargeType,
+  allowsAttribute,
+  allowsModifier,
+  isChargeType,
+} from '../../domain/models/Charge';
 import { Modifier } from '../../domain/models/Modifier';
 import {
   OrdinaryDefinitions,
   OrdinaryType,
   SEVERAL,
+  admitsModifier,
   isOrdinaryType,
 } from '../../domain/models/Ordinary';
 import { Tincture } from '../../domain/models/Tinctures';
@@ -23,7 +31,7 @@ import { NumberWords } from '../../domain/translations/Numbers';
 import { TermWord, Translation, asSeveral } from '../../domain/translations/Translation';
 import { Word } from '../../domain/translations/Word';
 import { TokenKind } from '../lexer/Lexer';
-import { guard, spelledTerm } from './Combinators';
+import { guard, optional, spelledTerm } from './Combinators';
 import { Vocabulary, complaining, positionOf, textBetween } from './Failures';
 import { number } from './Numbers';
 
@@ -59,6 +67,34 @@ export interface Borne<T extends string, W extends Word = Word> {
    * hands on one that accepts the word as it stands.
    */
   readonly modifier?: Parser<TokenKind, TermWord<Modifier> | undefined>;
+  /**
+   * What the blazon may say has been painted apart from the rest of it, where
+   * the language lets a blazon say anything: "stoned", "chatonné".
+   *
+   * A rule for the same reason the modifier is one, and read the same way: the
+   * word agrees with whatever the phrase called the charge, and only the phrase
+   * knows what it called it. What differs is what follows — a part is owed a
+   * tincture of its own, where a modifier is owed nothing.
+   */
+  readonly attribute?: Parser<TokenKind, TermWord<Attribute> | undefined>;
+  /**
+   * Whether the blazon laid it over everything else, where the tongue says so
+   * before ever naming it: "over all a bend gules".
+   *
+   * English says it there and French says it after the tincture, so the two
+   * arrive by different roads — this one, and the rule that reads the end of the
+   * phrase. Either road sets the same thing, and a blazon travels one of them.
+   */
+  readonly overAll?: true;
+  /**
+   * The word saying it is cut into compons, where the language has one: read
+   * where its tincture would be, and agreeing with what the phrase said of it —
+   * "à la bordure componée", "au pal componé" — for the reason a modifier does.
+   *
+   * What comes back is the word as written. Whether this band may be compony at
+   * all is the model's to say, and is asked once the word has been read.
+   */
+  readonly compony?: Parser<TokenKind, string>;
 }
 
 /**
@@ -171,36 +207,93 @@ function begunByTheCount<T>(
  * the other. Tried separately, every word in neither list would fail both
  * readings at the same place, and the complaint would be settled by whichever
  * was listed first rather than by anything about the blazon.
+ *
+ * The union is the model's own, the writer having the same two vocabularies to
+ * ask about; it is named again here because this is where a reader of the
+ * grammar meets it.
  */
-export type BorneType = OrdinaryType | ChargeType;
+export type { BorneType };
 
 export type BorneTerm = Borne<BorneType>;
 
 /**
- * Something borne, told what may be said of it after its tincture.
+ * Something borne, told what may be said of it once it has been named: what was
+ * done to the figure, which of its parts was painted apart, and how the word for
+ * compony agrees with it where it may stand in its tincture's place.
  *
- * The rule is built from the word, because a tongue that agrees with its words
- * cannot say which writings are right until it knows what they will stand
+ * Both rules are built from the word, because a tongue that agrees with its
+ * words cannot say which writings are right until it knows what they will stand
  * beside — and built once the phrase has been read, because the phrase is the
  * only thing that knows how it introduced the word.
  */
-export function modifiable<T extends string, W extends Word>(
+export function qualifiable<T extends string, W extends Word>(
   borne: Parser<TokenKind, Borne<T, W>>,
-  modifier: (word: W) => Parser<TokenKind, TermWord<Modifier> | undefined>
+  modifier: (word: W) => Parser<TokenKind, TermWord<Modifier> | undefined>,
+  attribute: (word: W) => Parser<TokenKind, TermWord<Attribute> | undefined>,
+  compony?: (word: W) => Parser<TokenKind, string>
 ): Parser<TokenKind, Borne<T, W>> {
-  return apply(borne, (one): Borne<T, W> => ({ ...one, modifier: modifier(one.word) }));
+  return apply(borne, (one): Borne<T, W> => ({
+    ...one,
+    modifier: modifier(one.word),
+    attribute: attribute(one.word),
+    ...(compony === undefined ? {} : { compony: compony(one.word) }),
+  }));
+}
+
+/**
+ * Something borne, with the words a tongue puts before it to say it is laid over
+ * everything else: "over all a bend gules".
+ *
+ * Only a tongue that says it there needs this. French says the same thing after
+ * the tincture, where nothing has yet been named to put words in front of, and
+ * reads it at the end of the phrase instead.
+ *
+ * The key is left off rather than set false where the words were absent, as the
+ * count and the modifier are, so that what the field bears reads back as what
+ * the blazon wrote.
+ */
+export function laidOver<T extends string, W extends Word>(
+  said: Parser<TokenKind, unknown>,
+  borne: Parser<TokenKind, Borne<T, W>>
+): Parser<TokenKind, Borne<T, W>> {
+  return apply(seq(optional(said), borne), ([over, one]): Borne<T, W> =>
+    over === undefined ? one : { ...one, overAll: true }
+  );
 }
 
 /**
  * Whether what is borne may be borne under a modifier.
  *
- * Only a charge may, and only the modifiers its own definition declares. A band
- * takes none: what a blazon does to an ordinary it does to the line the band is
- * drawn with — indented, embattled — which is another vocabulary and is not read
- * yet, so nothing is quietly accepted here in its name.
+ * Both vocabularies declare their own, and neither holds the other's: a charge
+ * is voided or pierced, which is done to its middle, and a band is indented,
+ * which is done to the line it is named after. So the question is put to
+ * whichever vocabulary named the term, and a charge indented is refused by the
+ * same reckoning as a fess voided.
  */
 export function bornUnder(type: BorneType, modifier: Modifier): boolean {
-  return isChargeType(type) && allowsModifier(type, modifier);
+  return isChargeType(type) ? allowsModifier(type, modifier) : admitsModifier(type, modifier);
+}
+
+/**
+ * Whether what is borne has the part a blazon wants painted.
+ *
+ * Only a charge has parts, and only the ones its own definition declares. A band
+ * has none: a fess is a band of one tincture from edge to edge, and nothing in
+ * it is named apart from the rest.
+ */
+export function bearsPart(type: BorneType, attribute: Attribute): boolean {
+  return isChargeType(type) && allowsAttribute(type, attribute);
+}
+
+/**
+ * Whether what is borne may be cut into compons.
+ *
+ * Only a band may, and only the bands whose definition gives them a number of
+ * compons: no source makes a charge compony, a charge being no band to be cut
+ * along.
+ */
+export function inCompons(type: BorneType): boolean {
+  return isOrdinaryType(type) && OrdinaryDefinitions[type].compons !== undefined;
 }
 
 /** The two vocabularies a field's bearings are named from, as one. */

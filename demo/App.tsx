@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import {
   BrowserRouter,
   Link,
@@ -13,19 +13,31 @@ import { ArmorialsPage } from './pages/ArmorialsPage';
 import { BlazonPage } from './pages/BlazonPage';
 import { ConventionsPage } from './pages/ConventionsPage';
 import { DocIndexPage } from './pages/DocIndexPage';
+import { PresentationsPage } from './pages/PresentationsPage';
 import { VocabularyPage } from './pages/VocabularyPage';
 import { WorkInProgressPage } from './pages/WorkInProgressPage';
 import { ARMORIALS } from './armorials';
 import { currentPullRequests } from './preview/PullRequests';
 import { Languages } from '../src/domain/models/Languages';
 import { languageIn } from './utils/Languages';
+import { PRESENTATIONS, presentationNamed } from './utils/Presentations';
 import { readingIn } from './utils/Reading';
 import { vocabularyPath } from './utils/Vocabulary';
+
+/**
+ * The presenter is a library of its own, and a large one. It is fetched when a
+ * deck is opened and not before: a reader who came to write a blazon should not
+ * be made to download a slideshow to do it.
+ */
+const PresentationPage = lazy(() =>
+  import('./pages/PresentationPage').then((module) => ({ default: module.PresentationPage }))
+);
 
 const DOCS = [
   { path: vocabularyPath(Languages.fr), label: 'French vocabulary' },
   { path: vocabularyPath(Languages.en), label: 'English vocabulary' },
   { path: '/doc/conventions', label: 'Conventions' },
+  { path: '/doc/presentations', label: 'Presentations' },
 ];
 
 /**
@@ -46,6 +58,11 @@ export function App() {
         <Route path="/doc" element={<DocIndexPage />} />
         <Route path="/doc/vocabulary/:language" element={<ReadVocabulary />} />
         <Route path="/doc/conventions" element={<ConventionsPage />} />
+        <Route
+          path="/doc/presentations"
+          element={<PresentationsPage presentations={PRESENTATIONS} />}
+        />
+        <Route path="/doc/presentations/:slug" element={<ReadPresentation />} />
         <Route path="/armorials" element={<ArmorialsPage armorials={ARMORIALS} />} />
         <Route path="/armorial/:slug" element={<ReadArmorial />} />
         {currentPullRequests.length !== 0 && (
@@ -112,6 +129,29 @@ function ReadArmorial() {
   const { slug } = useParams();
   const armorial = ARMORIALS.find((candidate) => candidate.slug === slug);
   return armorial !== undefined ? <ArmorialPage armorial={armorial} /> : <NotFound />;
+}
+
+/** One deck answers to its own slug, taken from the name of the file it is kept in. */
+function ReadPresentation() {
+  const { slug } = useParams();
+  const presentation = slug === undefined ? undefined : presentationNamed(slug);
+  if (presentation === undefined) {
+    return <NotFound />;
+  }
+  return (
+    <Suspense fallback={<Fetching />}>
+      <PresentationPage presentation={presentation} />
+    </Suspense>
+  );
+}
+
+/** What stands in for a page while the code that draws it is on its way. */
+function Fetching() {
+  return (
+    <main className="plane">
+      <p className="plane__extent">Fetching the slides…</p>
+    </main>
+  );
 }
 
 function Rail() {

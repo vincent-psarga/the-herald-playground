@@ -5,7 +5,6 @@ export interface FrenchWordOptions extends WordOptions {
   readonly isFeminine?: boolean;
   /** Whether the other gender is read too. */
   readonly acceptsBothGender?: boolean;
-  readonly needsElision?: boolean;
   /** How the word is written agreeing with a feminine noun, where the "-e" is wrong. */
   readonly feminine?: string;
   /** The same, several times over, where the "-es" is wrong. */
@@ -13,15 +12,13 @@ export interface FrenchWordOptions extends WordOptions {
 }
 
 /**
- * A French word, which agrees with what introduces it in two ways a bare
- * spelling does not carry.
+ * A French word, which agrees with what introduces it in gender, as a bare
+ * word does not.
  *
  * Gender decides the article the field bears it under — "à la fasce" but "au
- * chevron" — and elision decides whether "de" contracts before it. Elision can
- * usually be read off the first letter, but not always: a French h is either
- * mute, when the word behaves as though it began with the vowel behind it, or
- * aspirated, when it does not — "d'hermine", but "de hérisson". Neither that nor
- * gender can be derived, so both are declared where the default is wrong.
+ * chevron" — and cannot be derived, so it is declared where the default is
+ * wrong. Elision is not kept here: whether "de" contracts before a word is asked
+ * of the French words English borrows as well, so every Word carries it.
  *
  * A word may also have no settled gender at all. Heraldic French kept the
  * feminine "la losange" where the language at large went masculine, and
@@ -43,9 +40,6 @@ export class FrenchWord extends Word {
    */
   public readonly acceptsBothGender: boolean;
 
-  /** Whether "de" contracts to "d'" before the word. */
-  public readonly needsElision: boolean;
-
   /** The word agreeing with a feminine noun: "évidée" for "évidé". */
   public readonly feminine: string;
 
@@ -56,7 +50,6 @@ export class FrenchWord extends Word {
     super(value, description, options);
     this.isFeminine = options?.isFeminine ?? false;
     this.acceptsBothGender = options?.acceptsBothGender ?? false;
-    this.needsElision = options?.needsElision ?? /^[aeiouyàâäéèêëîïôöùûü]/.test(value);
     this.feminine = options?.feminine ?? `${value}e`;
     this.feminines = options?.feminines ?? `${this.feminine}s`;
   }
